@@ -197,3 +197,10 @@
 ## Bug Fotos de Progresso (v5)
 - [x] Fix: data enviada como string JS completa em vez de YYYY-MM-DD no upload de fotos (removido new Date() no router)
 - [x] Garantir formato correto no frontend (Fotos.tsx) e no backend (router/db)
+
+## Compressão de Imagens no Upload (v6)
+- [x] Criar utilitário compressImage() com Canvas API (sem dependências)
+- [x] Redimensionar para máx 1200px de largura/altura mantendo proporção
+- [x] Comprimir para JPEG com qualidade 0.82 (bom equilíbrio qualidade/tamanho)
+- [x] Mostrar tamanho original vs comprimido no preview de upload
+- [x] Integrar no fluxo de upload (Fotos.tsx) antes de converter para base64

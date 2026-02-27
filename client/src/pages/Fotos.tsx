@@ -12,10 +12,11 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
-import { Upload, ImageIcon, Trash2, X, ZoomIn, GitCompare, Users, ChevronLeft, ChevronRight } from "lucide-react";
+import { Upload, ImageIcon, Trash2, X, ZoomIn, GitCompare, Users, Loader2, ArrowDown } from "lucide-react";
 import { toast } from "sonner";
-import { format } from "date-fns";
+import { format, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { compressImage, formatBytes } from "@/lib/imageCompressor";
 
 const PHOTO_TYPES = [
   { value: "front", label: "Frente" },
@@ -32,8 +33,12 @@ const PHOTO_TYPE_LABELS: Record<string, string> = Object.fromEntries(
 // Multi-upload slot: one per photo type
 interface UploadSlot {
   type: string;
-  file: File | null;
-  preview: string | null;
+  file: File | null;           // compressed file
+  preview: string | null;      // data URL from compressor
+  originalSize: number | null;
+  compressedSize: number | null;
+  savingsPercent: number | null;
+  compressing: boolean;
 }
 
 function PhotoSkeleton() {
@@ -43,6 +48,16 @@ function PhotoSkeleton() {
     </div>
   );
 }
+
+const emptySlot = (type: string): UploadSlot => ({
+  type,
+  file: null,
+  preview: null,
+  originalSize: null,
+  compressedSize: null,
+  savingsPercent: null,
+  compressing: false,
+});
 
 export default function Fotos() {
   const [filterClientId, setFilterClientId] = useState<string>("");
@@ -62,9 +77,9 @@ export default function Fotos() {
 
   // Multi-upload slots: front, back, side_left by default
   const [slots, setSlots] = useState<UploadSlot[]>([
-    { type: "front", file: null, preview: null },
-    { type: "back", file: null, preview: null },
-    { type: "side_left", file: null, preview: null },
+    emptySlot("front"),
+    emptySlot("back"),
+    emptySlot("side_left"),
   ]);
 
   // Compare mode state
@@ -101,14 +116,10 @@ export default function Fotos() {
     setUploadClientId("");
     setUploadDate(format(new Date(), "yyyy-MM-dd"));
     setUploadNotes("");
-    setSlots([
-      { type: "front", file: null, preview: null },
-      { type: "back", file: null, preview: null },
-      { type: "side_left", file: null, preview: null },
-    ]);
+    setSlots([emptySlot("front"), emptySlot("back"), emptySlot("side_left")]);
   };
 
-  const handleFileSelect = (file: File, slotIdx: number) => {
+  const handleFileSelect = useCallback(async (file: File, slotIdx: number) => {
     if (!file.type.startsWith("image/")) {
       toast.error("Selecione apenas arquivos de imagem.");
       return;
@@ -117,16 +128,46 @@ export default function Fotos() {
       toast.error("Arquivo muito grande. Máximo 16MB.");
       return;
     }
-    const url = URL.createObjectURL(file);
-    setSlots(prev => prev.map((s, i) => i === slotIdx ? { ...s, file, preview: url } : s));
-  };
+
+    // Mark slot as compressing
+    setSlots(prev => prev.map((s, i) =>
+      i === slotIdx ? { ...s, compressing: true, file: null, preview: null } : s
+    ));
+
+    try {
+      const result = await compressImage(file, {
+        maxDimension: 1200,
+        quality: 0.82,
+        outputType: "image/jpeg",
+      });
+
+      setSlots(prev => prev.map((s, i) =>
+        i === slotIdx
+          ? {
+              ...s,
+              compressing: false,
+              file: result.file,
+              preview: result.dataUrl,
+              originalSize: result.originalSize,
+              compressedSize: result.compressedSize,
+              savingsPercent: result.savingsPercent,
+            }
+          : s
+      ));
+    } catch (err) {
+      toast.error("Erro ao processar a imagem. Tente novamente.");
+      setSlots(prev => prev.map((s, i) =>
+        i === slotIdx ? { ...emptySlot(s.type) } : s
+      ));
+    }
+  }, []);
 
   const handleDrop = useCallback((e: React.DragEvent, slotIdx: number) => {
     e.preventDefault();
     setIsDragging(false);
     const file = e.dataTransfer.files[0];
     if (file) handleFileSelect(file, slotIdx);
-  }, []);
+  }, [handleFileSelect]);
 
   const handleUpload = async () => {
     const filledSlots = slots.filter(s => s.file !== null);
@@ -141,31 +182,20 @@ export default function Fotos() {
     for (const slot of filledSlots) {
       if (!slot.file) continue;
       try {
-        await new Promise<void>((resolve, reject) => {
-          const reader = new FileReader();
-          reader.onload = async (e) => {
-            const base64 = (e.target?.result as string).split(",")[1];
-            try {
-              await uploadMutation.mutateAsync({
-                clientId: parseInt(uploadClientId),
-                photoType: slot.type as any,
-                date: uploadDate,
-                notes: uploadNotes || undefined,
-                fileBase64: base64,
-                fileName: slot.file!.name,
-                mimeType: slot.file!.type,
-              });
-              successCount++;
-              resolve();
-            } catch (err) {
-              errorCount++;
-              reject(err);
-            }
-          };
-          reader.readAsDataURL(slot.file!);
+        // Use the already-compressed preview dataUrl directly (no extra FileReader needed)
+        const base64 = slot.preview!.split(",")[1];
+        await uploadMutation.mutateAsync({
+          clientId: parseInt(uploadClientId),
+          photoType: slot.type as any,
+          date: uploadDate,
+          notes: uploadNotes || undefined,
+          fileBase64: base64,
+          fileName: slot.file.name,
+          mimeType: slot.file.type,
         });
+        successCount++;
       } catch {
-        // continue with next slot
+        errorCount++;
       }
     }
 
@@ -175,7 +205,6 @@ export default function Fotos() {
     if (successCount > 0) {
       setShowUpload(false);
       resetUploadForm();
-      // Set filter to the uploaded client
       setFilterClientId(uploadClientId);
     }
   };
@@ -183,6 +212,11 @@ export default function Fotos() {
   const getClientName = (clientId: number) => {
     const c = clients.find((cl: any) => cl.id === clientId);
     return c?.name || "Aluno";
+  };
+
+  const formatDate = (dateStr: string) => {
+    try { return format(parseISO(dateStr), "d MMM yyyy", { locale: ptBR }); }
+    catch { return dateStr; }
   };
 
   // Get unique dates for compare mode
@@ -193,6 +227,11 @@ export default function Fotos() {
   const comparePhotos2 = photos.filter((p: any) => p.date === compareDate2 && p.photoType === compareType);
 
   const selectedClient = clients.find((c: any) => String(c.id) === filterClientId);
+
+  // Total compression savings for current upload
+  const totalOriginal = slots.reduce((sum, s) => sum + (s.originalSize ?? 0), 0);
+  const totalCompressed = slots.reduce((sum, s) => sum + (s.compressedSize ?? 0), 0);
+  const hasCompressedSlots = slots.some(s => s.compressedSize !== null);
 
   return (
     <div className="space-y-4 p-4 md:p-0">
@@ -288,9 +327,7 @@ export default function Fotos() {
                   <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-200">
                     <div className="absolute bottom-0 left-0 right-0 p-3">
                       <p className="text-white text-xs font-semibold">{PHOTO_TYPE_LABELS[photo.photoType] || photo.photoType}</p>
-                      <p className="text-white/60 text-[10px]">
-                        {format(new Date(photo.date), "d MMM yyyy", { locale: ptBR })}
-                      </p>
+                      <p className="text-white/60 text-[10px]">{formatDate(photo.date)}</p>
                     </div>
                     <div className="absolute top-2 right-2 flex gap-1">
                       <button
@@ -317,7 +354,6 @@ export default function Fotos() {
       {/* Compare mode */}
       {filterClientId && mode === "compare" && (
         <div className="space-y-4">
-          {/* Compare controls */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 p-4 rounded-xl border border-border bg-card/50">
             <div>
               <Label className="text-xs text-muted-foreground">Tipo de foto</Label>
@@ -336,9 +372,7 @@ export default function Fotos() {
                 <SelectTrigger className="mt-1"><SelectValue placeholder="Selecione" /></SelectTrigger>
                 <SelectContent>
                   {uniqueDates.map(d => (
-                    <SelectItem key={d} value={d}>
-                      {format(new Date(d), "d MMM yyyy", { locale: ptBR })}
-                    </SelectItem>
+                    <SelectItem key={d} value={d}>{formatDate(d)}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -349,33 +383,23 @@ export default function Fotos() {
                 <SelectTrigger className="mt-1"><SelectValue placeholder="Selecione" /></SelectTrigger>
                 <SelectContent>
                   {uniqueDates.map(d => (
-                    <SelectItem key={d} value={d}>
-                      {format(new Date(d), "d MMM yyyy", { locale: ptBR })}
-                    </SelectItem>
+                    <SelectItem key={d} value={d}>{formatDate(d)}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
           </div>
 
-          {/* Comparison view */}
           {compareDate1 && compareDate2 ? (
             <div className="grid grid-cols-2 gap-4">
-              {/* Before */}
               <div className="space-y-2">
                 <div className="flex items-center gap-2">
                   <Badge variant="outline" className="text-xs">Antes</Badge>
-                  <span className="text-xs text-muted-foreground">
-                    {format(new Date(compareDate1), "d MMM yyyy", { locale: ptBR })}
-                  </span>
+                  <span className="text-xs text-muted-foreground">{formatDate(compareDate1)}</span>
                 </div>
                 {comparePhotos1.length > 0 ? (
                   <div className="aspect-[3/4] rounded-xl overflow-hidden border border-border">
-                    <img
-                      src={comparePhotos1[0].photoUrl}
-                      alt="Antes"
-                      className="w-full h-full object-cover"
-                    />
+                    <img src={comparePhotos1[0].photoUrl} alt="Antes" className="w-full h-full object-cover" />
                   </div>
                 ) : (
                   <div className="aspect-[3/4] rounded-xl border border-dashed border-border flex items-center justify-center">
@@ -385,22 +409,14 @@ export default function Fotos() {
                   </div>
                 )}
               </div>
-
-              {/* After */}
               <div className="space-y-2">
                 <div className="flex items-center gap-2">
                   <Badge className="text-xs">Depois</Badge>
-                  <span className="text-xs text-muted-foreground">
-                    {format(new Date(compareDate2), "d MMM yyyy", { locale: ptBR })}
-                  </span>
+                  <span className="text-xs text-muted-foreground">{formatDate(compareDate2)}</span>
                 </div>
                 {comparePhotos2.length > 0 ? (
                   <div className="aspect-[3/4] rounded-xl overflow-hidden border border-border">
-                    <img
-                      src={comparePhotos2[0].photoUrl}
-                      alt="Depois"
-                      className="w-full h-full object-cover"
-                    />
+                    <img src={comparePhotos2[0].photoUrl} alt="Depois" className="w-full h-full object-cover" />
                   </div>
                 ) : (
                   <div className="aspect-[3/4] rounded-xl border border-dashed border-border flex items-center justify-center">
@@ -420,7 +436,7 @@ export default function Fotos() {
         </div>
       )}
 
-      {/* Upload Modal — Multi-upload */}
+      {/* Upload Modal — Multi-upload with compression */}
       <Dialog open={showUpload} onOpenChange={(v) => { setShowUpload(v); if (!v) resetUploadForm(); }}>
         <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader>
@@ -451,10 +467,23 @@ export default function Fotos() {
               />
             </div>
 
-            {/* Multi-slot upload */}
+            {/* Multi-slot upload with compression info */}
             <div>
-              <Label className="text-sm font-medium">Fotos (selecione até 3 ângulos)</Label>
-              <div className="grid grid-cols-3 gap-2 mt-2">
+              <div className="flex items-center justify-between mb-2">
+                <Label className="text-sm font-medium">Fotos (até 3 ângulos)</Label>
+                {hasCompressedSlots && totalOriginal > 0 && (
+                  <span className="text-xs text-emerald-500 flex items-center gap-1">
+                    <ArrowDown className="h-3 w-3" />
+                    {formatBytes(totalOriginal)} → {formatBytes(totalCompressed)}
+                    {totalOriginal > totalCompressed && (
+                      <span className="font-semibold">
+                        ({Math.round(((totalOriginal - totalCompressed) / totalOriginal) * 100)}% menor)
+                      </span>
+                    )}
+                  </span>
+                )}
+              </div>
+              <div className="grid grid-cols-3 gap-2">
                 {slots.map((slot, idx) => (
                   <div key={idx} className="space-y-1">
                     <Select
@@ -481,14 +510,27 @@ export default function Fotos() {
                       onDragLeave={() => setIsDragging(false)}
                       onDrop={(e) => handleDrop(e, idx)}
                     >
-                      {slot.preview ? (
+                      {slot.compressing ? (
+                        <div className="absolute inset-0 flex flex-col items-center justify-center gap-1 bg-background/80">
+                          <Loader2 className="h-5 w-5 text-primary animate-spin" />
+                          <span className="text-[10px] text-muted-foreground">Comprimindo...</span>
+                        </div>
+                      ) : slot.preview ? (
                         <>
                           <img src={slot.preview} alt="" className="w-full h-full object-cover" />
+                          {/* Compression badge */}
+                          {slot.savingsPercent !== null && slot.savingsPercent > 0 && (
+                            <div className="absolute bottom-0 left-0 right-0 bg-black/60 px-1 py-0.5 text-center">
+                              <span className="text-[9px] text-emerald-400 font-medium">
+                                -{slot.savingsPercent}% · {formatBytes(slot.compressedSize!)}
+                              </span>
+                            </div>
+                          )}
                           <button
                             className="absolute top-1 right-1 p-1 rounded-full bg-black/50 hover:bg-black/70 transition-colors"
                             onClick={(e) => {
                               e.stopPropagation();
-                              setSlots(prev => prev.map((s, i) => i === idx ? { ...s, file: null, preview: null } : s));
+                              setSlots(prev => prev.map((s, i) => i === idx ? emptySlot(s.type) : s));
                             }}
                           >
                             <X className="h-3 w-3 text-white" />
@@ -515,6 +557,9 @@ export default function Fotos() {
                   e.target.value = "";
                 }}
               />
+              <p className="text-[11px] text-muted-foreground mt-2">
+                As fotos são comprimidas automaticamente para até 1200px · JPEG 82% — sem perda visual perceptível.
+              </p>
             </div>
 
             <div>
@@ -534,9 +579,13 @@ export default function Fotos() {
               <Button
                 className="flex-1"
                 onClick={handleUpload}
-                disabled={uploading || !uploadClientId || slots.every(s => !s.file)}
+                disabled={uploading || !uploadClientId || slots.every(s => !s.file) || slots.some(s => s.compressing)}
               >
-                {uploading ? "Enviando..." : `Enviar ${slots.filter(s => s.file).length} foto${slots.filter(s => s.file).length !== 1 ? "s" : ""}`}
+                {uploading ? (
+                  <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Enviando...</>
+                ) : (
+                  `Enviar ${slots.filter(s => s.file).length} foto${slots.filter(s => s.file).length !== 1 ? "s" : ""}`
+                )}
               </Button>
             </div>
           </div>
@@ -564,7 +613,7 @@ export default function Fotos() {
             <div className="mt-3 text-center">
               <p className="text-white font-medium">{getClientName(lightbox.clientId)}</p>
               <p className="text-white/60 text-sm">
-                {PHOTO_TYPE_LABELS[lightbox.photoType]} · {format(new Date(lightbox.date), "d 'de' MMMM 'de' yyyy", { locale: ptBR })}
+                {PHOTO_TYPE_LABELS[lightbox.photoType]} · {formatDate(lightbox.date)}
               </p>
             </div>
           </div>
