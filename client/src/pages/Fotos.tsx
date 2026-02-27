@@ -311,8 +311,25 @@ export default function Fotos() {
               </Button>
             </div>
           ) : (
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-              {photos.map((photo: any) => (
+            <div className="space-y-6">
+              {Object.entries(
+                photos.reduce((acc: Record<string, any[]>, photo: any) => {
+                  const date = photo.date;
+                  if (!acc[date]) acc[date] = [];
+                  acc[date].push(photo);
+                  return acc;
+                }, {})
+              )
+                .sort(([dateA], [dateB]) => dateB.localeCompare(dateA))
+                .map(([date, datPhotos]) => (
+                  <div key={date} className="space-y-3">
+                    <div className="flex items-center gap-3">
+                      <h3 className="text-sm font-semibold text-foreground">{formatDate(date)}</h3>
+                      <div className="flex-1 h-px bg-border"></div>
+                      <span className="text-xs text-muted-foreground">{datPhotos.length} foto{datPhotos.length !== 1 ? "s" : ""}</span>
+                    </div>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                      {datPhotos.map((photo: any) => (
                 <div
                   key={photo.id}
                   className="relative aspect-[3/4] rounded-xl overflow-hidden group cursor-pointer border border-border"
@@ -345,7 +362,10 @@ export default function Fotos() {
                     </div>
                   </div>
                 </div>
-              ))}
+                      ))}
+                    </div>
+                  </div>
+                ))}
             </div>
           )}
         </>

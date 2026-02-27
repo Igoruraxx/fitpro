@@ -252,3 +252,9 @@
 - [x] Upload de imagem do laudo (comprimida com compressImage)
 - [x] Botão "Gerar Relatório PDF" (placeholder por ora)
 - [x] Rota /bioimpedancia no App.tsx e sidebar (desktop + mobile)
+
+## Reorganizacao do Modulo de Fotos (v11)
+- [x] Agrupar fotos por data na aba de fotos
+- [x] Criar secoes separadas para cada data
+- [x] Exibir data como cabecalho de secao
+- [x] Manter funcionalidade de comparativo e filtro por aluno
