@@ -180,3 +180,8 @@
 - [x] Redirecionar para /login se não autenticado
 - [x] Redirecionar para / após login bem-sucedido
 - [x] Logout limpa cookie JWT e redireciona para /login
+
+## Validações de Cadastro de Alunos (v3)
+- [x] Limitar dias selecionáveis pela quantidade de sessões/semana (ex: 3 sessões = máx 3 dias)
+- [x] Mostrar mensagem de erro se tentar selecionar mais dias que sessões
+- [x] Desabilitar visualmente botões de dias após atingir o limite

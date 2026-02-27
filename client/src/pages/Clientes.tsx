@@ -155,9 +155,20 @@ export default function Clientes() {
   };
 
   const toggleDay = (day: string) => {
-    setSelectedDays(prev =>
-      prev.includes(day) ? prev.filter(d => d !== day) : [...prev, day]
-    );
+    setSelectedDays(prev => {
+      if (prev.includes(day)) {
+        // Always allow removing a day
+        return prev.filter(d => d !== day);
+      } else {
+        // Only allow adding if we haven't reached the limit
+        const sessionsPerWeekNum = parseInt(sessionsPerWeek) || 3;
+        if (prev.length < sessionsPerWeekNum) {
+          return [...prev, day];
+        }
+        // Silently ignore if limit reached
+        return prev;
+      }
+    });
   };
 
   const handleSubmit = async () => {
@@ -457,23 +468,41 @@ export default function Clientes() {
 
               {/* Days of week */}
               <div className="mt-2">
-                <Label className="text-xs text-muted-foreground">Dias da semana</Label>
-                <div className="flex gap-1.5 mt-1.5 flex-wrap">
-                  {WEEKDAYS.map((day) => (
-                    <button
-                      key={day.value}
-                      type="button"
-                      onClick={() => toggleDay(day.value)}
-                      className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors ${
-                        selectedDays.includes(day.value)
-                          ? "border-primary bg-primary/10 text-primary"
-                          : "border-border bg-card text-muted-foreground hover:bg-accent/30"
-                      }`}
-                    >
-                      {day.label}
-                    </button>
-                  ))}
+                <div className="flex items-center justify-between">
+                  <Label className="text-xs text-muted-foreground">Dias da semana</Label>
+                  <span className="text-xs text-muted-foreground">
+                    {selectedDays.length} de {parseInt(sessionsPerWeek) || 3} dias
+                  </span>
                 </div>
+                <div className="flex gap-1.5 mt-1.5 flex-wrap">
+                  {WEEKDAYS.map((day) => {
+                    const sessionsPerWeekNum = parseInt(sessionsPerWeek) || 3;
+                    const isSelected = selectedDays.includes(day.value);
+                    const isDisabled = !isSelected && selectedDays.length >= sessionsPerWeekNum;
+                    return (
+                      <button
+                        key={day.value}
+                        type="button"
+                        onClick={() => toggleDay(day.value)}
+                        disabled={isDisabled}
+                        className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors ${
+                          isSelected
+                            ? "border-primary bg-primary/10 text-primary"
+                            : isDisabled
+                            ? "border-border/30 bg-card/30 text-muted-foreground/40 cursor-not-allowed"
+                            : "border-border bg-card text-muted-foreground hover:bg-accent/30"
+                        }`}
+                      >
+                        {day.label}
+                      </button>
+                    );
+                  })}
+                </div>
+                {selectedDays.length === parseInt(sessionsPerWeek) && (
+                  <p className="text-xs text-muted-foreground mt-1.5">
+                    ✓ Limite de {parseInt(sessionsPerWeek)} dias atingido
+                  </p>
+                )}
               </div>
 
               <div className="grid grid-cols-3 gap-3 mt-3">
@@ -494,17 +523,24 @@ export default function Clientes() {
                     </SelectContent>
                   </Select>
                 </div>
-                <div>
-                  <Label className="text-xs text-muted-foreground">Sessões/sem</Label>
-                  <Select value={sessionsPerWeek} onValueChange={setSessionsPerWeek}>
-                    <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      {[1,2,3,4,5,6,7].map(n => (
-                        <SelectItem key={n} value={String(n)}>{n}x</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+              <div>
+                <Label className="text-xs text-muted-foreground">Sessões/sem</Label>
+                <Select value={sessionsPerWeek} onValueChange={(v) => {
+                  setSessionsPerWeek(v);
+                  // Auto-adjust selected days if they exceed new limit
+                  const newLimit = parseInt(v) || 3;
+                  if (selectedDays.length > newLimit) {
+                    setSelectedDays(selectedDays.slice(0, newLimit));
+                  }
+                }}>
+                  <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {[1,2,3,4,5,6,7].map(n => (
+                      <SelectItem key={n} value={String(n)}>{n}x</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
               </div>
             </div>
 
