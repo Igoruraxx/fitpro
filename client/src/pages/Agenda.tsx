@@ -6,7 +6,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
-import { ChevronLeft, ChevronRight, Plus, Clock, List, Grid3X3, CalendarDays, Trash2, Edit } from "lucide-react";
+import { ChevronLeft, ChevronRight, Plus, Clock, List, Grid3X3, CalendarDays, Trash2, Edit, CheckCircle2, XCircle, UserX, Calendar } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
 import {
   format, addDays, subDays, startOfWeek, endOfWeek, startOfMonth, endOfMonth,
@@ -143,6 +149,51 @@ export default function Agenda() {
     }
   };
 
+  const STATUS_OPTIONS = [
+    { value: "scheduled", label: "Agendado", icon: Calendar, color: "text-primary" },
+    { value: "completed", label: "Concluído", icon: CheckCircle2, color: "text-green-400" },
+    { value: "cancelled", label: "Cancelado", icon: XCircle, color: "text-red-400" },
+    { value: "no_show", label: "Faltou", icon: UserX, color: "text-yellow-400" },
+  ];
+
+  const STATUS_LABELS: Record<string, string> = {
+    scheduled: "Agendado",
+    completed: "Concluído",
+    cancelled: "Cancelado",
+    no_show: "Faltou",
+  };
+
+  const quickUpdateStatus = (apptId: number, newStatus: string) => {
+    updateMutation.mutate({ id: apptId, status: newStatus as any }, {
+      onSuccess: () => { toast.success("Status atualizado!"); refetch(); },
+    });
+  };
+
+  const renderStatusBadge = (appt: any) => (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <button
+          onClick={(e) => e.stopPropagation()}
+          className={`text-[10px] px-2 py-0.5 rounded-full border font-medium transition-opacity hover:opacity-80 ${getStatusColor(appt.status)}`}
+        >
+          {STATUS_LABELS[appt.status] || appt.status}
+        </button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-40">
+        {STATUS_OPTIONS.map((opt) => (
+          <DropdownMenuItem
+            key={opt.value}
+            onClick={(e) => { e.stopPropagation(); quickUpdateStatus(appt.id, opt.value); }}
+            className={`cursor-pointer ${opt.color}`}
+          >
+            <opt.icon className="h-3.5 w-3.5 mr-2" />
+            {opt.label}
+          </DropdownMenuItem>
+        ))}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+
   const headerLabel = useMemo(() => {
     if (viewMode === "day") return format(currentDate, "d 'de' MMMM yyyy", { locale: ptBR });
     if (viewMode === "week" || viewMode === "list") {
@@ -264,21 +315,21 @@ export default function Agenda() {
                     {dayAppts.map((appt: any) => (
                       <div
                         key={appt.id}
-                        onClick={() => openEditAppt(appt)}
-                        className={`flex items-center justify-between rounded-lg px-3 py-2 border cursor-pointer ${getStatusColor(appt.status)} hover:opacity-80 transition-colors`}
+                        className={`flex items-center justify-between rounded-lg px-3 py-2 border ${getStatusColor(appt.status)} transition-colors`}
                       >
-                        <div>
-                          <div className="font-medium text-sm">{getClientName(appt)}</div>
+                        <div className="flex-1 min-w-0 cursor-pointer" onClick={() => openEditAppt(appt)}>
+                          <div className="font-medium text-sm truncate">{getClientName(appt)}</div>
                           <div className="text-xs opacity-70 flex items-center gap-1">
-                            <Clock className="h-3 w-3" /> {appt.startTime} - {appt.duration}min
+                            <Clock className="h-3 w-3" /> {appt.startTime} · {appt.duration}min
                           </div>
                         </div>
-                        <div className="flex gap-1">
+                        <div className="flex items-center gap-1 shrink-0 ml-2">
+                          {renderStatusBadge(appt)}
                           <Button variant="ghost" size="icon" className="h-7 w-7" onClick={(e) => { e.stopPropagation(); openEditAppt(appt); }}>
-                            <Edit className="h-3.5 w-3.5" />
+                            <Edit className="h-3 w-3" />
                           </Button>
                           <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={(e) => { e.stopPropagation(); deleteMutation.mutate({ id: appt.id }); }}>
-                            <Trash2 className="h-3.5 w-3.5" />
+                            <Trash2 className="h-3 w-3" />
                           </Button>
                         </div>
                       </div>

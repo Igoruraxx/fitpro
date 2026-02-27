@@ -71,3 +71,38 @@
 - [x] Testes de autenticação e autorização
 - [x] Testes de validação de input
 - [x] Testes de acesso admin
+
+## Funcionalidades Adicionais (FitTrainer spec)
+
+### Dashboard
+- [x] Saudação personalizada com nome do treinador
+- [x] 4 cards de estatísticas animados (Alunos ativos, Sessões de hoje, Taxa de presença, Próxima sessão)
+- [x] Gráfico de barras: sessões por semana nas últimas 8 semanas
+- [x] Gráfico de pizza: distribuição de status das sessões
+- [x] Lista de sessões do dia com badge de status
+
+### Gestão de Alunos (melhorias)
+- [x] Busca por nome em tempo real
+- [x] Badge de status: Ativo, Inativo, Pausado
+- [x] Loading skeleton enquanto carrega
+- [x] Confirmação de exclusão via AlertDialog
+- [x] Cards com objetivo, e-mail, telefone, frequência semanal
+
+### Agenda (melhorias)
+- [x] Atualização de status inline por sessão (Agendado/Concluído/Cancelado/Faltou)
+- [x] Destaque visual do dia atual
+- [x] Cards de sessão compactos dentro de cada dia
+
+### Fotos de Progresso (melhorias)
+- [x] Upload real de fotos para storage S3
+- [x] Galeria em grid com cards (aspect ratio 3:4)
+- [x] Hover overlay com nome do aluno, tipo e data
+- [x] Filtro por aluno na galeria
+- [x] Área de upload com drag-style
+- [x] Exclusão de fotos com confirmação
+
+### Layout & Navegação (melhorias)
+- [x] Sidebar com Dashboard como item principal
+- [x] Nome e cargo do treinador no rodapé da sidebar
+- [x] Ícone de haltere no branding
+- [x] Header com título da página atual

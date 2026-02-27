@@ -173,3 +173,51 @@ describe("input validation", () => {
     ).rejects.toThrow();
   });
 });
+
+describe("dashboard procedures - access control", () => {
+  it("dashboard.stats throws UNAUTHORIZED for anonymous users", async () => {
+    const ctx = createAnonContext();
+    const caller = appRouter.createCaller(ctx);
+    await expect(caller.dashboard.stats()).rejects.toThrow();
+  });
+
+  it("dashboard.weeklyChart throws UNAUTHORIZED for anonymous users", async () => {
+    const ctx = createAnonContext();
+    const caller = appRouter.createCaller(ctx);
+    await expect(caller.dashboard.weeklyChart()).rejects.toThrow();
+  });
+
+  it("dashboard.statusChart throws UNAUTHORIZED for anonymous users", async () => {
+    const ctx = createAnonContext();
+    const caller = appRouter.createCaller(ctx);
+    await expect(caller.dashboard.statusChart()).rejects.toThrow();
+  });
+
+  it("dashboard.todaySessions throws UNAUTHORIZED for anonymous users", async () => {
+    const ctx = createAnonContext();
+    const caller = appRouter.createCaller(ctx);
+    await expect(caller.dashboard.todaySessions()).rejects.toThrow();
+  });
+});
+
+describe("photos procedures - access control", () => {
+  it("photos.listAll throws UNAUTHORIZED for anonymous users", async () => {
+    const ctx = createAnonContext();
+    const caller = appRouter.createCaller(ctx);
+    await expect(caller.photos.listAll({})).rejects.toThrow();
+  });
+
+  it("photos.delete throws UNAUTHORIZED for anonymous users", async () => {
+    const ctx = createAnonContext();
+    const caller = appRouter.createCaller(ctx);
+    await expect(caller.photos.delete({ id: 1 })).rejects.toThrow();
+  });
+
+  it("photos.upload requires clientId and file data", async () => {
+    const ctx = createUserContext();
+    const caller = appRouter.createCaller(ctx);
+    await expect(
+      (caller.photos.upload as any)({ photoType: "front", date: "2026-01-01" })
+    ).rejects.toThrow();
+  });
+});

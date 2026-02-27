@@ -214,6 +214,12 @@ export async function deleteMeasurement(id: number, trainerId: number) {
 export async function getPhotosByClient(trainerId: number, clientId: number) {
   const db = await getDb();
   if (!db) return [];
+  if (clientId === 0) {
+    // Return all photos for this trainer
+    return db.select().from(progressPhotos)
+      .where(eq(progressPhotos.trainerId, trainerId))
+      .orderBy(desc(progressPhotos.date));
+  }
   return db.select().from(progressPhotos)
     .where(and(eq(progressPhotos.trainerId, trainerId), eq(progressPhotos.clientId, clientId)))
     .orderBy(desc(progressPhotos.date));
@@ -283,6 +289,139 @@ export async function getFinancialSummary(trainerId: number, month: number, year
     if (row.status === "pending") pending += amt;
   }
   return { income, expenses, pending };
+}
+
+// ==================== DASHBOARD ====================
+
+export async function getDashboardStats(trainerId: number) {
+  const db = await getDb();
+  if (!db) return { activeClients: 0, todayCompleted: 0, attendanceRate: 0, nextSession: null };
+
+  const today = new Date();
+  const todayStr = today.toISOString().split('T')[0];
+
+  const allClients = await db.select({ count: sql<number>`count(*)` }).from(clients)
+    .where(and(eq(clients.trainerId, trainerId), eq(clients.status, 'active')));
+
+  const todayAppts = await db.select().from(appointments)
+    .where(and(
+      eq(appointments.trainerId, trainerId),
+      gte(appointments.date, new Date(todayStr)),
+      lte(appointments.date, new Date(todayStr))
+    ));
+
+  const todayCompleted = todayAppts.filter(a => a.status === 'completed').length;
+  const todayTotal = todayAppts.length;
+  const attendanceRate = todayTotal > 0 ? Math.round((todayCompleted / todayTotal) * 100) : 0;
+
+  const nextSession = await db.select().from(appointments)
+    .where(and(
+      eq(appointments.trainerId, trainerId),
+      eq(appointments.status, 'scheduled'),
+      gte(appointments.date, new Date(todayStr))
+    ))
+    .orderBy(asc(appointments.date), asc(appointments.startTime))
+    .limit(1);
+
+  let nextSessionInfo = null;
+  if (nextSession.length > 0) {
+    const ns = nextSession[0];
+    let clientName = ns.guestName || 'Convidado';
+    if (ns.clientId) {
+      const cl = await db.select({ name: clients.name }).from(clients).where(eq(clients.id, ns.clientId)).limit(1);
+      if (cl.length > 0) clientName = cl[0].name;
+    }
+    nextSessionInfo = { time: ns.startTime, clientName, date: ns.date };
+  }
+
+  return {
+    activeClients: allClients[0]?.count ?? 0,
+    todayCompleted,
+    attendanceRate,
+    nextSession: nextSessionInfo,
+  };
+}
+
+export async function getWeeklySessionsChart(trainerId: number) {
+  const db = await getDb();
+  if (!db) return [];
+
+  const weeks: { week: string; total: number }[] = [];
+  const now = new Date();
+
+  for (let i = 7; i >= 0; i--) {
+    const weekStart = new Date(now);
+    weekStart.setDate(now.getDate() - (i * 7) - now.getDay() + 1);
+    weekStart.setHours(0, 0, 0, 0);
+    const weekEnd = new Date(weekStart);
+    weekEnd.setDate(weekStart.getDate() + 6);
+    weekEnd.setHours(23, 59, 59, 999);
+
+    const result = await db.select({ count: sql<number>`count(*)` }).from(appointments)
+      .where(and(
+        eq(appointments.trainerId, trainerId),
+        gte(appointments.date, weekStart),
+        lte(appointments.date, weekEnd)
+      ));
+
+    const label = `${weekStart.getDate()}/${weekStart.getMonth() + 1}`;
+    weeks.push({ week: label, total: result[0]?.count ?? 0 });
+  }
+
+  return weeks;
+}
+
+export async function getSessionStatusChart(trainerId: number) {
+  const db = await getDb();
+  if (!db) return [];
+
+  const result = await db.select({
+    status: appointments.status,
+    count: sql<number>`count(*)`
+  }).from(appointments)
+    .where(eq(appointments.trainerId, trainerId))
+    .groupBy(appointments.status);
+
+  const labels: Record<string, string> = {
+    scheduled: 'Agendadas',
+    completed: 'Concluídas',
+    cancelled: 'Canceladas',
+    no_show: 'Faltas',
+  };
+
+  return result.map(r => ({
+    name: labels[r.status] || r.status,
+    value: r.count,
+    status: r.status,
+  }));
+}
+
+export async function getTodaySessions(trainerId: number) {
+  const db = await getDb();
+  if (!db) return [];
+
+  const today = new Date();
+  const todayStr = today.toISOString().split('T')[0];
+
+  const appts = await db.select().from(appointments)
+    .where(and(
+      eq(appointments.trainerId, trainerId),
+      gte(appointments.date, new Date(todayStr)),
+      lte(appointments.date, new Date(todayStr))
+    ))
+    .orderBy(asc(appointments.startTime));
+
+  const result = [];
+  for (const appt of appts) {
+    let clientName = appt.guestName || 'Convidado';
+    if (appt.clientId) {
+      const cl = await db.select({ name: clients.name }).from(clients).where(eq(clients.id, appt.clientId)).limit(1);
+      if (cl.length > 0) clientName = cl[0].name;
+    }
+    result.push({ ...appt, clientName });
+  }
+
+  return result;
 }
 
 // ==================== ADMIN STATS ====================

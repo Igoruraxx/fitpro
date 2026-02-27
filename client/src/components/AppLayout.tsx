@@ -1,7 +1,10 @@
 import { useAuth } from "@/_core/hooks/useAuth";
 import { getLoginUrl } from "@/const";
 import { useIsMobile } from "@/hooks/useMobile";
-import { Calendar, Users, TrendingUp, DollarSign, User, LogOut, Shield, Loader2 } from "lucide-react";
+import {
+  LayoutDashboard, Calendar, Users, TrendingUp, DollarSign, User,
+  LogOut, Shield, Loader2, Dumbbell, Image, ChevronRight,
+} from "lucide-react";
 import { useLocation } from "wouter";
 import { Button } from "./ui/button";
 import { Avatar, AvatarFallback } from "./ui/avatar";
@@ -14,12 +17,39 @@ import {
 } from "./ui/dropdown-menu";
 
 const navItems = [
+  { icon: LayoutDashboard, label: "Dashboard", path: "/dashboard" },
   { icon: Calendar, label: "Agenda", path: "/" },
-  { icon: Users, label: "Clientes", path: "/clientes" },
+  { icon: Users, label: "Alunos", path: "/clientes" },
+  { icon: Image, label: "Fotos", path: "/fotos" },
   { icon: TrendingUp, label: "Evolução", path: "/evolucao" },
   { icon: DollarSign, label: "Finanças", path: "/financas" },
   { icon: User, label: "Perfil", path: "/perfil" },
 ];
+
+// Mobile bottom nav shows only the 5 most important items
+const mobileNavItems = [
+  { icon: LayoutDashboard, label: "Dashboard", path: "/dashboard" },
+  { icon: Calendar, label: "Agenda", path: "/" },
+  { icon: Users, label: "Alunos", path: "/clientes" },
+  { icon: Image, label: "Fotos", path: "/fotos" },
+  { icon: User, label: "Perfil", path: "/perfil" },
+];
+
+const PAGE_TITLES: Record<string, string> = {
+  "/dashboard": "Dashboard",
+  "/": "Agenda",
+  "/clientes": "Alunos",
+  "/fotos": "Fotos de Progresso",
+  "/evolucao": "Evolução",
+  "/financas": "Finanças",
+  "/perfil": "Perfil",
+  "/admin": "Painel Admin",
+};
+
+function getPageTitle(location: string): string {
+  if (location.startsWith("/clientes/")) return "Detalhe do Aluno";
+  return PAGE_TITLES[location] || "FITPRO";
+}
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const { user, loading, logout } = useAuth();
@@ -39,39 +69,56 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="flex flex-col items-center gap-6 p-8 max-w-md w-full text-center">
           <div className="flex items-center gap-3 mb-4">
-            <Calendar className="h-10 w-10 text-primary" />
+            <div className="p-3 rounded-2xl bg-primary/20">
+              <Dumbbell className="h-10 w-10 text-primary" />
+            </div>
             <div className="text-left">
-              <h1 className="text-2xl font-extrabold text-primary tracking-tight">FITPRO</h1>
+              <h1 className="text-3xl font-extrabold text-primary tracking-tight">FITPRO</h1>
               <p className="text-xs text-muted-foreground uppercase tracking-widest">Agenda Personal</p>
             </div>
           </div>
           <p className="text-muted-foreground">
-            Gerencie seus clientes, agenda e finanças em um só lugar.
+            Gerencie seus alunos, agenda, evolução e finanças em um só lugar.
           </p>
           <Button
             onClick={() => { window.location.href = getLoginUrl(); }}
             size="lg"
             className="w-full"
           >
-            Entrar
+            Entrar com Manus
           </Button>
         </div>
       </div>
     );
   }
 
+  const pageTitle = getPageTitle(location);
+
   return (
     <div className="min-h-screen bg-background flex flex-col">
       {/* Header */}
       <header className="sticky top-0 z-50 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="flex h-14 items-center justify-between px-4">
-          <div className="flex items-center gap-3">
-            <Calendar className="h-7 w-7 text-primary" />
+          {/* Logo */}
+          <div className="flex items-center gap-2.5">
+            <div className="p-1.5 rounded-xl bg-primary/20">
+              <Dumbbell className="h-5 w-5 text-primary" />
+            </div>
             <div>
-              <h1 className="text-lg font-extrabold text-primary tracking-tight leading-none">FITPRO</h1>
-              <p className="text-[10px] text-muted-foreground uppercase tracking-widest">Agenda Personal</p>
+              <h1 className="text-base font-extrabold text-primary tracking-tight leading-none">FITPRO</h1>
+              <p className="text-[9px] text-muted-foreground uppercase tracking-widest">Agenda Personal</p>
             </div>
           </div>
+
+          {/* Page title (desktop) */}
+          {!isMobile && (
+            <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+              <ChevronRight className="h-3.5 w-3.5" />
+              <span className="font-medium text-foreground">{pageTitle}</span>
+            </div>
+          )}
+
+          {/* Right actions */}
           <div className="flex items-center gap-2">
             {user.role === "admin" && (
               <Button
@@ -120,45 +167,78 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
       {/* Desktop sidebar + content */}
       {!isMobile ? (
-        <div className="flex flex-1">
-          <nav className="w-56 border-r border-border bg-card/50 p-3 space-y-1 shrink-0">
-            {navItems.map((item) => {
-              const isActive = location === item.path || (item.path !== "/" && location.startsWith(item.path));
-              return (
+        <div className="flex flex-1 overflow-hidden">
+          <nav className="w-56 border-r border-border bg-card/30 flex flex-col shrink-0">
+            <div className="flex-1 p-3 space-y-0.5 overflow-y-auto">
+              {navItems.map((item) => {
+                const isActive = location === item.path || (item.path !== "/" && item.path !== "/dashboard" && location.startsWith(item.path));
+                const isExactActive = location === item.path;
+                const active = item.path === "/" ? location === "/" : item.path === "/dashboard" ? location === "/dashboard" : isActive;
+                return (
+                  <button
+                    key={item.path}
+                    onClick={() => setLocation(item.path)}
+                    className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+                      active
+                        ? "bg-primary/15 text-primary"
+                        : "text-muted-foreground hover:bg-accent/50 hover:text-foreground"
+                    }`}
+                  >
+                    <item.icon className="h-4.5 w-4.5 shrink-0" style={{ width: 18, height: 18 }} />
+                    {item.label}
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Sidebar footer with trainer info */}
+            <div className="border-t border-border p-3">
+              <div className="flex items-center gap-2.5 px-2 py-1.5">
+                <Avatar className="h-8 w-8 border border-border shrink-0">
+                  <AvatarFallback className="text-xs font-bold bg-primary/20 text-primary">
+                    {user.name?.charAt(0).toUpperCase() || "U"}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs font-semibold truncate">{user.name || "Personal Trainer"}</p>
+                  <p className="text-[10px] text-muted-foreground truncate">
+                    {(user as any).cref ? `CREF ${(user as any).cref}` : "Personal Trainer"}
+                  </p>
+                </div>
                 <button
-                  key={item.path}
-                  onClick={() => setLocation(item.path)}
-                  className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
-                    isActive
-                      ? "bg-primary/15 text-primary"
-                      : "text-muted-foreground hover:bg-accent hover:text-foreground"
-                  }`}
+                  onClick={logout}
+                  className="text-muted-foreground hover:text-destructive transition-colors p-1 rounded"
+                  title="Sair"
                 >
-                  <item.icon className="h-5 w-5" />
-                  {item.label}
+                  <LogOut className="h-3.5 w-3.5" />
                 </button>
-              );
-            })}
+              </div>
+            </div>
           </nav>
+
           <main className="flex-1 p-6 overflow-auto">{children}</main>
         </div>
       ) : (
         <>
+          {/* Mobile page title */}
+          <div className="px-4 pt-3 pb-1">
+            <h2 className="text-lg font-bold">{pageTitle}</h2>
+          </div>
           <main className="flex-1 pb-20 overflow-auto">{children}</main>
           {/* Bottom Navigation Mobile */}
-          <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 safe-area-bottom">
+          <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
             <div className="flex items-center justify-around h-16">
-              {navItems.map((item) => {
-                const isActive = location === item.path || (item.path !== "/" && location.startsWith(item.path));
+              {mobileNavItems.map((item) => {
+                const active = item.path === "/" ? location === "/" : item.path === "/dashboard" ? location === "/dashboard" : location.startsWith(item.path);
                 return (
                   <button
                     key={item.path}
                     onClick={() => setLocation(item.path)}
                     className={`flex flex-col items-center justify-center gap-0.5 w-full h-full transition-colors ${
-                      isActive ? "text-primary" : "text-muted-foreground"
+                      active ? "text-primary" : "text-muted-foreground"
                     }`}
                   >
-                    <item.icon className={`h-5 w-5 ${isActive ? "text-primary" : ""}`} />
+                    <item.icon className="h-5 w-5" />
                     <span className="text-[10px] font-medium">{item.label}</span>
                   </button>
                 );

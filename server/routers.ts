@@ -10,7 +10,9 @@ import {
   getPhotosByClient, createProgressPhoto, deleteProgressPhoto,
   getTransactionsByTrainer, createTransaction, updateTransaction, deleteTransaction, getFinancialSummary,
   updateUserProfile, getAllTrainers, getAdminDashboardStats,
+  getDashboardStats, getWeeklySessionsChart, getSessionStatusChart, getTodaySessions,
 } from "./db";
+import { storagePut } from "./storage";
 import { notifyOwner } from "./_core/notification";
 
 export const appRouter = router({
@@ -239,6 +241,61 @@ export const appRouter = router({
       year: z.number(),
     })).query(async ({ ctx, input }) => {
       return getFinancialSummary(ctx.user.id, input.month, input.year);
+    }),
+  }),
+
+  // ==================== DASHBOARD ====================
+  dashboard: router({
+    stats: protectedProcedure.query(async ({ ctx }) => {
+      return getDashboardStats(ctx.user.id);
+    }),
+    weeklyChart: protectedProcedure.query(async ({ ctx }) => {
+      return getWeeklySessionsChart(ctx.user.id);
+    }),
+    statusChart: protectedProcedure.query(async ({ ctx }) => {
+      return getSessionStatusChart(ctx.user.id);
+    }),
+    todaySessions: protectedProcedure.query(async ({ ctx }) => {
+      return getTodaySessions(ctx.user.id);
+    }),
+  }),
+
+  // ==================== PHOTO UPLOAD ====================
+  photos: router({
+    upload: protectedProcedure.input(z.object({
+      clientId: z.number(),
+      photoType: z.enum(["front", "back", "side_left", "side_right", "other"]).default("front"),
+      date: z.string(),
+      notes: z.string().optional(),
+      fileBase64: z.string(),
+      fileName: z.string(),
+      mimeType: z.string().default("image/jpeg"),
+    })).mutation(async ({ ctx, input }) => {
+      const { fileBase64, fileName, mimeType, clientId, photoType, date, notes } = input;
+      const buffer = Buffer.from(fileBase64, "base64");
+      const key = `photos/${ctx.user.id}/${clientId}/${Date.now()}-${fileName}`;
+      const { url } = await storagePut(key, buffer, mimeType);
+      const id = await createProgressPhoto({
+        trainerId: ctx.user.id,
+        clientId,
+        photoUrl: url,
+        photoType,
+        date: new Date(date) as any,
+        notes,
+      } as any);
+      return { id, url };
+    }),
+    listAll: protectedProcedure.input(z.object({
+      clientId: z.number().optional(),
+    })).query(async ({ ctx, input }) => {
+      if (input.clientId) {
+        return getPhotosByClient(ctx.user.id, input.clientId);
+      }
+      return getPhotosByClient(ctx.user.id, 0); // all photos
+    }),
+    delete: protectedProcedure.input(z.object({ id: z.number() })).mutation(async ({ ctx, input }) => {
+      await deleteProgressPhoto(input.id, ctx.user.id);
+      return { success: true };
     }),
   }),
 
