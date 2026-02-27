@@ -14,23 +14,42 @@ import Financas from "./pages/Financas";
 import Perfil from "./pages/Perfil";
 import Admin from "./pages/Admin";
 import Fotos from "./pages/Fotos";
+import Login from "./pages/Login";
+import Register from "./pages/Register";
+import ForgotPassword from "./pages/ForgotPassword";
+import ResetPassword from "./pages/ResetPassword";
+import ConfirmEmail from "./pages/ConfirmEmail";
 
 function Router() {
   return (
-    <AppLayout>
-      <Switch>
-        <Route path="/dashboard" component={Dashboard} />
-        <Route path="/" component={Agenda} />
-        <Route path="/clientes" component={Clientes} />
-        <Route path="/clientes/:id" component={ClienteDetalhe} />
-        <Route path="/fotos" component={Fotos} />
-        <Route path="/evolucao" component={Evolucao} />
-        <Route path="/financas" component={Financas} />
-        <Route path="/perfil" component={Perfil} />
-        <Route path="/admin" component={Admin} />
-        <Route component={NotFound} />
-      </Switch>
-    </AppLayout>
+    <Switch>
+      {/* Auth Routes - No AppLayout */}
+      <Route path="/register" component={Register} />
+      <Route path="/login" component={Login} />
+      <Route path="/forgot-password" component={ForgotPassword} />
+      <Route path="/reset-password" component={ResetPassword} />
+      <Route path="/confirm-email" component={ConfirmEmail} />
+
+      {/* App Routes - With AppLayout */}
+      <Route>
+        {() => (
+          <AppLayout>
+            <Switch>
+              <Route path="/dashboard" component={Dashboard} />
+              <Route path="/" component={Agenda} />
+              <Route path="/clientes" component={Clientes} />
+              <Route path="/clientes/:id" component={ClienteDetalhe} />
+              <Route path="/fotos" component={Fotos} />
+              <Route path="/evolucao" component={Evolucao} />
+              <Route path="/financas" component={Financas} />
+              <Route path="/perfil" component={Perfil} />
+              <Route path="/admin" component={Admin} />
+              <Route component={NotFound} />
+            </Switch>
+          </AppLayout>
+        )}
+      </Route>
+    </Switch>
   );
 }
 

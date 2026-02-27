@@ -160,9 +160,12 @@
 - [x] Endpoint forgotPassword (envio de e-mail de recuperação)
 - [x] Endpoint resetPassword (nova senha via token)
 - [x] Preparação para Google OAuth (campo googleId + endpoint)de Cadastro (/register)
-- [ ] Página de Login (/login)
-- [ ] Página de Confirmação de E-mail (/confirm-email)
-- [ ] Página de Recuperação de Conta (/forgot-password)
-- [ ] Página de Nova Senha (/reset-password)
+- [x] Página de Login (/login)
+- [x] Página de Confirmação de E-mail (/confirm-email)
+- [x] Página de Recuperação de Conta (/forgot-password)
+- [x] Página de Nova Senha (/reset-password)
+- [x] Integração de rotas de autenticação no App.tsx
+- [x] Testes para páginas de autenticação (38 testes)
+- [ ] Configurar envio de e-mail (Nodemailer/Resend/SendGrid)
 - [ ] Remover dependência do Manus OAuth das rotas protegidas
 - [ ] Atualizar AppLayout para usar novo sistema de auth

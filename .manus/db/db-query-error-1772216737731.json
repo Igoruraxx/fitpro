@@ -1,0 +1,8 @@
+{
+  "query": "\n-- Check if passwordHash column exists\nSELECT column_name FROM information_schema.columns \nWHERE table_name='users' AND column_name='passwordHash';\n\n-- If it doesn't exist, we'll add it\nALTER TABLE users ADD COLUMN IF NOT EXISTS \"passwordHash\" text;\nALTER TABLE users ADD COLUMN IF NOT EXISTS \"emailVerified\" boolean DEFAULT false;\nALTER TABLE users ADD COLUMN IF NOT EXISTS \"googleId\" varchar(255);\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 4PiQ8e52qW4Xjb6.root --database 5UbJ997E6SHYZid72bThxF --execute \n-- Check if passwordHash column exists\nSELECT column_name FROM information_schema.columns \nWHERE table_name='users' AND column_name='passwordHash';\n\n-- If it doesn't exist, we'll add it\nALTER TABLE users ADD COLUMN IF NOT EXISTS \"passwordHash\" text;\nALTER TABLE users ADD COLUMN IF NOT EXISTS \"emailVerified\" boolean DEFAULT false;\nALTER TABLE users ADD COLUMN IF NOT EXISTS \"googleId\" varchar(255);\n",
+  "returncode": 1,
+  "logs": [
+    "ERROR 1064 (42000) at line 7: You have an error in your SQL syntax; check the manual that corresponds to your TiDB version for the right syntax to use line 1 column 57 near \"\"passwordHash\" text\""
+  ]
+}

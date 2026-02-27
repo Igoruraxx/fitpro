@@ -1,6 +1,5 @@
 import { z } from "zod";
-import { publicProcedure, router } from "../_core/trpc";
-import { TRPCError } from "@trpc/server";
+import { publicProcedure, protectedProcedure, router } from "../_core/trpc";import { TRPCError } from "@trpc/server";
 import {
   hashPassword,
   verifyPassword,
@@ -19,6 +18,8 @@ import {
   updateUserEmailVerified,
   updateUserPassword,
 } from "../db";
+import { getSessionCookieOptions } from "../_core/cookies";
+import { COOKIE_NAME } from "@shared/const";
 
 const registerSchema = z.object({
   email: z.string().email("E-mail inválido"),
@@ -263,4 +264,12 @@ export const authRouter = router({
         message: "Google OAuth ainda não está implementado",
       };
     }),
+
+  me: publicProcedure.query(opts => opts.ctx.user),
+
+  logout: publicProcedure.mutation(({ ctx }) => {
+    const cookieOptions = getSessionCookieOptions(ctx.req);
+    ctx.res.clearCookie(COOKIE_NAME, { ...cookieOptions, maxAge: -1 });
+    return { success: true } as const;
+  }),
 });
