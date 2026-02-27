@@ -603,14 +603,14 @@ export async function getFinancialDashboard(trainerId: number) {
   // Get all clients for this trainer
   const allClients = await db.select().from(clients).where(eq(clients.trainerId, trainerId));
 
-  // Filter: only active training clients count for financial
-  const activeTraining = allClients.filter(c => c.status === 'active' && c.clientType === 'training');
-  const activeConsulting = allClients.filter(c => c.status === 'active' && c.clientType === 'consulting');
+  // Filter: only active clients count for financial
+  const activeClients = allClients.filter(c => c.status === 'active');
   const inactiveClients = allClients.filter(c => c.status === 'inactive');
 
-  // Monthly plan clients (active training only)
-  const monthlyClients = activeTraining.filter(c => c.planType === 'monthly');
-  const packageClients = activeTraining.filter(c => c.planType === 'package');
+  // Monthly plan clients (active, not consulting)
+  const monthlyClients = activeClients.filter(c => c.planType === 'monthly');
+  const packageClients = activeClients.filter(c => c.planType === 'package');
+  const consultingClients = activeClients.filter(c => c.planType === 'consulting');
 
   // Monthly revenue expected
   const monthlyRevenue = monthlyClients.reduce((sum, c) => sum + (parseFloat(c.monthlyFee || '0') || 0), 0);
@@ -627,11 +627,8 @@ export async function getFinancialDashboard(trainerId: number) {
   });
   const overdueAmount = overdueClients.reduce((sum, c) => sum + (parseFloat(c.monthlyFee || '0') || 0), 0);
 
-  // Expiring packages: training clients with sessionsRemaining <= 3
-  const expiringPackages = packageClients.filter(c => {
-    const rem = c.sessionsRemaining ?? 0;
-    return rem <= 3 && rem >= 0;
-  });
+  // Expiring packages: package clients with sessionsRemaining <= 3
+  const expiringPackages = packageClients.filter(c => (c.sessionsRemaining ?? 0) > 0 && (c.sessionsRemaining ?? 0) <= 3);
 
   // Completed sessions this month
   const monthStart = `${currentYear}-${String(currentMonth).padStart(2, '0')}-01`;
@@ -678,12 +675,11 @@ export async function getFinancialDashboard(trainerId: number) {
 
   return {
     summary: {
-      totalActiveClients: activeTraining.length + activeConsulting.length,
-      activeTrainingClients: activeTraining.length,
-      activeConsultingClients: activeConsulting.length,
-      inactiveClients: inactiveClients.length,
+      totalActiveClients: activeClients.length,
       monthlyPlanClients: monthlyClients.length,
       packagePlanClients: packageClients.length,
+      consultingClients: consultingClients.length,
+      inactiveClients: inactiveClients.length,
     },
     revenue: {
       monthlyExpected: Math.round(monthlyRevenue * 100) / 100,
@@ -717,7 +713,6 @@ export async function getFinancialDashboard(trainerId: number) {
       id: c.id,
       name: c.name,
       status: c.status,
-      clientType: c.clientType,
       planType: c.planType,
       monthlyFee: c.monthlyFee ? parseFloat(c.monthlyFee) : null,
       paymentDay: c.paymentDay,

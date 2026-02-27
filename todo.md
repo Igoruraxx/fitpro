@@ -229,6 +229,15 @@
 - [x] Adicionar rota /financas no App.tsx
 - [x] Adicionar item Finanças no sidebar do AppLayout
 
+## Correção de Lógica de Planos (v10)
+- [x] Remover campo clientType da tabela clients (era tipo de aluno, não é necessário)
+- [x] Adicionar "Consultoria" como opção em planType (ao lado de Mensal e Pacote)
+- [x] Consultoria não deve ter campos: sessionsPerWeek, packageSessions, sessionsRemaining, scheduledDays (campos são opcionais agora)
+- [x] Atualizar lógica de agendamento para não gerar sessões quando planType = "Consultoria"
+- [x] Atualizar dashboard financeiro para excluir Consultoria de cálculos de sessões
+- [x] Atualizar UI do cadastro de alunos (remover clientType, ajustar planType com 3 opções)
+- [ ] Testar fluxo completo de Consultoria
+
 ## Módulo Bioimpedância (v9)
 - [x] Tabela bioimpedanceExams no schema e banco (PostgreSQL Supabase)
 - [x] Campos: peso, IMC, gorduraCorporal%, massaGorda, massaLivreGordura, massaMuscular, taxaMuscular, massaMuscularEsqueletica, massaOssea, massaProteica, proteina%, umidade, aguaCorporal%, gorduraSubcutanea%, gorduraVisceral, TMB, idadeMetabolica, WHR, pesoIdeal, nivelObesidade, tipoCorpo, imageUrl, notes

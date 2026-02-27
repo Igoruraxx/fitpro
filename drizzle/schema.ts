@@ -8,8 +8,7 @@ export const subscriptionPlanEnum = pgEnum("subscription_plan", ["free", "basic"
 export const subscriptionStatusEnum = pgEnum("subscription_status", ["active", "inactive", "trial", "cancelled"]);
 export const genderEnum = pgEnum("gender", ["male", "female", "other"]);
 export const clientStatusEnum = pgEnum("client_status", ["active", "inactive", "trial"]);
-export const planTypeEnum = pgEnum("plan_type", ["monthly", "package"]);
-export const clientTypeEnum = pgEnum("client_type", ["training", "consulting"]);
+export const planTypeEnum = pgEnum("plan_type", ["monthly", "package", "consulting"]);
 export const appointmentStatusEnum = pgEnum("appointment_status", ["scheduled", "completed", "cancelled", "no_show"]);
 export const recurrenceTypeEnum = pgEnum("recurrence_type", ["none", "daily", "weekly", "biweekly", "monthly"]);
 export const photoTypeEnum = pgEnum("photo_type", ["front", "back", "side_left", "side_right", "other"]);
@@ -68,10 +67,7 @@ export const clients = pgTable("clients", {
   photoUrl: text("photoUrl"),
   status: clientStatusEnum("status").default("active").notNull(),
 
-  // Client type: training (has sessions) or consulting (no sessions in agenda)
-  clientType: clientTypeEnum("clientType").default("training").notNull(),
-
-  // Plan type: monthly subscription or session package
+  // Plan type: monthly subscription, session package, or consulting (no sessions)
   planType: planTypeEnum("planType").default("monthly").notNull(),
 
   // Monthly plan fields
@@ -83,8 +79,8 @@ export const clients = pgTable("clients", {
   sessionsRemaining: integer("sessionsRemaining"),   // countdown — decremented on each completed session
   packageValue: decimal("packageValue", { precision: 10, scale: 2 }),
 
-  // Weekly schedule (shared by both plan types)
-  sessionsPerWeek: integer("sessionsPerWeek").default(3),
+  // Weekly schedule (only for monthly/package plans, not for consulting)
+  sessionsPerWeek: integer("sessionsPerWeek"),
   sessionDays: varchar("sessionDays", { length: 20 }),  // comma-separated weekday numbers e.g. "1,3,5"
   sessionTime: varchar("sessionTime", { length: 5 }),   // default start time HH:MM
   sessionDuration: integer("sessionDuration").default(60),  // minutes

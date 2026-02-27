@@ -188,8 +188,7 @@ export const appRouter = router({
       gender: z.enum(["male", "female", "other"]).optional(),
       photoUrl: z.string().optional(),
       status: z.enum(["active", "inactive", "trial"]).optional(),
-      clientType: z.enum(["training", "consulting"]).optional(),
-      planType: z.enum(["monthly", "package"]).optional(),
+      planType: z.enum(["monthly", "package", "consulting"]).optional(),
       // Monthly plan
       monthlyFee: z.string().optional(),
       paymentDay: z.number().optional(),
@@ -221,8 +220,7 @@ export const appRouter = router({
       gender: z.enum(["male", "female", "other"]).optional(),
       photoUrl: z.string().optional(),
       status: z.enum(["active", "inactive", "trial"]).optional(),
-      clientType: z.enum(["training", "consulting"]).optional(),
-      planType: z.enum(["monthly", "package"]).optional(),
+      planType: z.enum(["monthly", "package", "consulting"]).optional(),
       // Monthly plan
       monthlyFee: z.string().optional(),
       paymentDay: z.number().optional(),
