@@ -19,9 +19,9 @@ import { toast } from "sonner";
 import { useLocation } from "wouter";
 
 const STATUS_STYLES: Record<string, string> = {
-  active: "bg-green-500/20 text-green-400 border border-green-500/30",
-  inactive: "bg-red-500/20 text-red-400 border border-red-500/30",
-  trial: "bg-yellow-500/20 text-yellow-400 border border-yellow-500/30",
+  active: "badge-success",
+  inactive: "badge-danger",
+  trial: "badge-warning",
 };
 
 const STATUS_LABELS: Record<string, string> = {
@@ -31,12 +31,14 @@ const STATUS_LABELS: Record<string, string> = {
 };
 
 const CLIENT_TYPE_STYLES: Record<string, string> = {
-  training: "bg-blue-500/20 text-blue-400 border border-blue-500/30",
-  consulting: "bg-purple-500/20 text-purple-400 border border-purple-500/30",
+  monthly: "badge-primary",
+  package: "badge-neutral",
+  consulting: "badge-neutral",
 };
 
 const CLIENT_TYPE_LABELS: Record<string, string> = {
-  training: "Treino",
+  monthly: "Mensal",
+  package: "Pacote",
   consulting: "Consultoria",
 };
 
@@ -243,15 +245,15 @@ export default function Clientes() {
   const activeCount = clients.filter((c: any) => c.status === "active").length;
 
   return (
-    <div className="space-y-4 p-4 md:p-0">
+    <div className="space-y-5">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h2 className="text-2xl font-bold">Alunos</h2>
-          <p className="text-sm text-muted-foreground">
+          <h1 className="text-xl font-bold text-foreground">Alunos</h1>
+          <p className="text-sm text-muted-foreground mt-0.5">
             {activeCount} ativo{activeCount !== 1 ? "s" : ""} · {clients.length} total
           </p>
         </div>
-        <Button onClick={openNew}>
+        <Button onClick={openNew} size="sm">
           <Plus className="h-4 w-4 mr-2" /> Novo Aluno
         </Button>
       </div>
@@ -323,27 +325,25 @@ export default function Clientes() {
             return (
               <div
                 key={client.id}
-                className="flex items-center gap-3 p-3 rounded-xl border border-border bg-card hover:bg-accent/30 transition-colors cursor-pointer"
+                className="flex items-center gap-3 p-3.5 rounded-xl border border-border bg-card hover:bg-muted/40 hover:border-border/80 transition-all cursor-pointer shadow-sm"
                 onClick={() => setLocation(`/clientes/${client.id}`)}
               >
-                <Avatar className="h-11 w-11 border border-border shrink-0">
-                  <AvatarFallback className="bg-primary/20 text-primary text-sm font-bold">
+                <Avatar className="h-10 w-10 shrink-0">
+                  <AvatarFallback className="bg-primary/10 text-primary text-sm font-bold">
                     {client.name.charAt(0).toUpperCase()}
                   </AvatarFallback>
                 </Avatar>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <span className="font-semibold text-sm">{client.name}</span>
-                    <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${STATUS_STYLES[client.status] || ""}`}>
+                    <span className="font-semibold text-sm text-foreground">{client.name}</span>
+                    <span className={STATUS_STYLES[client.status] || "badge-neutral"}>
                       {STATUS_LABELS[client.status] || client.status}
                     </span>
-                    {client.planType === "consulting" && (
-                      <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium bg-purple-500/20 text-purple-400 border border-purple-500/30`}>
-                        Consultoria
-                      </span>
-                    )}
+                    <span className={CLIENT_TYPE_STYLES[client.planType] || "badge-neutral"}>
+                      {CLIENT_TYPE_LABELS[client.planType] || client.planType}
+                    </span>
                     {sessionsLow && (
-                      <span className="flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full font-medium bg-orange-500/20 text-orange-400 border border-orange-500/30">
+                      <span className="badge-warning flex items-center gap-1">
                         <AlertTriangle className="h-2.5 w-2.5" />
                         {client.sessionsRemaining === 0 ? "Sem sessões" : `${client.sessionsRemaining} restante${client.sessionsRemaining !== 1 ? "s" : ""}`}
                       </span>

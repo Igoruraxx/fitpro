@@ -330,38 +330,38 @@ export default function Fotos() {
                     </div>
                     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
                       {datPhotos.map((photo: any) => (
-                <div
-                  key={photo.id}
-                  className="relative aspect-[3/4] rounded-xl overflow-hidden group cursor-pointer border border-border"
-                  onClick={() => setLightbox(photo)}
-                >
-                  <img
-                    src={photo.photoUrl}
-                    alt={`Foto de ${getClientName(photo.clientId)}`}
-                    className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-                    loading="lazy"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                    <div className="absolute bottom-0 left-0 right-0 p-3">
-                      <p className="text-white text-xs font-semibold">{PHOTO_TYPE_LABELS[photo.photoType] || photo.photoType}</p>
-                      <p className="text-white/60 text-[10px]">{formatDate(photo.date)}</p>
-                    </div>
-                    <div className="absolute top-2 right-2 flex gap-1">
-                      <button
-                        className="p-1.5 rounded-lg bg-white/20 hover:bg-white/30 transition-colors"
-                        onClick={(e) => { e.stopPropagation(); setLightbox(photo); }}
-                      >
-                        <ZoomIn className="h-3.5 w-3.5 text-white" />
-                      </button>
-                      <button
-                        className="p-1.5 rounded-lg bg-red-500/70 hover:bg-red-500 transition-colors"
-                        onClick={(e) => { e.stopPropagation(); setDeleteTarget(photo); }}
-                      >
-                        <Trash2 className="h-3.5 w-3.5 text-white" />
-                      </button>
-                    </div>
-                  </div>
-                </div>
+                        <div
+                          key={photo.id}
+                          className="relative aspect-[3/4] rounded-xl overflow-hidden group cursor-pointer border border-border"
+                          onClick={() => setLightbox(photo)}
+                        >
+                          <img
+                            src={photo.photoUrl}
+                            alt={`Foto de ${getClientName(photo.clientId)}`}
+                            className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                            loading="lazy"
+                          />
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                            <div className="absolute bottom-0 left-0 right-0 p-3">
+                              <p className="text-white text-xs font-semibold">{PHOTO_TYPE_LABELS[photo.photoType] || photo.photoType}</p>
+                              <p className="text-white/60 text-[10px]">{formatDate(photo.date)}</p>
+                            </div>
+                            <div className="absolute top-2 right-2 flex gap-1">
+                              <button
+                                className="p-1.5 rounded-lg bg-white/20 hover:bg-white/30 transition-colors"
+                                onClick={(e) => { e.stopPropagation(); setLightbox(photo); }}
+                              >
+                                <ZoomIn className="h-3.5 w-3.5 text-white" />
+                              </button>
+                              <button
+                                className="p-1.5 rounded-lg bg-red-500/70 hover:bg-red-500 transition-colors"
+                                onClick={(e) => { e.stopPropagation(); setDeleteTarget(photo); }}
+                              >
+                                <Trash2 className="h-3.5 w-3.5 text-white" />
+                              </button>
+                            </div>
+                          </div>
+                        </div>
                       ))}
                     </div>
                   </div>

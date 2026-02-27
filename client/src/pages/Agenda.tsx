@@ -110,10 +110,10 @@ function safeParseDate(dateStr: string): Date {
 
 function getStatusStyle(status: string) {
   switch (status) {
-    case "completed": return "bg-green-500/25 text-green-300 border-green-500/40";
-    case "cancelled": return "bg-red-500/20 text-red-400 border-red-500/30";
-    case "no_show":   return "bg-yellow-500/20 text-yellow-400 border-yellow-500/30";
-    default:          return "bg-primary/20 text-primary border-primary/30";
+    case "completed": return "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-800";
+    case "cancelled": return "bg-red-50 text-red-700 border-red-200 dark:bg-red-950/40 dark:text-red-400 dark:border-red-800";
+    case "no_show":   return "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-400 dark:border-amber-800";
+    default:          return "bg-indigo-50 text-indigo-700 border-indigo-200 dark:bg-indigo-950/40 dark:text-indigo-400 dark:border-indigo-800";
   }
 }
 
@@ -803,28 +803,43 @@ export default function Agenda() {
       onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
     >
-      <div className="space-y-4 p-4 md:p-6">
-        {/* Page header */}
+      <div className="space-y-4">
+        {/* Toolbar */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div>
-            <h2 className="text-2xl font-bold">Agenda</h2>
-            <p className="text-sm text-muted-foreground">Gerencie seus atendimentos</p>
-          </div>
-          <div className="flex items-center gap-2 flex-wrap">
-            <Button
-              variant="outline" size="sm"
+          {/* Navigation */}
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => navigate(-1)}
+              className="p-1.5 rounded-lg border border-border bg-card hover:bg-accent transition-colors"
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </button>
+            <button
               onClick={() => setCurrentDate(new Date())}
-              className="text-primary border-primary/50"
+              className="px-3 py-1.5 text-xs font-medium rounded-lg border border-border bg-card hover:bg-accent transition-colors text-muted-foreground hover:text-foreground"
             >
               Hoje
-            </Button>
-            <div className="flex items-center border border-border rounded-lg overflow-hidden">
+            </button>
+            <button
+              onClick={() => navigate(1)}
+              className="p-1.5 rounded-lg border border-border bg-card hover:bg-accent transition-colors"
+            >
+              <ChevronRight className="h-4 w-4" />
+            </button>
+            <h3 className="text-sm font-semibold capitalize text-foreground ml-1">{headerLabel}</h3>
+          </div>
+
+          {/* View tabs */}
+          <div className="flex items-center gap-2">
+            <div className="flex items-center bg-muted rounded-lg p-0.5">
               {viewTabs.map(({ key, label, icon: Icon }) => (
                 <button
                   key={key}
                   onClick={() => setViewMode(key)}
-                  className={`flex items-center gap-1 px-3 py-1.5 text-xs font-medium transition-colors ${
-                    viewMode === key ? "bg-primary/20 text-primary" : "text-muted-foreground hover:text-foreground"
+                  className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md transition-all ${
+                    viewMode === key
+                      ? "bg-card text-foreground shadow-sm"
+                      : "text-muted-foreground hover:text-foreground"
                   }`}
                 >
                   <Icon className="h-3.5 w-3.5" />
@@ -833,17 +848,6 @@ export default function Agenda() {
               ))}
             </div>
           </div>
-        </div>
-
-        {/* Navigation */}
-        <div className="flex items-center justify-between">
-          <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
-            <ChevronLeft className="h-5 w-5" />
-          </Button>
-          <h3 className="text-base font-semibold capitalize text-center">{headerLabel}</h3>
-          <Button variant="ghost" size="icon" onClick={() => navigate(1)}>
-            <ChevronRight className="h-5 w-5" />
-          </Button>
         </div>
 
         {/* View content */}

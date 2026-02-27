@@ -296,6 +296,99 @@ export async function deleteTransaction(id: number, trainerId: number) {
   await db.delete(transactions).where(and(eq(transactions.id, id), eq(transactions.trainerId, trainerId)));
 }
 
+// Mark transaction as paid (baixa)
+export async function markTransactionPaid(id: number, trainerId: number) {
+  const db = await getDb();
+  if (!db) return;
+  const today = new Date().toISOString().split('T')[0];
+  await db.update(transactions)
+    .set({ status: 'paid', paidAt: today, updatedAt: new Date() })
+    .where(and(eq(transactions.id, id), eq(transactions.trainerId, trainerId)));
+}
+
+// Get overdue clients: active clients with pending/overdue income transactions past dueDate
+export async function getOverdueClients(trainerId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  const today = new Date().toISOString().split('T')[0];
+
+  // Get all active clients
+  const activeClients = await db.select().from(clients)
+    .where(and(eq(clients.trainerId, trainerId), eq(clients.status, 'active')));
+
+  // Get all pending/overdue income transactions with dueDate in the past
+  const overdueTransactions = await db.select().from(transactions)
+    .where(and(
+      eq(transactions.trainerId, trainerId),
+      eq(transactions.type, 'income'),
+      sql`${transactions.status} IN ('pending', 'overdue')`,
+      sql`${transactions.dueDate} IS NOT NULL`,
+      sql`${transactions.dueDate} < ${today}::date`
+    ));
+
+  // Map clientId -> overdue transactions
+  const overdueByClient: Record<number, any[]> = {};
+  for (const t of overdueTransactions) {
+    if (t.clientId) {
+      if (!overdueByClient[t.clientId]) overdueByClient[t.clientId] = [];
+      overdueByClient[t.clientId].push(t);
+    }
+  }
+
+  return activeClients
+    .filter(c => overdueByClient[c.id])
+    .map(c => ({
+      ...c,
+      overdueTransactions: overdueByClient[c.id],
+      totalOverdue: overdueByClient[c.id].reduce((sum: number, t: any) => sum + parseFloat(t.amount), 0),
+      oldestDueDate: overdueByClient[c.id].reduce((oldest: string, t: any) => t.dueDate < oldest ? t.dueDate : oldest, overdueByClient[c.id][0].dueDate),
+    }));
+}
+
+// Generate monthly charges for all active monthly-plan clients (skip inactive)
+export async function generateMonthlyCharges(trainerId: number, month: number, year: number) {
+  const db = await getDb();
+  if (!db) return 0;
+
+  // Only active clients with monthly plan
+  const monthlyClients = await db.select().from(clients)
+    .where(and(
+      eq(clients.trainerId, trainerId),
+      eq(clients.status, 'active'),
+      eq(clients.planType, 'monthly')
+    ));
+
+  let created = 0;
+  for (const client of monthlyClients) {
+    if (!client.monthlyFee || !client.paymentDay) continue;
+    const dueDate = `${year}-${String(month).padStart(2, '0')}-${String(client.paymentDay).padStart(2, '0')}`;
+
+    // Check if charge already exists for this client/month
+    const existing = await db.select({ id: transactions.id }).from(transactions)
+      .where(and(
+        eq(transactions.trainerId, trainerId),
+        eq(transactions.clientId, client.id),
+        eq(transactions.type, 'income'),
+        sql`${transactions.dueDate} = ${dueDate}::date`
+      ));
+    if (existing.length > 0) continue;
+
+    await db.insert(transactions).values({
+      trainerId,
+      clientId: client.id,
+      type: 'income',
+      category: 'Mensalidade',
+      description: `Mensalidade ${client.name} - ${String(month).padStart(2, '0')}/${year}`,
+      amount: client.monthlyFee,
+      date: dueDate,
+      dueDate,
+      status: 'pending',
+    });
+    created++;
+  }
+  return created;
+}
+
 export async function getFinancialSummary(trainerId: number, month: number, year: number) {
   const db = await getDb();
   if (!db) return { income: 0, expenses: 0, pending: 0 };

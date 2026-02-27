@@ -106,76 +106,98 @@ export default function Financas() {
   }, [transactions]);
 
   return (
-    <div className="space-y-4 p-4 md:p-0">
+    <div className="space-y-5">
+      {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div>
-          <h2 className="text-2xl font-bold">Finanças</h2>
-          <p className="text-sm text-muted-foreground">Controle suas receitas e despesas</p>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => navigateMonth(-1)}
+            className="p-1.5 rounded-lg border border-border bg-card hover:bg-accent transition-colors"
+          >
+            <ChevronLeft className="h-4 w-4" />
+          </button>
+          <h2 className="text-base font-semibold capitalize text-foreground">
+            {format(new Date(year, month - 1), "MMMM yyyy", { locale: ptBR })}
+          </h2>
+          <button
+            onClick={() => navigateMonth(1)}
+            className="p-1.5 rounded-lg border border-border bg-card hover:bg-accent transition-colors"
+          >
+            <ChevronRight className="h-4 w-4" />
+          </button>
         </div>
         <div className="flex gap-2">
-          <Button onClick={() => openNew("income")} className="bg-green-600 hover:bg-green-700">
+          <Button onClick={() => openNew("income")} size="sm" className="bg-emerald-600 hover:bg-emerald-700 text-white">
             <Plus className="h-4 w-4 mr-1" /> Receita
           </Button>
-          <Button onClick={() => openNew("expense")} variant="destructive">
+          <Button onClick={() => openNew("expense")} size="sm" variant="destructive">
             <Plus className="h-4 w-4 mr-1" /> Despesa
           </Button>
         </div>
       </div>
 
-      {/* Month nav */}
-      <div className="flex items-center justify-between">
-        <Button variant="ghost" size="icon" onClick={() => navigateMonth(-1)}>
-          <ChevronLeft className="h-5 w-5" />
-        </Button>
-        <h3 className="text-lg font-semibold capitalize">
-          {format(new Date(year, month - 1), "MMMM yyyy", { locale: ptBR })}
-        </h3>
-        <Button variant="ghost" size="icon" onClick={() => navigateMonth(1)}>
-          <ChevronRight className="h-5 w-5" />
-        </Button>
-      </div>
-
       {/* Summary cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <div className="rounded-xl border border-border bg-card p-3">
-          <div className="flex items-center gap-2 text-xs text-muted-foreground mb-1">
-            <TrendingUp className="h-3.5 w-3.5 text-green-400" /> Receitas
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+        <div className="rounded-xl border border-border bg-card p-4 shadow-sm">
+          <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground mb-2">
+            <div className="p-1.5 rounded-lg bg-emerald-50 dark:bg-emerald-950/40">
+              <TrendingUp className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
+            </div>
+            Receitas
           </div>
-          <div className="text-lg font-bold text-green-400">R$ {(summary?.income || 0).toFixed(2)}</div>
+          <div className="text-xl font-bold text-emerald-600 dark:text-emerald-400">R$ {(summary?.income || 0).toFixed(2)}</div>
         </div>
-        <div className="rounded-xl border border-border bg-card p-3">
-          <div className="flex items-center gap-2 text-xs text-muted-foreground mb-1">
-            <TrendingDown className="h-3.5 w-3.5 text-red-400" /> Despesas
+        <div className="rounded-xl border border-border bg-card p-4 shadow-sm">
+          <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground mb-2">
+            <div className="p-1.5 rounded-lg bg-red-50 dark:bg-red-950/40">
+              <TrendingDown className="h-3.5 w-3.5 text-red-600 dark:text-red-400" />
+            </div>
+            Despesas
           </div>
-          <div className="text-lg font-bold text-red-400">R$ {(summary?.expenses || 0).toFixed(2)}</div>
+          <div className="text-xl font-bold text-red-600 dark:text-red-400">R$ {(summary?.expenses || 0).toFixed(2)}</div>
         </div>
-        <div className="rounded-xl border border-border bg-card p-3">
-          <div className="flex items-center gap-2 text-xs text-muted-foreground mb-1">
-            <DollarSign className="h-3.5 w-3.5 text-primary" /> Saldo
+        <div className="rounded-xl border border-border bg-card p-4 shadow-sm">
+          <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground mb-2">
+            <div className="p-1.5 rounded-lg bg-indigo-50 dark:bg-indigo-950/40">
+              <DollarSign className="h-3.5 w-3.5 text-indigo-600 dark:text-indigo-400" />
+            </div>
+            Saldo
           </div>
-          <div className={`text-lg font-bold ${balance >= 0 ? "text-green-400" : "text-red-400"}`}>
+          <div className={`text-xl font-bold ${balance >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400"}`}>
             R$ {balance.toFixed(2)}
           </div>
         </div>
-        <div className="rounded-xl border border-border bg-card p-3">
-          <div className="flex items-center gap-2 text-xs text-muted-foreground mb-1">
-            <Clock className="h-3.5 w-3.5 text-yellow-400" /> Pendente
+        <div className="rounded-xl border border-border bg-card p-4 shadow-sm">
+          <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground mb-2">
+            <div className="p-1.5 rounded-lg bg-amber-50 dark:bg-amber-950/40">
+              <Clock className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400" />
+            </div>
+            Pendente
           </div>
-          <div className="text-lg font-bold text-yellow-400">R$ {(summary?.pending || 0).toFixed(2)}</div>
+          <div className="text-xl font-bold text-amber-600 dark:text-amber-400">R$ {(summary?.pending || 0).toFixed(2)}</div>
         </div>
       </div>
 
       {/* Chart */}
       {chartData.length > 0 && (
-        <div className="rounded-xl border border-border bg-card p-4">
-          <h3 className="font-semibold mb-3">Por Categoria</h3>
+        <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
+          <h3 className="text-sm font-semibold text-foreground mb-4">Receitas por Categoria</h3>
           <ResponsiveContainer width="100%" height={180}>
-            <BarChart data={chartData}>
-              <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
-              <XAxis dataKey="name" tick={{ fontSize: 10, fill: "#888" }} />
-              <YAxis tick={{ fontSize: 10, fill: "#888" }} />
-              <Tooltip contentStyle={{ background: "#1a1f3a", border: "1px solid #333", borderRadius: 8 }} />
-              <Bar dataKey="value" fill="#3B82F6" radius={[4, 4, 0, 0]} />
+            <BarChart data={chartData} margin={{ top: 4, right: 4, left: -24, bottom: 0 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
+              <XAxis dataKey="name" tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }} axisLine={false} tickLine={false} />
+              <YAxis tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }} axisLine={false} tickLine={false} />
+              <Tooltip
+                contentStyle={{
+                  backgroundColor: "hsl(var(--card))",
+                  border: "1px solid hsl(var(--border))",
+                  borderRadius: "8px",
+                  fontSize: "12px",
+                  boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
+                }}
+                formatter={(v: any) => [`R$ ${Number(v).toFixed(2)}`, "Valor"]}
+              />
+              <Bar dataKey="value" fill="#6366f1" radius={[4, 4, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
         </div>
@@ -191,26 +213,30 @@ export default function Financas() {
           </div>
         ) : (
           transactions.map((t: any) => (
-            <div key={t.id} className="flex items-center gap-3 p-3 rounded-xl border border-border bg-card">
-              <div className={`w-10 h-10 rounded-lg flex items-center justify-center shrink-0 ${
-                t.type === "income" ? "bg-green-500/20" : "bg-red-500/20"
+            <div key={t.id} className="flex items-center gap-3 p-3.5 rounded-xl border border-border bg-card hover:bg-muted/30 transition-colors shadow-sm">
+              <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${
+                t.type === "income" ? "bg-emerald-50 dark:bg-emerald-950/40" : "bg-red-50 dark:bg-red-950/40"
               }`}>
-                {t.type === "income" ? <TrendingUp className="h-5 w-5 text-green-400" /> : <TrendingDown className="h-5 w-5 text-red-400" />}
+                {t.type === "income"
+                  ? <TrendingUp className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+                  : <TrendingDown className="h-4 w-4 text-red-600 dark:text-red-400" />}
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
-                  <span className="font-medium text-sm truncate">{t.category}</span>
-                  <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${
-                    t.status === "paid" ? "bg-green-500/20 text-green-400" :
-                    t.status === "overdue" ? "bg-red-500/20 text-red-400" :
-                    t.status === "cancelled" ? "bg-muted text-muted-foreground" :
-                    "bg-yellow-500/20 text-yellow-400"
+                  <span className="font-semibold text-sm text-foreground truncate">{t.category}</span>
+                  <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${
+                    t.status === "paid" ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400" :
+                    t.status === "overdue" ? "bg-red-50 text-red-700 dark:bg-red-950/40 dark:text-red-400" :
+                    t.status === "cancelled" ? "bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400" :
+                    "bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-400"
                   }`}>{t.status === "paid" ? "Pago" : t.status === "pending" ? "Pendente" : t.status === "overdue" ? "Atrasado" : "Cancelado"}</span>
                 </div>
-                {t.description && <p className="text-xs text-muted-foreground truncate">{t.description}</p>}
-                <p className="text-xs text-muted-foreground">{format(new Date(t.date), "dd/MM/yyyy")}</p>
+                {t.description && <p className="text-xs text-muted-foreground truncate mt-0.5">{t.description}</p>}
+                <p className="text-xs text-muted-foreground mt-0.5">{format(new Date(t.date), "dd/MM/yyyy")}</p>
               </div>
-              <div className={`text-sm font-bold shrink-0 ${t.type === "income" ? "text-green-400" : "text-red-400"}`}>
+              <div className={`text-sm font-bold shrink-0 ${
+                t.type === "income" ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400"
+              }`}>
                 {t.type === "income" ? "+" : "-"}R$ {parseFloat(t.amount).toFixed(2)}
               </div>
               <div className="flex gap-1 shrink-0">

@@ -1,0 +1,8 @@
+{
+  "query": "ALTER TABLE transactions ADD COLUMN IF NOT EXISTS \"dueDate\" date; ALTER TABLE transactions ADD COLUMN IF NOT EXISTS \"paidAt\" date;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 4PiQ8e52qW4Xjb6.root --database 5UbJ997E6SHYZid72bThxF --execute ALTER TABLE transactions ADD COLUMN IF NOT EXISTS \"dueDate\" date; ALTER TABLE transactions ADD COLUMN IF NOT EXISTS \"paidAt\" date;",
+  "returncode": 1,
+  "logs": [
+    "ERROR 1064 (42000) at line 1: You have an error in your SQL syntax; check the manual that corresponds to your TiDB version for the right syntax to use line 1 column 59 near \"\"dueDate\" date\""
+  ]
+}

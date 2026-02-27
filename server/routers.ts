@@ -11,6 +11,7 @@ import {
   getMeasurementsByClient, createMeasurement, deleteMeasurement,
   getPhotosByClient, createProgressPhoto, deleteProgressPhoto,
   getTransactionsByTrainer, createTransaction, updateTransaction, deleteTransaction, getFinancialSummary, getFinancialDashboard,
+  markTransactionPaid, getOverdueClients, generateMonthlyCharges,
   updateUserProfile, getAllTrainers, getAdminDashboardStats,
   getDashboardStats, getWeeklySessionsChart, getSessionStatusChart, getTodaySessions,
   getBioimpedanceByClient, createBioimpedanceExam, updateBioimpedanceExam, deleteBioimpedanceExam,
@@ -422,10 +423,25 @@ export const appRouter = router({
       description: z.string().optional(),
       amount: z.string(),
       date: z.string(),
+      dueDate: z.string().optional(),
       status: z.enum(["pending", "paid", "overdue", "cancelled"]).default("pending"),
     })).mutation(async ({ ctx, input }) => {
       const id = await createTransaction({ ...input, trainerId: ctx.user.id } as any);
       return { id };
+    }),
+    markPaid: protectedProcedure.input(z.object({ id: z.number() })).mutation(async ({ ctx, input }) => {
+      await markTransactionPaid(input.id, ctx.user.id);
+      return { success: true };
+    }),
+    overdueClients: protectedProcedure.query(async ({ ctx }) => {
+      return getOverdueClients(ctx.user.id);
+    }),
+    generateMonthlyCharges: protectedProcedure.input(z.object({
+      month: z.number(),
+      year: z.number(),
+    })).mutation(async ({ ctx, input }) => {
+      const count = await generateMonthlyCharges(ctx.user.id, input.month, input.year);
+      return { count };
     }),
     update: protectedProcedure.input(z.object({
       id: z.number(),

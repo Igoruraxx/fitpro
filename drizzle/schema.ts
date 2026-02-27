@@ -169,6 +169,8 @@ export const transactions = pgTable("transactions", {
   description: text("description"),
   amount: decimal("amount", { precision: 10, scale: 2 }).notNull(),
   date: date("date").notNull(),
+  dueDate: date("dueDate"),           // vencimento da cobrança
+  paidAt: date("paidAt"),             // data em que foi pago
   status: transactionStatusEnum("status").default("pending").notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().notNull(),

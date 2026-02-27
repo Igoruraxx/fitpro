@@ -268,3 +268,27 @@
 - [x] Dashboard com receita esperada por tipo de plano (grafico de barras)
 - [x] Exibir metricas: total de alunos, receita total, receita media por tipo
 - [x] Adicionar rota e menu item para Relatorio de Planos
+
+## Integração Financeira Completa (v13)
+- [ ] Vincular pagamentos ao cadastro de alunos (clientId obrigatório)
+- [ ] Dar baixa em pagamento de aluno devedor (marcar como pago)
+- [ ] Botão WhatsApp para cobranças com mensagem pré-formatada
+- [ ] Aviso visual quando aluno está com pagamento atrasado
+- [ ] Marcador gráfico de sessões pendentes no relatório financeiro
+- [ ] Alunos inativos não geram cobrança (filtrar na geração de cobranças)
+- [ ] Lista de devedores com dias de atraso
+- [ ] Aviso de inadimplência no card do aluno na listagem
+- [ ] Aviso de inadimplência na página de detalhe do aluno
+
+## Redesign Completo do Layout (v14)
+- [x] Novo sistema de design: paleta neutra e profissional (slate/zinc + accent indigo)
+- [x] Tipografia: Inter como fonte principal
+- [x] Tokens CSS atualizados: cores, sombras, raios, espaçamentos
+- [x] Sidebar redesenhada: agrupada por seções, hover suave, indicador de rota ativa
+- [x] Topbar com título da página e menu de usuário
+- [x] Cards com sombras suaves e bordas sutis
+- [x] Dashboard redesenhado: métricas em cards elegantes, gráficos clean
+- [x] Agenda redesenhada: toolbar clean, tabs de visualização refinadas
+- [x] Listagem de alunos redesenhada com badges clean
+- [x] Financas redesenhada: cards de métricas com ícones coloridos, gráfico clean
+- [x] Mobile: bottom nav refinada com indicador de rota ativa
