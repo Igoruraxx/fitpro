@@ -204,3 +204,9 @@
 - [x] Comprimir para JPEG com qualidade 0.82 (bom equilíbrio qualidade/tamanho)
 - [x] Mostrar tamanho original vs comprimido no preview de upload
 - [x] Integrar no fluxo de upload (Fotos.tsx) antes de converter para base64
+
+## Bug Drag-and-Drop Agenda (v7)
+- [x] Diagnosticar por que DnD não funciona: PointerSensor conflitava com button interno; handle usava opacity-0 sem setActivatorNodeRef
+- [x] Corrigir drag-and-drop: usar setActivatorNodeRef no handle, MouseSensor+TouchSensor em vez de PointerSensor
+- [x] Handle visível no hover com área de clique dedicada (left-0 top-0 bottom-0 w-5)
+- [x] Funciona nas views Dia, Lista e Semana

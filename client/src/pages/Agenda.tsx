@@ -26,7 +26,7 @@ import {
 import { ptBR } from "date-fns/locale";
 import {
   DndContext, DragEndEvent, DragOverlay, DragStartEvent,
-  PointerSensor, useSensor, useSensors, closestCenter,
+  PointerSensor, MouseSensor, TouchSensor, useSensor, useSensors, closestCenter,
 } from "@dnd-kit/core";
 import { useDraggable, useDroppable } from "@dnd-kit/core";
 import { CSS } from "@dnd-kit/utilities";
@@ -148,27 +148,29 @@ function DraggableApptCard({
   onStatusChange: (id: number, status: string) => void;
   clientPhone?: string; apptDate: Date; compact?: boolean;
 }) {
-  const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
+  const { attributes, listeners, setNodeRef, setActivatorNodeRef, transform, isDragging } = useDraggable({
     id: `appt-${appt.id}`,
     data: { appt },
   });
 
-  const style = { transform: CSS.Translate.toString(transform), opacity: isDragging ? 0.4 : 1 };
+  const style = { transform: CSS.Translate.toString(transform), opacity: isDragging ? 0.3 : 1 };
   const isCompleted = appt.status === "completed";
 
   return (
     <div
       ref={setNodeRef}
       style={style}
-      className={`group relative rounded-lg border text-sm transition-all ${getStatusStyle(appt.status)} ${
+      className={`group relative rounded-lg border text-sm transition-all select-none ${getStatusStyle(appt.status)} ${
         isCompleted ? "ring-1 ring-green-500/30" : ""
       }`}
     >
-      {/* Drag handle */}
+      {/* Drag handle — only this element initiates drag */}
       <div
+        ref={setActivatorNodeRef}
         {...listeners}
         {...attributes}
-        className="absolute left-1 top-1/2 -translate-y-1/2 cursor-grab active:cursor-grabbing opacity-0 group-hover:opacity-60 transition-opacity z-10"
+        className="absolute left-0 top-0 bottom-0 w-5 flex items-center justify-center cursor-grab active:cursor-grabbing opacity-0 group-hover:opacity-50 hover:!opacity-100 transition-opacity z-10 rounded-l-lg hover:bg-white/10"
+        title="Arrastar"
       >
         <GripVertical className="h-3.5 w-3.5" />
       </div>
@@ -176,7 +178,7 @@ function DraggableApptCard({
       {/* Main content — clickable to edit */}
       <button
         onClick={onEdit}
-        className={`w-full text-left ${compact ? "px-5 py-1.5" : "px-5 py-2"}`}
+        className={`w-full text-left ${compact ? "pl-5 pr-8 py-1.5" : "pl-5 pr-8 py-2"}`}
       >
         <div className={`font-medium truncate ${compact ? "text-xs" : "text-sm"}`}>{clientName}</div>
         {!compact && (
@@ -308,7 +310,8 @@ export default function Agenda() {
   const [pendingDeleteAppt, setPendingDeleteAppt] = useState<any>(null);
 
   const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 8 } })
+    useSensor(MouseSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(TouchSensor, { activationConstraint: { delay: 150, tolerance: 5 } })
   );
 
   const { data: clientsList = [] } = trpc.clients.list.useQuery();
