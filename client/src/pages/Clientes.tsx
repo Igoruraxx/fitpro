@@ -1,7 +1,7 @@
 import { trpc } from "@/lib/trpc";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel,
   AlertDialogContent, AlertDialogDescription, AlertDialogFooter,
@@ -14,7 +14,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Plus, Search, Phone, Trash2, Edit, Users, Calendar, Package, CreditCard, Clock, AlertTriangle, Briefcase, Dumbbell } from "lucide-react";
+import { Plus, Search, Phone, Trash2, Edit, Users, Calendar, Package, CreditCard, Clock, AlertTriangle, Briefcase, Dumbbell, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
 import { useLocation } from "wouter";
 
@@ -113,6 +113,8 @@ export default function Clientes() {
   const utils = trpc.useUtils();
 
   const { data: clients = [], isLoading } = trpc.clients.list.useQuery();
+  const { data: overdueClients = [] } = trpc.finances.overdueClients.useQuery();
+  const overdueClientIds = new Set((overdueClients as any[]).map((c: any) => c.id));
 
   const createMutation = trpc.clients.create.useMutation({
     onSuccess: () => { toast.success("Aluno cadastrado!"); utils.clients.list.invalidate(); setShowModal(false); },
@@ -321,11 +323,16 @@ export default function Clientes() {
           {filtered.map((client: any) => {
             const isPackage = client.planType === "package";
             const sessionsLow = isPackage && client.sessionsRemaining !== null && client.sessionsRemaining <= 3;
+            const isOverdue = overdueClientIds.has(client.id);
 
             return (
               <div
                 key={client.id}
-                className="flex items-center gap-3 p-3.5 rounded-xl border border-border bg-card hover:bg-muted/40 hover:border-border/80 transition-all cursor-pointer shadow-sm"
+                className={`flex items-center gap-3 p-3.5 rounded-xl border transition-all cursor-pointer shadow-sm ${
+                  isOverdue
+                    ? "border-red-200 bg-red-50/50 hover:bg-red-50 dark:border-red-900/50 dark:bg-red-950/10 dark:hover:bg-red-950/20"
+                    : "border-border bg-card hover:bg-muted/40 hover:border-border/80"
+                }`}
                 onClick={() => setLocation(`/clientes/${client.id}`)}
               >
                 <Avatar className="h-10 w-10 shrink-0">
@@ -346,6 +353,12 @@ export default function Clientes() {
                       <span className="badge-warning flex items-center gap-1">
                         <AlertTriangle className="h-2.5 w-2.5" />
                         {client.sessionsRemaining === 0 ? "Sem sessões" : `${client.sessionsRemaining} restante${client.sessionsRemaining !== 1 ? "s" : ""}`}
+                      </span>
+                    )}
+                    {isOverdue && (
+                      <span className="badge-danger flex items-center gap-1">
+                        <AlertCircle className="h-2.5 w-2.5" />
+                        Inadimplente
                       </span>
                     )}
                   </div>
@@ -410,6 +423,9 @@ export default function Clientes() {
         <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>{editing ? "Editar Aluno" : "Novo Aluno"}</DialogTitle>
+            <DialogDescription className="sr-only">
+              {editing ? "Edite os dados do aluno" : "Preencha os dados para cadastrar um novo aluno"}
+            </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
 

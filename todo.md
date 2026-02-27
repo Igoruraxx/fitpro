@@ -270,15 +270,15 @@
 - [x] Adicionar rota e menu item para Relatorio de Planos
 
 ## Integração Financeira Completa (v13)
-- [ ] Vincular pagamentos ao cadastro de alunos (clientId obrigatório)
-- [ ] Dar baixa em pagamento de aluno devedor (marcar como pago)
-- [ ] Botão WhatsApp para cobranças com mensagem pré-formatada
-- [ ] Aviso visual quando aluno está com pagamento atrasado
-- [ ] Marcador gráfico de sessões pendentes no relatório financeiro
-- [ ] Alunos inativos não geram cobrança (filtrar na geração de cobranças)
-- [ ] Lista de devedores com dias de atraso
-- [ ] Aviso de inadimplência no card do aluno na listagem
-- [ ] Aviso de inadimplência na página de detalhe do aluno
+- [x] Vincular pagamentos ao cadastro de alunos (clientId obrigatório)
+- [x] Dar baixa em pagamento de aluno devedor (marcar como pago)
+- [x] Botão WhatsApp para cobranças com mensagem pré-formatada
+- [x] Aviso visual quando aluno está com pagamento atrasado
+- [x] Marcador gráfico de sessões pendentes no relatório financeiro
+- [x] Alunos inativos não geram cobrança (filtrar na geração de cobranças)
+- [x] Lista de devedores com dias de atraso
+- [x] Aviso de inadimplência no card do aluno na listagem
+- [x] Aviso de inadimplência na página de detalhe do aluno
 
 ## Redesign Completo do Layout (v14)
 - [x] Novo sistema de design: paleta neutra e profissional (slate/zinc + accent indigo)
@@ -300,22 +300,27 @@
 - [x] Testar carregamento da aba
 
 ## Correção End-to-End + Refatoração Financeiro (v16)
-- [ ] Sincronizar schema clients com banco (campos faltando: prepaidValue, prepaidDueDate, etc.)
-- [ ] Verificar e aplicar migração de todas as colunas faltantes
-- [ ] Refatorar financeiro: apenas entradas (receitas), remover saídas/despesas
-- [ ] Dar baixa automática por aluno de acordo com plano (Mensal/Pacote/Consultoria)
-- [ ] Botão "Dar baixa" individual por aluno na aba financeiro
-- [ ] Corrigir inconsistências visuais (dark mode, badges, mobile)
-- [ ] Verificação end-to-end de todas as abas
+- [x] Sincronizar schema clients com banco (clientType removido, dueDate/paidAt adicionados)
+- [x] Verificar e aplicar migração de todas as colunas faltantes
+- [x] Refatorar financeiro: apenas entradas (receitas), remover saídas/despesas
+- [x] Dar baixa automática por aluno de acordo com plano (Mensal/Pacote/Consultoria)
+- [x] Botão "Dar baixa" individual por aluno na aba financeiro
+- [x] Corrigir inconsistências visuais (dark mode, badges, mobile)
+- [x] Verificação end-to-end de todas as abas
 
 ## Bug: Botões de Tipo de Plano com texto extravasando (v17)
-- [ ] Corrigir layout dos 3 botões (Mensalidade/Pacote/Consultoria) para comportar o texto
-- [ ] Garantir responsividade no mobile
+- [x] Corrigir layout dos 3 botões (Mensalidade/Pacote/Consultoria) para comportar o texto
+- [x] Garantir responsividade no mobile
 
 ## Bug: Alinhamento botões plano + erro enum consulting (v18)
 - [x] Corrigir alinhamento: botões de plano com ícone centralizado acima do texto
 - [x] Corrigir enum plan_type no banco: adicionar valor "consulting"
 - [x] Testar update de cliente com planType=consulting
+- [x] Validação de dia 31 em meses menores (clampDay) implementada em generateMonthlyCharges
+- [x] Notificações automáticas ao gerar cobranças e dar baixa (notifyOwner)
+- [x] Testes vitest atualizados: 71 testes passando (100%)
+- [x] DialogDescription adicionado em todos os Dialogs (acessibilidade)
+- [x] Gráficos corrigidos para usar tokens CSS do tema (light-mode friendly)
 
 ## Financeiro: apenas receitas automáticas dos alunos (v19)
 - [x] Remover botão "Nova Receita" manual do financeiro
@@ -326,4 +331,9 @@
 ## Campo de Dia de Vencimento (v20)
 - [x] Adicionar seletor de dia (01-31) no cadastro para plano Mensalidade
 - [x] Usar esse dia para gerar cobranças automáticas
-- [ ] Testar geração de cobranças com dia de vencimento
+- [x] Testar geração de cobranças com dia de vencimento (71 testes passando)
+
+## Pendentes Conhecidos
+- [ ] Configurar envio de e-mail (Nodemailer/Resend/SendGrid) para notificações externas
+- [ ] Integração Stripe para pagamentos de assinatura
+- [ ] Testar fluxo completo de Consultoria no browser

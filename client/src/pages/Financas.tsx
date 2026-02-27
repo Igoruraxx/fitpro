@@ -1,7 +1,7 @@
 import { trpc } from "@/lib/trpc";
 import { useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   TrendingUp, Clock, AlertCircle, CheckCircle2, Users,
@@ -339,6 +339,7 @@ export default function Financas() {
         <DialogContent className="sm:max-w-xs">
           <DialogHeader>
             <DialogTitle>Alterar Status</DialogTitle>
+            <DialogDescription className="sr-only">Altere o status desta cobrança</DialogDescription>
           </DialogHeader>
           {editingStatus && (
             <div className="space-y-4">
@@ -379,6 +380,7 @@ export default function Financas() {
               <AlertCircle className="h-5 w-5" />
               Alunos Inadimplentes
             </DialogTitle>
+            <DialogDescription className="sr-only">Lista de alunos com pagamentos em atraso</DialogDescription>
           </DialogHeader>
           <div className="space-y-3 max-h-[60vh] overflow-y-auto">
             {(overdueClients as any[]).length === 0 ? (

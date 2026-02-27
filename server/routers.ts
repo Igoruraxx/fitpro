@@ -430,7 +430,14 @@ export const appRouter = router({
       return { id };
     }),
     markPaid: protectedProcedure.input(z.object({ id: z.number() })).mutation(async ({ ctx, input }) => {
-      await markTransactionPaid(input.id, ctx.user.id);
+      const tx = await markTransactionPaid(input.id, ctx.user.id);
+      // Notify owner about payment confirmation
+      if (tx) {
+        notifyOwner({
+          title: `✅ Pagamento confirmado`,
+          content: `${tx.description || tx.category} — R$ ${parseFloat(tx.amount as string).toFixed(2)} marcado como pago.`,
+        }).catch(() => {});
+      }
       return { success: true };
     }),
     overdueClients: protectedProcedure.query(async ({ ctx }) => {
@@ -441,6 +448,13 @@ export const appRouter = router({
       year: z.number(),
     })).mutation(async ({ ctx, input }) => {
       const count = await generateMonthlyCharges(ctx.user.id, input.month, input.year);
+      if (count > 0) {
+        const monthNames = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+        notifyOwner({
+          title: `💰 ${count} cobrança${count !== 1 ? 's' : ''} gerada${count !== 1 ? 's' : ''}`,
+          content: `Cobranças de ${monthNames[input.month - 1]}/${input.year} geradas automaticamente para ${count} aluno${count !== 1 ? 's' : ''} ativos.`,
+        }).catch(() => {});
+      }
       return { count };
     }),
     update: protectedProcedure.input(z.object({

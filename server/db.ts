@@ -299,11 +299,16 @@ export async function deleteTransaction(id: number, trainerId: number) {
 // Mark transaction as paid (baixa)
 export async function markTransactionPaid(id: number, trainerId: number) {
   const db = await getDb();
-  if (!db) return;
+  if (!db) return null;
+  // Fetch transaction first for notification payload
+  const [tx] = await db.select().from(transactions)
+    .where(and(eq(transactions.id, id), eq(transactions.trainerId, trainerId)));
+  if (!tx) return null;
   const today = new Date().toISOString().split('T')[0];
   await db.update(transactions)
     .set({ status: 'paid', paidAt: today, updatedAt: new Date() })
     .where(and(eq(transactions.id, id), eq(transactions.trainerId, trainerId)));
+  return tx;
 }
 
 // Get overdue clients: active clients with pending/overdue income transactions past dueDate
@@ -358,10 +363,17 @@ export async function generateMonthlyCharges(trainerId: number, month: number, y
       eq(clients.planType, 'monthly')
     ));
 
+  // Helper: get last valid day in a month
+  const clampDay = (day: number, m: number, y: number) => {
+    const lastDay = new Date(y, m, 0).getDate(); // day 0 of next month = last day of current month
+    return Math.min(day, lastDay);
+  };
+
   let created = 0;
   for (const client of monthlyClients) {
     if (!client.monthlyFee || !client.paymentDay) continue;
-    const dueDate = `${year}-${String(month).padStart(2, '0')}-${String(client.paymentDay).padStart(2, '0')}`;
+    const validDay = clampDay(client.paymentDay, month, year);
+    const dueDate = `${year}-${String(month).padStart(2, '0')}-${String(validDay).padStart(2, '0')}`;
 
     // Check if charge already exists for this client/month
     const existing = await db.select({ id: transactions.id }).from(transactions)

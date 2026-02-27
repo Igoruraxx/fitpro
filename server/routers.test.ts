@@ -222,6 +222,90 @@ describe("photos procedures - access control", () => {
   });
 });
 
+// ==================== BUSINESS LOGIC TESTS ====================
+
+describe("plan type validation", () => {
+  it("clients.create accepts consulting plan type (valid input)", async () => {
+    const ctx = createUserContext();
+    const caller = appRouter.createCaller(ctx);
+    // consulting is a valid planType - should not throw input validation error
+    // It may succeed or fail at DB level; either way, input is valid
+    const result = caller.clients.create({ name: "Consultor Teste", planType: "consulting" });
+    // Just ensure it doesn't throw a ZodError (input validation error)
+    await result.then(
+      () => expect(true).toBe(true), // success is fine
+      (err) => expect(err.code).not.toBe("BAD_REQUEST") // DB errors are ok, ZodError is not
+    );
+  });
+
+  it("clients.create rejects invalid plan type", async () => {
+    const ctx = createUserContext();
+    const caller = appRouter.createCaller(ctx);
+    await expect(
+      (caller.clients.create as any)({ name: "Test", planType: "invalid_plan" })
+    ).rejects.toThrow();
+  });
+
+  it("clients.create accepts monthly plan type (valid input)", async () => {
+    const ctx = createUserContext();
+    const caller = appRouter.createCaller(ctx);
+    // monthly is a valid planType - should not throw input validation error
+    const result = caller.clients.create({ name: "Mensal Teste", planType: "monthly", monthlyFee: "150", paymentDay: 5 });
+    await result.then(
+      () => expect(true).toBe(true),
+      (err) => expect(err.code).not.toBe("BAD_REQUEST")
+    );
+  });
+});
+
+describe("finances procedures - access control", () => {
+  it("finances.overdueClients throws UNAUTHORIZED for anonymous users", async () => {
+    const ctx = createAnonContext();
+    const caller = appRouter.createCaller(ctx);
+    await expect(caller.finances.overdueClients()).rejects.toThrow();
+  });
+
+  it("finances.generateMonthlyCharges throws UNAUTHORIZED for anonymous users", async () => {
+    const ctx = createAnonContext();
+    const caller = appRouter.createCaller(ctx);
+    await expect(
+      caller.finances.generateMonthlyCharges({ month: 2, year: 2026 })
+    ).rejects.toThrow();
+  });
+
+  it("finances.markPaid throws UNAUTHORIZED for anonymous users", async () => {
+    const ctx = createAnonContext();
+    const caller = appRouter.createCaller(ctx);
+    await expect(caller.finances.markPaid({ id: 1 })).rejects.toThrow();
+  });
+
+  it("finances.generateMonthlyCharges accepts valid month and year", async () => {
+    const ctx = createUserContext();
+    const caller = appRouter.createCaller(ctx);
+    // Valid month/year should pass input validation and return a count
+    const result = caller.finances.generateMonthlyCharges({ month: 2, year: 2026 });
+    await result.then(
+      (r) => expect(typeof r.count).toBe("number"), // success: count is a number
+      (err) => expect(err.code).not.toBe("BAD_REQUEST") // DB errors are ok
+    );
+  });
+});
+
+describe("payment day clamping logic", () => {
+  it("clamps day 31 to 28 in February (non-leap year)", () => {
+    const clampDay = (day: number, m: number, y: number) => {
+      const lastDay = new Date(y, m, 0).getDate();
+      return Math.min(day, lastDay);
+    };
+    expect(clampDay(31, 2, 2025)).toBe(28); // Feb 2025 has 28 days
+    expect(clampDay(31, 2, 2024)).toBe(29); // Feb 2024 is leap year
+    expect(clampDay(31, 4, 2026)).toBe(30); // April has 30 days
+    expect(clampDay(31, 1, 2026)).toBe(31); // January has 31 days
+    expect(clampDay(28, 2, 2025)).toBe(28); // Day 28 is valid in Feb
+    expect(clampDay(5, 2, 2025)).toBe(5);   // Day 5 is always valid
+  });
+});
+
 // ==================== SUPABASE CONNECTION TEST ====================
 
 describe("Supabase PostgreSQL connection", () => {

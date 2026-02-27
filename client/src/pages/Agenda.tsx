@@ -4,7 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Repeat2 } from "lucide-react";
 import { useState, useMemo, useCallback } from "react";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -883,6 +883,9 @@ export default function Agenda() {
               <DialogTitle>
                 {editingAppt ? "Editar Atendimento" : "Agendar Atendimento"}
               </DialogTitle>
+              <DialogDescription className="sr-only">
+                {editingAppt ? "Edite os dados do atendimento" : "Preencha os dados para agendar um novo atendimento"}
+              </DialogDescription>
               {selectedDate && (
                 <p className="text-sm text-muted-foreground">
                   {format(selectedDate, "EEEE, d 'de' MMMM", { locale: ptBR })}
