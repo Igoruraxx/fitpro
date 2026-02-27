@@ -1,0 +1,10 @@
+{
+  "query": "\nCREATE TABLE IF NOT EXISTS bioimpedance_exams (\n  id SERIAL PRIMARY KEY,\n  trainer_id INTEGER NOT NULL,\n  client_id INTEGER NOT NULL REFERENCES clients(id) ON DELETE CASCADE,\n  date DATE NOT NULL,\n  weight DECIMAL(6,2),\n  muscle_mass DECIMAL(6,2),\n  muscle_pct DECIMAL(5,2),\n  body_fat_pct DECIMAL(5,2),\n  visceral_fat DECIMAL(5,2),\n  perimetria TEXT,\n  dobras TEXT,\n  image_url TEXT,\n  notes TEXT,\n  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),\n  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()\n);\n\nCREATE INDEX IF NOT EXISTS idx_bioimpedance_exams_trainer ON bioimpedance_exams(trainer_id);\nCREATE INDEX IF NOT EXISTS idx_bioimpedance_exams_client ON bioimpedance_exams(client_id);\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 4PiQ8e52qW4Xjb6.root --database 5UbJ997E6SHYZid72bThxF --execute \nCREATE TABLE IF NOT EXISTS bioimpedance_exams (\n  id SERIAL PRIMARY KEY,\n  trainer_id INTEGER NOT NULL,\n  client_id INTEGER NOT NULL REFERENCES clients(id) ON DELETE CASCADE,\n  date DATE NOT NULL,\n  weight DECIMAL(6,2),\n  muscle_mass DECIMAL(6,2),\n  muscle_pct DECIMAL(5,2),\n  body_fat_pct DECIMAL(5,2),\n  visceral_fat DECIMAL(5,2),\n  perimetria TEXT,\n  dobras TEXT,\n  image_url TEXT,\n  notes TEXT,\n  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),\n  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()\n);\n\nCREATE INDEX IF NOT EXISTS idx_bioimpedance_exams_trainer ON bioimpedance_exams(trainer_id);\nCREATE INDEX IF NOT EXISTS idx_bioimpedance_exams_client ON bioimpedance_exams(client_id);\n",
+  "returncode": 1,
+  "logs": [
+    "ERROR 1064 (42000) at line 2: You have an error in your SQL syntax; check the manual that corresponds to your TiDB version for the right syntax to use line 15 column 25 near \"TIMESTAMPTZ NOT NULL DEFAULT NOW(),",
+    "  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()",
+    ")\""
+  ]
+}

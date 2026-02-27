@@ -1,672 +1,466 @@
-import { useState, useMemo, useRef } from "react";
+import { useState, useRef } from "react";
 import { trpc } from "@/lib/trpc";
-import { compressImage } from "@/lib/imageCompressor";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
-  LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend,
+  LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, BarChart, Bar
 } from "recharts";
-import { format, parseISO } from "date-fns";
-import { ptBR } from "date-fns/locale";
+import { Plus, Activity, Ruler, TrendingUp, ImageIcon, Trash2, Edit2, ChevronDown, ChevronUp } from "lucide-react";
+import { toast } from "sonner";
 
-// ─── Types ───────────────────────────────────────────────────────────────────
-type Exam = {
-  id: number;
-  date: string;
-  weight?: string | null;
-  bmi?: string | null;
-  bodyFatPct?: string | null;
-  fatMass?: string | null;
-  leanMass?: string | null;
-  muscleMass?: string | null;
-  muscleRate?: string | null;
-  skeletalMuscleMass?: string | null;
-  boneMass?: string | null;
-  proteinMass?: string | null;
-  proteinPct?: string | null;
-  moistureContent?: string | null;
-  bodyWaterPct?: string | null;
-  subcutaneousFatPct?: string | null;
-  visceralFat?: string | null;
-  bmr?: string | null;
-  metabolicAge?: number | null;
-  whr?: string | null;
-  idealWeight?: string | null;
-  obesityLevel?: string | null;
-  bodyType?: string | null;
-  imageUrl?: string | null;
-  notes?: string | null;
-};
-
-type FormData = {
-  date: string;
-  weight: string;
-  bmi: string;
-  bodyFatPct: string;
-  fatMass: string;
-  leanMass: string;
-  muscleMass: string;
-  muscleRate: string;
-  skeletalMuscleMass: string;
-  boneMass: string;
-  proteinMass: string;
-  proteinPct: string;
-  moistureContent: string;
-  bodyWaterPct: string;
-  subcutaneousFatPct: string;
-  visceralFat: string;
-  bmr: string;
-  metabolicAge: string;
-  whr: string;
-  idealWeight: string;
-  obesityLevel: string;
-  bodyType: string;
-  notes: string;
-};
-
-const emptyForm: FormData = {
-  date: new Date().toISOString().split("T")[0],
-  weight: "", bmi: "", bodyFatPct: "", fatMass: "", leanMass: "",
-  muscleMass: "", muscleRate: "", skeletalMuscleMass: "", boneMass: "",
-  proteinMass: "", proteinPct: "", moistureContent: "", bodyWaterPct: "",
-  subcutaneousFatPct: "", visceralFat: "", bmr: "", metabolicAge: "",
-  whr: "", idealWeight: "", obesityLevel: "", bodyType: "", notes: "",
-};
-
-// ─── Auto-calculate bodyFatPct from fatMass / weight ─────────────────────────
-function calcBodyFatPct(weight: string, fatMass: string): string {
-  const w = parseFloat(weight);
-  const f = parseFloat(fatMass);
-  if (w > 0 && f >= 0) return ((f / w) * 100).toFixed(1);
-  return "";
+interface Perimetria {
+  cintura?: string; quadril?: string; braco?: string; coxa?: string;
+  panturrilha?: string; pescoco?: string; torax?: string; abdomen?: string;
+}
+interface Dobras {
+  tricipital?: string; subescapular?: string; abdominal?: string;
+  suprailiaca?: string; coxa?: string; axilarMedia?: string; peitoral?: string;
 }
 
-// ─── Status badge helper ──────────────────────────────────────────────────────
-function visceralStatus(v: number): { label: string; color: string } {
-  if (v <= 9) return { label: "Normal", color: "text-green-400" };
-  if (v <= 14) return { label: "Alto risco", color: "text-yellow-400" };
-  return { label: "Muito alto", color: "text-red-400" };
-}
-function fatPctStatus(pct: number, isMale = false): { label: string; color: string } {
-  const limit = isMale ? [6, 17, 25] : [14, 24, 32];
-  if (pct < limit[0]) return { label: "Muito baixo", color: "text-blue-400" };
-  if (pct <= limit[1]) return { label: "Excelente", color: "text-green-400" };
-  if (pct <= limit[2]) return { label: "Alto", color: "text-yellow-400" };
-  return { label: "Muito alto", color: "text-red-400" };
-}
-
-// ─── Chart colors ─────────────────────────────────────────────────────────────
-const CHART_METRICS = [
-  { key: "weight", label: "Peso (kg)", color: "#a78bfa" },
-  { key: "bodyFatPct", label: "% Gordura", color: "#f87171" },
-  { key: "muscleMass", label: "Massa Muscular (kg)", color: "#34d399" },
-  { key: "leanMass", label: "Massa Magra (kg)", color: "#60a5fa" },
-  { key: "visceralFat", label: "Gordura Visceral", color: "#fb923c" },
-  { key: "bmi", label: "IMC", color: "#e879f9" },
+const PERIMETRIA_FIELDS: { key: keyof Perimetria; label: string }[] = [
+  { key: "cintura", label: "Cintura" }, { key: "quadril", label: "Quadril" },
+  { key: "braco", label: "Braço" }, { key: "coxa", label: "Coxa" },
+  { key: "panturrilha", label: "Panturrilha" }, { key: "pescoco", label: "Pescoço" },
+  { key: "torax", label: "Tórax" }, { key: "abdomen", label: "Abdômen" },
+];
+const DOBRAS_FIELDS: { key: keyof Dobras; label: string }[] = [
+  { key: "tricipital", label: "Tricipital" }, { key: "subescapular", label: "Subescapular" },
+  { key: "abdominal", label: "Abdominal" }, { key: "suprailiaca", label: "Suprailíaca" },
+  { key: "coxa", label: "Coxa" }, { key: "axilarMedia", label: "Axilar Média" },
+  { key: "peitoral", label: "Peitoral" },
 ];
 
-// ─── Main Component ───────────────────────────────────────────────────────────
+function parseJSON<T>(str: string | null | undefined, fallback: T): T {
+  if (!str) return fallback;
+  try { return JSON.parse(str) as T; } catch { return fallback; }
+}
+function fmtDate(d: string) {
+  const [y, m, day] = d.split("-");
+  return `${day}/${m}/${y}`;
+}
+function fmtNum(v: string | null | undefined) {
+  if (!v) return "—";
+  return parseFloat(v).toLocaleString("pt-BR", { maximumFractionDigits: 1 });
+}
+function emptyForm() {
+  return {
+    date: new Date().toISOString().slice(0, 10),
+    weight: "", muscleMass: "", musclePct: "", bodyFatPct: "", visceralFat: "",
+    perimetria: {} as Perimetria, dobras: {} as Dobras,
+    notes: "", imageBase64: "", imagePreview: "",
+  };
+}
+
 export default function Bioimpedancia() {
   const [selectedClientId, setSelectedClientId] = useState<number | null>(null);
-  const [tab, setTab] = useState<"graficos" | "exames">("graficos");
-  const [showModal, setShowModal] = useState(false);
-  const [editingExam, setEditingExam] = useState<Exam | null>(null);
-  const [form, setForm] = useState<FormData>(emptyForm);
-  const [imageFile, setImageFile] = useState<File | null>(null);
-  const [imagePreview, setImagePreview] = useState<string | null>(null);
-  const [imageBase64, setImageBase64] = useState<string | null>(null);
-  const [compressing, setCompressing] = useState(false);
-  const [viewImage, setViewImage] = useState<string | null>(null);
-  const [activeMetrics, setActiveMetrics] = useState<string[]>(["weight", "bodyFatPct", "muscleMass"]);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [editId, setEditId] = useState<number | null>(null);
+  const [form, setForm] = useState(emptyForm());
+  const [expandedId, setExpandedId] = useState<number | null>(null);
+  const fileRef = useRef<HTMLInputElement>(null);
 
-  const utils = trpc.useUtils();
-
-  // Clients list
   const { data: clients = [] } = trpc.clients.list.useQuery();
-
-  // Exams for selected client
-  const { data: exams = [], isLoading: examsLoading } = trpc.bioimpedance.list.useQuery(
-    { clientId: selectedClientId! },
-    { enabled: !!selectedClientId }
+  const { data: exams = [], refetch } = trpc.bioimpedance.list.useQuery(
+    { clientId: selectedClientId! }, { enabled: !!selectedClientId }
   );
 
-  const createMutation = trpc.bioimpedance.create.useMutation({
-    onSuccess: () => { utils.bioimpedance.list.invalidate(); closeModal(); },
+  const createMut = trpc.bioimpedance.create.useMutation({
+    onSuccess: () => { toast.success("Exame salvo!"); setModalOpen(false); refetch(); },
+    onError: (e) => toast.error(e.message),
   });
-  const updateMutation = trpc.bioimpedance.update.useMutation({
-    onSuccess: () => { utils.bioimpedance.list.invalidate(); closeModal(); },
+  const updateMut = trpc.bioimpedance.update.useMutation({
+    onSuccess: () => { toast.success("Exame atualizado!"); setModalOpen(false); refetch(); },
+    onError: (e) => toast.error(e.message),
   });
-  const deleteMutation = trpc.bioimpedance.delete.useMutation({
-    onSuccess: () => utils.bioimpedance.list.invalidate(),
+  const deleteMut = trpc.bioimpedance.delete.useMutation({
+    onSuccess: () => { toast.success("Exame removido."); refetch(); },
+    onError: (e) => toast.error(e.message),
   });
 
-  // Chart data (sorted ascending)
-  const chartData = useMemo(() => {
-    return [...exams]
-      .sort((a, b) => a.date.localeCompare(b.date))
-      .map((e) => ({
-        date: format(parseISO(e.date), "dd/MM", { locale: ptBR }),
-        weight: e.weight ? parseFloat(e.weight) : null,
-        bodyFatPct: e.bodyFatPct ? parseFloat(e.bodyFatPct) : null,
-        muscleMass: e.muscleMass ? parseFloat(e.muscleMass) : null,
-        leanMass: e.leanMass ? parseFloat(e.leanMass) : null,
-        visceralFat: e.visceralFat ? parseFloat(e.visceralFat) : null,
-        bmi: e.bmi ? parseFloat(e.bmi) : null,
-      }));
-  }, [exams]);
+  const chartData = [...exams]
+    .sort((a, b) => a.date.localeCompare(b.date))
+    .map((e) => ({
+      date: fmtDate(e.date),
+      "Peso (kg)": e.weight ? parseFloat(e.weight) : undefined,
+      "% Gordura": e.bodyFatPct ? parseFloat(e.bodyFatPct) : undefined,
+      "% Muscular": e.musclePct ? parseFloat(e.musclePct) : undefined,
+      "Visceral": e.visceralFat ? parseFloat(e.visceralFat) : undefined,
+    }));
 
-  function openNew() {
-    setEditingExam(null);
-    setForm(emptyForm);
-    setImageFile(null);
-    setImagePreview(null);
-    setImageBase64(null);
-    setShowModal(true);
-  }
-
-  function openEdit(exam: Exam) {
-    setEditingExam(exam);
+  function openNew() { setEditId(null); setForm(emptyForm()); setModalOpen(true); }
+  function openEdit(exam: typeof exams[0]) {
+    setEditId(exam.id);
     setForm({
-      date: exam.date,
-      weight: exam.weight ?? "",
-      bmi: exam.bmi ?? "",
-      bodyFatPct: exam.bodyFatPct ?? "",
-      fatMass: exam.fatMass ?? "",
-      leanMass: exam.leanMass ?? "",
-      muscleMass: exam.muscleMass ?? "",
-      muscleRate: exam.muscleRate ?? "",
-      skeletalMuscleMass: exam.skeletalMuscleMass ?? "",
-      boneMass: exam.boneMass ?? "",
-      proteinMass: exam.proteinMass ?? "",
-      proteinPct: exam.proteinPct ?? "",
-      moistureContent: exam.moistureContent ?? "",
-      bodyWaterPct: exam.bodyWaterPct ?? "",
-      subcutaneousFatPct: exam.subcutaneousFatPct ?? "",
+      date: exam.date, weight: exam.weight ?? "", muscleMass: exam.muscleMass ?? "",
+      musclePct: exam.musclePct ?? "", bodyFatPct: exam.bodyFatPct ?? "",
       visceralFat: exam.visceralFat ?? "",
-      bmr: exam.bmr ?? "",
-      metabolicAge: exam.metabolicAge?.toString() ?? "",
-      whr: exam.whr ?? "",
-      idealWeight: exam.idealWeight ?? "",
-      obesityLevel: exam.obesityLevel ?? "",
-      bodyType: exam.bodyType ?? "",
-      notes: exam.notes ?? "",
+      perimetria: parseJSON<Perimetria>(exam.perimetria, {}),
+      dobras: parseJSON<Dobras>(exam.dobras, {}),
+      notes: exam.notes ?? "", imageBase64: "", imagePreview: exam.imageUrl ?? "",
     });
-    setImagePreview(exam.imageUrl ?? null);
-    setImageBase64(null);
-    setShowModal(true);
+    setModalOpen(true);
   }
 
-  function closeModal() {
-    setShowModal(false);
-    setEditingExam(null);
-    setImageFile(null);
-    setImagePreview(null);
-    setImageBase64(null);
-  }
-
-  function setField(key: keyof FormData, value: string) {
-    setForm((prev) => {
-      const next = { ...prev, [key]: value };
-      // Auto-calculate bodyFatPct when weight or fatMass changes
-      if (key === "weight" || key === "fatMass") {
-        const auto = calcBodyFatPct(
-          key === "weight" ? value : prev.weight,
-          key === "fatMass" ? value : prev.fatMass
-        );
-        if (auto) next.bodyFatPct = auto;
-      }
-      return next;
-    });
-  }
-
-  async function handleImageSelect(e: React.ChangeEvent<HTMLInputElement>) {
+  function handleImageChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
-    setCompressing(true);
-    try {
-      const compressed = await compressImage(file, { maxDimension: 1400, quality: 0.82 });
-      setImageFile(compressed.file);
-      setImagePreview(compressed.dataUrl);
-      setImageBase64(compressed.dataUrl); // base64 data URL
-    } finally {
-      setCompressing(false);
-    }
-  }
-
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    if (!selectedClientId) return;
-
-    const payload = {
-      clientId: selectedClientId,
-      date: form.date,
-      weight: form.weight || undefined,
-      bmi: form.bmi || undefined,
-      bodyFatPct: form.bodyFatPct || undefined,
-      fatMass: form.fatMass || undefined,
-      leanMass: form.leanMass || undefined,
-      muscleMass: form.muscleMass || undefined,
-      muscleRate: form.muscleRate || undefined,
-      skeletalMuscleMass: form.skeletalMuscleMass || undefined,
-      boneMass: form.boneMass || undefined,
-      proteinMass: form.proteinMass || undefined,
-      proteinPct: form.proteinPct || undefined,
-      moistureContent: form.moistureContent || undefined,
-      bodyWaterPct: form.bodyWaterPct || undefined,
-      subcutaneousFatPct: form.subcutaneousFatPct || undefined,
-      visceralFat: form.visceralFat || undefined,
-      bmr: form.bmr || undefined,
-      metabolicAge: form.metabolicAge ? parseInt(form.metabolicAge) : undefined,
-      whr: form.whr || undefined,
-      idealWeight: form.idealWeight || undefined,
-      obesityLevel: form.obesityLevel || undefined,
-      bodyType: form.bodyType || undefined,
-      notes: form.notes || undefined,
-      imageBase64: imageBase64 || undefined,
+    if (file.size > 5 * 1024 * 1024) { toast.error("Imagem muito grande (máx. 5MB)"); return; }
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const base64 = ev.target?.result as string;
+      setForm((f) => ({ ...f, imageBase64: base64, imagePreview: base64 }));
     };
-
-    if (editingExam) {
-      const { clientId, imageBase64: _img, ...updateData } = payload;
-      await updateMutation.mutateAsync({ id: editingExam.id, ...updateData });
-    } else {
-      await createMutation.mutateAsync(payload);
-    }
+    reader.readAsDataURL(file);
   }
 
-  const selectedClient = clients.find((c) => c.id === selectedClientId);
-  const latestExam = exams[0];
-
-  function toggleMetric(key: string) {
-    setActiveMetrics((prev) =>
-      prev.includes(key) ? prev.filter((k) => k !== key) : [...prev, key]
-    );
+  function handleSubmit() {
+    if (!selectedClientId) return;
+    const payload = {
+      clientId: selectedClientId, date: form.date,
+      weight: form.weight || undefined, muscleMass: form.muscleMass || undefined,
+      musclePct: form.musclePct || undefined, bodyFatPct: form.bodyFatPct || undefined,
+      visceralFat: form.visceralFat || undefined,
+      perimetria: Object.keys(form.perimetria).length ? JSON.stringify(form.perimetria) : undefined,
+      dobras: Object.keys(form.dobras).length ? JSON.stringify(form.dobras) : undefined,
+      notes: form.notes || undefined, imageBase64: form.imageBase64 || undefined,
+    };
+    if (editId) updateMut.mutate({ id: editId, ...payload });
+    else createMut.mutate(payload);
   }
 
-  // ─── Render ─────────────────────────────────────────────────────────────────
+  const isPending = createMut.isPending || updateMut.isPending;
+
   return (
-    <div className="flex flex-col h-full bg-[#0f0f0f] text-white min-h-screen">
-      {/* Header */}
-      <div className="flex items-center justify-between px-4 pt-5 pb-3 border-b border-white/10">
+    <div className="p-4 md:p-6 max-w-5xl mx-auto space-y-6">
+      <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Bioimpedância</h1>
-          <p className="text-xs text-white/40 mt-0.5">Exames e resultados</p>
+          <h1 className="text-xl font-semibold text-foreground">Exames</h1>
+          <p className="text-sm text-muted-foreground mt-0.5">Bioimpedância, perimetria e dobras cutâneas</p>
         </div>
         {selectedClientId && (
-          <button
-            onClick={openNew}
-            className="bg-violet-600 hover:bg-violet-500 text-white text-sm font-semibold px-4 py-2 rounded-lg transition-colors"
-          >
-            + Exame
-          </button>
+          <Button onClick={openNew} size="sm" className="gap-1.5">
+            <Plus className="w-4 h-4" /> Novo Exame
+          </Button>
         )}
       </div>
 
-      {/* Tab bar */}
-      <div className="flex gap-1 mx-4 mt-4 bg-white/5 rounded-xl p-1">
-        {(["graficos", "exames"] as const).map((t) => (
-          <button
-            key={t}
-            onClick={() => setTab(t)}
-            className={`flex-1 py-2 text-sm font-semibold rounded-lg transition-colors capitalize ${
-              tab === t ? "bg-violet-600 text-white" : "text-white/50 hover:text-white"
-            }`}
-          >
-            {t === "graficos" ? "Gráficos" : "Exames"}
-          </button>
-        ))}
-      </div>
-
-      {/* Client selector */}
-      <div className="mx-4 mt-4">
-        <div className="relative">
-          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-white/30 text-sm">🔍</span>
-          <select
-            value={selectedClientId ?? ""}
-            onChange={(e) => setSelectedClientId(e.target.value ? parseInt(e.target.value) : null)}
-            className="w-full bg-white/5 border border-white/10 rounded-xl pl-9 pr-4 py-3 text-sm text-white appearance-none focus:outline-none focus:border-violet-500"
-          >
-            <option value="">Selecionar aluno...</option>
+      <div className="bg-card border border-border rounded-xl p-4">
+        <Label className="text-sm font-medium mb-2 block">Selecionar Aluno</Label>
+        <Select
+          value={selectedClientId ? String(selectedClientId) : "none"}
+          onValueChange={(v) => setSelectedClientId(v === "none" ? null : Number(v))}
+        >
+          <SelectTrigger className="w-full max-w-xs">
+            <SelectValue placeholder="Escolha um aluno..." />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="none">Escolha um aluno...</SelectItem>
             {clients.map((c) => (
-              <option key={c.id} value={c.id}>{c.name}</option>
+              <SelectItem key={c.id} value={String(c.id)}>{c.name}</SelectItem>
             ))}
-          </select>
-        </div>
+          </SelectContent>
+        </Select>
       </div>
 
-      {/* Content */}
-      <div className="flex-1 overflow-y-auto px-4 pb-8 mt-4">
-        {!selectedClientId ? (
-          <div className="flex flex-col items-center justify-center py-20 text-white/30">
-            <span className="text-5xl mb-3">📊</span>
-            <p className="text-sm">Selecione um aluno para ver os exames</p>
-          </div>
-        ) : examsLoading ? (
-          <div className="flex items-center justify-center py-20 text-white/40 text-sm">Carregando...</div>
-        ) : exams.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-20 text-white/30">
-            <span className="text-5xl mb-3">🔬</span>
-            <p className="text-sm mb-4">Nenhum exame registrado para {selectedClient?.name}</p>
-            <button onClick={openNew} className="bg-violet-600 hover:bg-violet-500 text-white text-sm font-semibold px-5 py-2 rounded-lg">
-              + Adicionar primeiro exame
-            </button>
-          </div>
-        ) : tab === "graficos" ? (
-          <div className="space-y-5">
-            {/* Latest summary cards */}
-            {latestExam && (
-              <div>
-                <p className="text-xs text-white/40 mb-2 uppercase tracking-wider">Último exame — {format(parseISO(latestExam.date), "dd/MM/yyyy")}</p>
-                <div className="grid grid-cols-3 gap-2">
-                  {[
-                    { label: "Peso", value: latestExam.weight ? `${latestExam.weight} kg` : "—" },
-                    { label: "IMC", value: latestExam.bmi ?? "—" },
-                    { label: "% Gordura", value: latestExam.bodyFatPct ? `${latestExam.bodyFatPct}%` : "—", status: latestExam.bodyFatPct ? fatPctStatus(parseFloat(latestExam.bodyFatPct)) : null },
-                    { label: "M. Muscular", value: latestExam.muscleMass ? `${latestExam.muscleMass} kg` : "—" },
-                    { label: "G. Visceral", value: latestExam.visceralFat ?? "—", status: latestExam.visceralFat ? visceralStatus(parseFloat(latestExam.visceralFat)) : null },
-                    { label: "TMB", value: latestExam.bmr ? `${latestExam.bmr} kcal` : "—" },
-                  ].map((item) => (
-                    <div key={item.label} className="bg-white/5 rounded-xl p-3">
-                      <p className="text-[10px] text-white/40 uppercase tracking-wider">{item.label}</p>
-                      <p className="text-base font-bold mt-0.5">{item.value}</p>
-                      {item.status && <p className={`text-[10px] font-medium mt-0.5 ${item.status.color}`}>{item.status.label}</p>}
-                    </div>
-                  ))}
-                </div>
+      {!selectedClientId && (
+        <div className="text-center py-16 text-muted-foreground">
+          <Activity className="w-12 h-12 mx-auto mb-3 opacity-30" />
+          <p className="font-medium">Selecione um aluno para ver os exames</p>
+        </div>
+      )}
+
+      {selectedClientId && (
+        <Tabs defaultValue="historico">
+          <TabsList className="mb-4">
+            <TabsTrigger value="historico">Histórico</TabsTrigger>
+            <TabsTrigger value="graficos" disabled={exams.length < 2}>
+              Gráficos {exams.length < 2 && <span className="ml-1 text-xs opacity-50">(min. 2)</span>}
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="historico" className="space-y-3">
+            {exams.length === 0 && (
+              <div className="text-center py-12 text-muted-foreground">
+                <Activity className="w-10 h-10 mx-auto mb-2 opacity-30" />
+                <p>Nenhum exame cadastrado ainda.</p>
               </div>
             )}
+            {[...exams].sort((a, b) => b.date.localeCompare(a.date)).map((exam) => {
+              const perim = parseJSON<Perimetria>(exam.perimetria, {});
+              const dobr = parseJSON<Dobras>(exam.dobras, {});
+              const isExpanded = expandedId === exam.id;
+              const hasPerim = Object.values(perim).some(Boolean);
+              const hasDobras = Object.values(dobr).some(Boolean);
+              return (
+                <div key={exam.id} className="bg-card border border-border rounded-xl overflow-hidden">
+                  <div className="flex items-center justify-between p-4">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center">
+                        <Activity className="w-5 h-5 text-blue-600" />
+                      </div>
+                      <div>
+                        <p className="font-semibold text-sm">{fmtDate(exam.date)}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {[
+                            exam.weight && `${fmtNum(exam.weight)} kg`,
+                            exam.bodyFatPct && `${fmtNum(exam.bodyFatPct)}% gord.`,
+                            exam.musclePct && `${fmtNum(exam.musclePct)}% musc.`,
+                          ].filter(Boolean).join(" · ") || "Dados parciais"}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEdit(exam)}>
+                        <Edit2 className="w-3.5 h-3.5" />
+                      </Button>
+                      <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive"
+                        onClick={() => { if (confirm("Remover exame?")) deleteMut.mutate({ id: exam.id }); }}>
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </Button>
+                      <Button variant="ghost" size="icon" className="h-8 w-8"
+                        onClick={() => setExpandedId(isExpanded ? null : exam.id)}>
+                        {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                      </Button>
+                    </div>
+                  </div>
+                  {isExpanded && (
+                    <div className="border-t border-border px-4 pb-4 pt-3 space-y-4">
+                      <div>
+                        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Composição Corporal</p>
+                        <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
+                          {[
+                            { label: "Peso Total", value: exam.weight, unit: "kg" },
+                            { label: "Massa Muscular", value: exam.muscleMass, unit: "kg" },
+                            { label: "% Muscular", value: exam.musclePct, unit: "%" },
+                            { label: "% Gordura", value: exam.bodyFatPct, unit: "%" },
+                            { label: "Gordura Visceral", value: exam.visceralFat, unit: "" },
+                          ].map(({ label, value, unit }) => (
+                            <div key={label} className="bg-blue-50 rounded-lg p-2.5 text-center">
+                              <p className="text-xs text-muted-foreground leading-tight">{label}</p>
+                              <p className="text-base font-bold text-blue-700 mt-0.5">
+                                {value ? `${fmtNum(value)}${unit}` : "—"}
+                              </p>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                      {hasPerim && (
+                        <div>
+                          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2 flex items-center gap-1">
+                            <Ruler className="w-3 h-3" /> Perimetria (cm)
+                          </p>
+                          <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+                            {PERIMETRIA_FIELDS.filter((f) => perim[f.key]).map((f) => (
+                              <div key={f.key} className="bg-gray-50 rounded-lg p-2 text-center">
+                                <p className="text-xs text-muted-foreground">{f.label}</p>
+                                <p className="text-sm font-semibold">{perim[f.key]}</p>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                      {hasDobras && (
+                        <div>
+                          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2 flex items-center gap-1">
+                            <TrendingUp className="w-3 h-3" /> Dobras Cutâneas (mm)
+                          </p>
+                          <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+                            {DOBRAS_FIELDS.filter((f) => dobr[f.key]).map((f) => (
+                              <div key={f.key} className="bg-gray-50 rounded-lg p-2 text-center">
+                                <p className="text-xs text-muted-foreground">{f.label}</p>
+                                <p className="text-sm font-semibold">{dobr[f.key]}</p>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                      {exam.imageUrl && (
+                        <div>
+                          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2 flex items-center gap-1">
+                            <ImageIcon className="w-3 h-3" /> Laudo
+                          </p>
+                          <img src={exam.imageUrl} alt="Laudo" className="rounded-lg max-h-64 object-contain border border-border" />
+                        </div>
+                      )}
+                      {exam.notes && (
+                        <div>
+                          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">Observações</p>
+                          <p className="text-sm text-foreground bg-gray-50 rounded-lg p-3">{exam.notes}</p>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </TabsContent>
 
-            {/* Metric toggles */}
+          <TabsContent value="graficos" className="space-y-6">
+            <div className="bg-card border border-border rounded-xl p-4">
+              <h3 className="text-sm font-semibold mb-4 flex items-center gap-2">
+                <TrendingUp className="w-4 h-4 text-blue-500" /> Peso e % Gordura
+              </h3>
+              <ResponsiveContainer width="100%" height={220}>
+                <LineChart data={chartData}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                  <XAxis dataKey="date" tick={{ fontSize: 11 }} />
+                  <YAxis tick={{ fontSize: 11 }} />
+                  <Tooltip />
+                  <Legend />
+                  <Line type="monotone" dataKey="Peso (kg)" stroke="#3b82f6" strokeWidth={2} dot={{ r: 4 }} connectNulls />
+                  <Line type="monotone" dataKey="% Gordura" stroke="#ef4444" strokeWidth={2} dot={{ r: 4 }} connectNulls />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+            <div className="bg-card border border-border rounded-xl p-4">
+              <h3 className="text-sm font-semibold mb-4 flex items-center gap-2">
+                <Activity className="w-4 h-4 text-emerald-500" /> % Massa Muscular e Gordura Visceral
+              </h3>
+              <ResponsiveContainer width="100%" height={220}>
+                <LineChart data={chartData}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                  <XAxis dataKey="date" tick={{ fontSize: 11 }} />
+                  <YAxis tick={{ fontSize: 11 }} />
+                  <Tooltip />
+                  <Legend />
+                  <Line type="monotone" dataKey="% Muscular" stroke="#10b981" strokeWidth={2} dot={{ r: 4 }} connectNulls />
+                  <Line type="monotone" dataKey="Visceral" stroke="#f59e0b" strokeWidth={2} dot={{ r: 4 }} connectNulls />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+            {(() => {
+              const sorted = [...exams].sort((a, b) => b.date.localeCompare(a.date));
+              if (sorted.length < 2) return null;
+              const last = parseJSON<Perimetria>(sorted[0].perimetria, {});
+              const prev = parseJSON<Perimetria>(sorted[1].perimetria, {});
+              const fields = PERIMETRIA_FIELDS.filter((f) => last[f.key] || prev[f.key]);
+              if (!fields.length) return null;
+              const data = fields.map((f) => ({
+                name: f.label,
+                [fmtDate(sorted[1].date)]: prev[f.key] ? parseFloat(prev[f.key]!) : undefined,
+                [fmtDate(sorted[0].date)]: last[f.key] ? parseFloat(last[f.key]!) : undefined,
+              }));
+              return (
+                <div className="bg-card border border-border rounded-xl p-4">
+                  <h3 className="text-sm font-semibold mb-4 flex items-center gap-2">
+                    <Ruler className="w-4 h-4 text-blue-500" /> Perimetria Comparativa (cm)
+                  </h3>
+                  <ResponsiveContainer width="100%" height={220}>
+                    <BarChart data={data} layout="vertical">
+                      <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                      <XAxis type="number" tick={{ fontSize: 11 }} />
+                      <YAxis dataKey="name" type="category" tick={{ fontSize: 11 }} width={80} />
+                      <Tooltip />
+                      <Legend />
+                      <Bar dataKey={fmtDate(sorted[1].date)} fill="#93c5fd" radius={[0, 4, 4, 0]} />
+                      <Bar dataKey={fmtDate(sorted[0].date)} fill="#3b82f6" radius={[0, 4, 4, 0]} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              );
+            })()}
+          </TabsContent>
+        </Tabs>
+      )}
+
+      <Dialog open={modalOpen} onOpenChange={setModalOpen}>
+        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>{editId ? "Editar Exame" : "Novo Exame"}</DialogTitle>
+            <DialogDescription>
+              Preencha os campos disponíveis. Todos são opcionais — salve com os dados que tiver.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-5 pt-2">
             <div>
-              <p className="text-xs text-white/40 mb-2 uppercase tracking-wider">Métricas no gráfico</p>
-              <div className="flex flex-wrap gap-2">
-                {CHART_METRICS.map((m) => (
-                  <button
-                    key={m.key}
-                    onClick={() => toggleMetric(m.key)}
-                    className={`text-xs px-3 py-1.5 rounded-full border transition-colors ${
-                      activeMetrics.includes(m.key)
-                        ? "border-transparent text-white"
-                        : "border-white/10 text-white/40 hover:text-white"
-                    }`}
-                    style={activeMetrics.includes(m.key) ? { backgroundColor: m.color + "33", borderColor: m.color, color: m.color } : {}}
-                  >
-                    {m.label}
-                  </button>
+              <Label className="text-sm font-medium">Data *</Label>
+              <Input type="date" value={form.date} onChange={(e) => setForm((f) => ({ ...f, date: e.target.value }))} className="mt-1" />
+            </div>
+            <div>
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Composição Corporal</p>
+              <div className="grid grid-cols-2 gap-3">
+                {([
+                  { key: "weight", label: "Peso Total (kg)" },
+                  { key: "muscleMass", label: "Massa Muscular (kg)" },
+                  { key: "musclePct", label: "% Massa Muscular" },
+                  { key: "bodyFatPct", label: "% Gordura Corporal" },
+                  { key: "visceralFat", label: "Gordura Visceral" },
+                ] as { key: keyof typeof form; label: string }[]).map(({ key, label }) => (
+                  <div key={key}>
+                    <Label className="text-xs text-muted-foreground">{label}</Label>
+                    <Input type="number" step="0.1" placeholder="—"
+                      value={String(form[key] ?? "")}
+                      onChange={(e) => setForm((f) => ({ ...f, [key]: e.target.value }))}
+                      className="mt-1 h-9" />
+                  </div>
                 ))}
               </div>
             </div>
-
-            {/* Chart */}
-            {chartData.length >= 2 && (
-              <div className="bg-white/5 rounded-2xl p-4">
-                <ResponsiveContainer width="100%" height={220}>
-                  <LineChart data={chartData} margin={{ top: 5, right: 5, left: -20, bottom: 0 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
-                    <XAxis dataKey="date" tick={{ fill: "rgba(255,255,255,0.4)", fontSize: 11 }} />
-                    <YAxis tick={{ fill: "rgba(255,255,255,0.4)", fontSize: 11 }} />
-                    <Tooltip
-                      contentStyle={{ backgroundColor: "#1a1a2e", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8, fontSize: 12 }}
-                      labelStyle={{ color: "rgba(255,255,255,0.7)" }}
-                    />
-                    {CHART_METRICS.filter((m) => activeMetrics.includes(m.key)).map((m) => (
-                      <Line
-                        key={m.key}
-                        type="monotone"
-                        dataKey={m.key}
-                        name={m.label}
-                        stroke={m.color}
-                        strokeWidth={2}
-                        dot={{ r: 4, fill: m.color }}
-                        connectNulls
-                      />
-                    ))}
-                  </LineChart>
-                </ResponsiveContainer>
-              </div>
-            )}
-
-            {chartData.length < 2 && (
-              <div className="bg-white/5 rounded-2xl p-6 text-center text-white/30 text-sm">
-                Adicione pelo menos 2 exames para ver o gráfico de evolução
-              </div>
-            )}
-          </div>
-        ) : (
-          /* Exams list */
-          <div className="space-y-3">
-            {exams.map((exam) => (
-              <div key={exam.id} className="bg-white/5 rounded-2xl p-4 border border-white/5">
-                <div className="flex items-start justify-between mb-3">
-                  <div>
-                    <p className="font-semibold">{format(parseISO(exam.date), "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}</p>
-                    {exam.obesityLevel && <p className="text-xs text-white/40 mt-0.5">{exam.bodyType} · {exam.obesityLevel}</p>}
+            <div>
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2 flex items-center gap-1">
+                <Ruler className="w-3 h-3" /> Perimetria (cm)
+              </p>
+              <div className="grid grid-cols-2 gap-3">
+                {PERIMETRIA_FIELDS.map(({ key, label }) => (
+                  <div key={key}>
+                    <Label className="text-xs text-muted-foreground">{label}</Label>
+                    <Input type="number" step="0.1" placeholder="—"
+                      value={form.perimetria[key] ?? ""}
+                      onChange={(e) => setForm((f) => ({ ...f, perimetria: { ...f.perimetria, [key]: e.target.value || undefined } }))}
+                      className="mt-1 h-9" />
                   </div>
-                  <div className="flex gap-2">
-                    {exam.imageUrl && (
-                      <button onClick={() => setViewImage(exam.imageUrl!)} className="text-xs text-violet-400 hover:text-violet-300 px-2 py-1 rounded-lg bg-violet-500/10">
-                        Ver laudo
-                      </button>
-                    )}
-                    <button onClick={() => openEdit(exam)} className="text-xs text-white/50 hover:text-white px-2 py-1 rounded-lg bg-white/5">
-                      Editar
-                    </button>
-                    <button
-                      onClick={() => { if (confirm("Excluir este exame?")) deleteMutation.mutate({ id: exam.id }); }}
-                      className="text-xs text-red-400/70 hover:text-red-400 px-2 py-1 rounded-lg bg-red-500/5"
-                    >
-                      Excluir
-                    </button>
-                  </div>
-                </div>
-                <div className="grid grid-cols-3 gap-2 text-sm">
-                  {[
-                    ["Peso", exam.weight ? `${exam.weight} kg` : null],
-                    ["IMC", exam.bmi],
-                    ["% Gordura", exam.bodyFatPct ? `${exam.bodyFatPct}%` : null],
-                    ["M. Gorda", exam.fatMass ? `${exam.fatMass} kg` : null],
-                    ["M. Magra", exam.leanMass ? `${exam.leanMass} kg` : null],
-                    ["M. Muscular", exam.muscleMass ? `${exam.muscleMass} kg` : null],
-                    ["G. Visceral", exam.visceralFat],
-                    ["TMB", exam.bmr ? `${exam.bmr} kcal` : null],
-                    ["Idade Met.", exam.metabolicAge?.toString() ?? null],
-                  ].filter(([, v]) => v).map(([label, value]) => (
-                    <div key={label as string}>
-                      <p className="text-[10px] text-white/30 uppercase">{label}</p>
-                      <p className="font-medium text-sm">{value}</p>
-                    </div>
-                  ))}
-                </div>
-                {exam.notes && <p className="text-xs text-white/40 mt-3 border-t border-white/5 pt-2">{exam.notes}</p>}
+                ))}
               </div>
-            ))}
-          </div>
-        )}
-      </div>
-
-      {/* Image viewer modal */}
-      {viewImage && (
-        <div className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center p-4" onClick={() => setViewImage(null)}>
-          <img src={viewImage} alt="Laudo" className="max-w-full max-h-full rounded-xl object-contain" />
-          <button className="absolute top-4 right-4 text-white/60 hover:text-white text-2xl">✕</button>
-        </div>
-      )}
-
-      {/* Form modal */}
-      {showModal && (
-        <div className="fixed inset-0 z-40 bg-black/70 flex items-end sm:items-center justify-center p-0 sm:p-4">
-          <div className="bg-[#1a1a2e] rounded-t-3xl sm:rounded-2xl w-full sm:max-w-2xl max-h-[92vh] overflow-y-auto">
-            <div className="sticky top-0 bg-[#1a1a2e] px-5 pt-5 pb-3 border-b border-white/10 flex items-center justify-between z-10">
-              <h2 className="text-lg font-bold">{editingExam ? "Editar Exame" : "Novo Exame de Bioimpedância"}</h2>
-              <button onClick={closeModal} className="text-white/40 hover:text-white text-xl">✕</button>
             </div>
-
-            <form onSubmit={handleSubmit} className="px-5 py-4 space-y-5">
-              {/* Date */}
-              <div>
-                <label className="text-xs text-white/50 uppercase tracking-wider block mb-1">Data do exame *</label>
-                <input
-                  type="date"
-                  required
-                  value={form.date}
-                  onChange={(e) => setField("date", e.target.value)}
-                  className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-violet-500"
-                />
-              </div>
-
-              {/* Upload image */}
-              <div>
-                <label className="text-xs text-white/50 uppercase tracking-wider block mb-1">Imagem do laudo (opcional)</label>
-                <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleImageSelect} />
-                {imagePreview ? (
-                  <div className="relative">
-                    <img src={imagePreview} alt="Laudo" className="w-full max-h-48 object-contain rounded-xl border border-white/10" />
-                    <button
-                      type="button"
-                      onClick={() => { setImagePreview(null); setImageBase64(null); if (fileInputRef.current) fileInputRef.current.value = ""; }}
-                      className="absolute top-2 right-2 bg-black/60 text-white rounded-full w-6 h-6 text-xs flex items-center justify-center"
-                    >✕</button>
+            <div>
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2 flex items-center gap-1">
+                <TrendingUp className="w-3 h-3" /> Dobras Cutâneas (mm)
+              </p>
+              <div className="grid grid-cols-2 gap-3">
+                {DOBRAS_FIELDS.map(({ key, label }) => (
+                  <div key={key}>
+                    <Label className="text-xs text-muted-foreground">{label}</Label>
+                    <Input type="number" step="0.1" placeholder="—"
+                      value={form.dobras[key] ?? ""}
+                      onChange={(e) => setForm((f) => ({ ...f, dobras: { ...f.dobras, [key]: e.target.value || undefined } }))}
+                      className="mt-1 h-9" />
                   </div>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={() => fileInputRef.current?.click()}
-                    disabled={compressing}
-                    className="w-full border-2 border-dashed border-white/10 rounded-xl py-6 text-white/40 hover:text-white hover:border-violet-500 transition-colors text-sm"
-                  >
-                    {compressing ? "Comprimindo..." : "📷 Clique para adicionar imagem do laudo"}
-                  </button>
-                )}
+                ))}
               </div>
-
-              {/* Section: Composição Corporal */}
-              <Section title="Composição Corporal">
-                <Row>
-                  <Field label="Peso (kg)" value={form.weight} onChange={(v) => setField("weight", v)} placeholder="ex: 80.5" />
-                  <Field label="IMC (kg/m²)" value={form.bmi} onChange={(v) => setField("bmi", v)} placeholder="ex: 25.4" />
-                </Row>
-                <Row>
-                  <Field
-                    label="% Gordura corporal"
-                    value={form.bodyFatPct}
-                    onChange={(v) => setField("bodyFatPct", v)}
-                    placeholder="Calculado automaticamente"
-                    hint={form.weight && form.fatMass ? `Auto: ${calcBodyFatPct(form.weight, form.fatMass)}%` : undefined}
-                  />
-                  <Field label="Massa gorda (kg)" value={form.fatMass} onChange={(v) => setField("fatMass", v)} placeholder="ex: 20.0" />
-                </Row>
-                <Row>
-                  <Field label="Massa livre de gordura (kg)" value={form.leanMass} onChange={(v) => setField("leanMass", v)} placeholder="ex: 60.0" />
-                  <Field label="Massa muscular (kg)" value={form.muscleMass} onChange={(v) => setField("muscleMass", v)} placeholder="ex: 55.0" />
-                </Row>
-                <Row>
-                  <Field label="Taxa muscular (%)" value={form.muscleRate} onChange={(v) => setField("muscleRate", v)} placeholder="ex: 68.5" />
-                  <Field label="M. Musc. Esquelética (kg)" value={form.skeletalMuscleMass} onChange={(v) => setField("skeletalMuscleMass", v)} placeholder="ex: 35.0" />
-                </Row>
-                <Row>
-                  <Field label="Massa óssea (kg)" value={form.boneMass} onChange={(v) => setField("boneMass", v)} placeholder="ex: 3.5" />
-                  <Field label="Massa protéica (kg)" value={form.proteinMass} onChange={(v) => setField("proteinMass", v)} placeholder="ex: 11.0" />
-                </Row>
-              </Section>
-
-              {/* Section: Hidratação */}
-              <Section title="Hidratação e Gordura">
-                <Row>
-                  <Field label="Proteína (%)" value={form.proteinPct} onChange={(v) => setField("proteinPct", v)} placeholder="ex: 13.7" />
-                  <Field label="Teor de umidade (kg)" value={form.moistureContent} onChange={(v) => setField("moistureContent", v)} placeholder="ex: 39.0" />
-                </Row>
-                <Row>
-                  <Field label="Água corporal (%)" value={form.bodyWaterPct} onChange={(v) => setField("bodyWaterPct", v)} placeholder="ex: 50.2" />
-                  <Field label="Gordura subcutânea (%)" value={form.subcutaneousFatPct} onChange={(v) => setField("subcutaneousFatPct", v)} placeholder="ex: 22.5" />
-                </Row>
-                <Row>
-                  <Field label="Gordura visceral" value={form.visceralFat} onChange={(v) => setField("visceralFat", v)} placeholder="ex: 10.0"
-                    hint={form.visceralFat ? visceralStatus(parseFloat(form.visceralFat)).label : undefined}
-                    hintColor={form.visceralFat ? visceralStatus(parseFloat(form.visceralFat)).color : undefined}
-                  />
-                  <Field label="Peso corporal ideal (kg)" value={form.idealWeight} onChange={(v) => setField("idealWeight", v)} placeholder="ex: 65.0" />
-                </Row>
-              </Section>
-
-              {/* Section: Metabolismo */}
-              <Section title="Metabolismo e Outros">
-                <Row>
-                  <Field label="TMB (kcal)" value={form.bmr} onChange={(v) => setField("bmr", v)} placeholder="ex: 1521" />
-                  <Field label="Idade metabólica" value={form.metabolicAge} onChange={(v) => setField("metabolicAge", v)} placeholder="ex: 33" />
-                </Row>
-                <Row>
-                  <Field label="WHR" value={form.whr} onChange={(v) => setField("whr", v)} placeholder="ex: 0.86" />
-                  <Field label="Nível de obesidade" value={form.obesityLevel} onChange={(v) => setField("obesityLevel", v)} placeholder="ex: Pré-obesidade" />
-                </Row>
-                <Field label="Tipo de corpo" value={form.bodyType} onChange={(v) => setField("bodyType", v)} placeholder="ex: Obesidade" />
-              </Section>
-
-              {/* Notes */}
-              <div>
-                <label className="text-xs text-white/50 uppercase tracking-wider block mb-1">Observações</label>
-                <textarea
-                  value={form.notes}
-                  onChange={(e) => setField("notes", e.target.value)}
-                  rows={3}
-                  placeholder="Anotações sobre o exame..."
-                  className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white resize-none focus:outline-none focus:border-violet-500"
-                />
-              </div>
-
-              <div className="flex gap-3 pt-2 pb-4">
-                <button type="button" onClick={closeModal} className="flex-1 py-3 rounded-xl border border-white/10 text-sm text-white/60 hover:text-white">
-                  Cancelar
-                </button>
-                <button
-                  type="submit"
-                  disabled={createMutation.isPending || updateMutation.isPending}
-                  className="flex-1 py-3 rounded-xl bg-violet-600 hover:bg-violet-500 text-sm font-semibold text-white disabled:opacity-50 transition-colors"
-                >
-                  {createMutation.isPending || updateMutation.isPending ? "Salvando..." : editingExam ? "Salvar alterações" : "Salvar exame"}
-                </button>
-              </div>
-            </form>
+            </div>
+            <div>
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2 flex items-center gap-1">
+                <ImageIcon className="w-3 h-3" /> Imagem do Laudo
+              </p>
+              {form.imagePreview && (
+                <img src={form.imagePreview} alt="Preview" className="rounded-lg max-h-40 object-contain border border-border mb-2" />
+              )}
+              <Button variant="outline" size="sm" type="button" onClick={() => fileRef.current?.click()} className="gap-1.5">
+                <ImageIcon className="w-3.5 h-3.5" /> {form.imagePreview ? "Trocar imagem" : "Adicionar imagem"}
+              </Button>
+              <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleImageChange} />
+            </div>
+            <div>
+              <Label className="text-xs text-muted-foreground">Observações</Label>
+              <Textarea placeholder="Anotações sobre o exame..."
+                value={form.notes}
+                onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))}
+                className="mt-1 resize-none" rows={3} />
+            </div>
+            <div className="flex gap-2 pt-1">
+              <Button variant="outline" className="flex-1" onClick={() => setModalOpen(false)}>Cancelar</Button>
+              <Button className="flex-1" onClick={handleSubmit} disabled={isPending || !form.date}>
+                {isPending ? "Salvando..." : editId ? "Atualizar" : "Salvar Exame"}
+              </Button>
+            </div>
           </div>
-        </div>
-      )}
-    </div>
-  );
-}
-
-// ─── Sub-components ───────────────────────────────────────────────────────────
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
-  return (
-    <div>
-      <p className="text-xs text-violet-400 uppercase tracking-wider font-semibold mb-3 border-b border-violet-500/20 pb-1">{title}</p>
-      <div className="space-y-3">{children}</div>
-    </div>
-  );
-}
-
-function Row({ children }: { children: React.ReactNode }) {
-  return <div className="grid grid-cols-2 gap-3">{children}</div>;
-}
-
-function Field({
-  label, value, onChange, placeholder, hint, hintColor,
-}: {
-  label: string;
-  value: string;
-  onChange: (v: string) => void;
-  placeholder?: string;
-  hint?: string;
-  hintColor?: string;
-}) {
-  return (
-    <div>
-      <label className="text-[11px] text-white/40 block mb-1">{label}</label>
-      <input
-        type="text"
-        inputMode="decimal"
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        placeholder={placeholder}
-        className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white focus:outline-none focus:border-violet-500 placeholder:text-white/20"
-      />
-      {hint && <p className={`text-[10px] mt-0.5 ${hintColor ?? "text-white/40"}`}>{hint}</p>}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

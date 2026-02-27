@@ -16,6 +16,32 @@ import { nanoid } from "nanoid";
 
 let _db: ReturnType<typeof drizzle> | null = null;
 
+async function runMigrations(db: ReturnType<typeof drizzle>) {
+  try {
+    await db.execute(sql`
+      CREATE TABLE IF NOT EXISTS "bioimpedanceExams" (
+        "id" SERIAL PRIMARY KEY,
+        "trainerId" INTEGER NOT NULL,
+        "clientId" INTEGER NOT NULL REFERENCES "clients"("id") ON DELETE CASCADE,
+        "date" DATE NOT NULL,
+        "weight" DECIMAL(6,2),
+        "muscleMass" DECIMAL(6,2),
+        "musclePct" DECIMAL(5,2),
+        "bodyFatPct" DECIMAL(5,2),
+        "visceralFat" DECIMAL(5,1),
+        "perimetria" TEXT,
+        "dobras" TEXT,
+        "imageUrl" TEXT,
+        "notes" TEXT,
+        "createdAt" TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      )
+    `);
+    console.log("[Database] Migrations applied");
+  } catch (err) {
+    console.warn("[Database] Migration warning:", err);
+  }
+}
+
 export async function getDb() {
   if (!_db) {
     // Prefer SUPABASE_DB_URL (PostgreSQL), fall back to DATABASE_URL (MySQL)
@@ -29,6 +55,7 @@ export async function getDb() {
       const client = postgres(connStr, { max: 5, ssl: 'require' });
       _db = drizzle(client);
       console.log("[Database] Connected to", ENV.supabaseDbUrl ? "Supabase PostgreSQL" : "MySQL");
+      await runMigrations(_db);
     } catch (error) {
       console.warn("[Database] Failed to connect:", error);
       _db = null;
@@ -405,7 +432,8 @@ export async function getFinancialSummary(trainerId: number, month: number, year
   const db = await getDb();
   if (!db) return { income: 0, expenses: 0, pending: 0 };
   const startDate = `${year}-${String(month).padStart(2, '0')}-01`;
-  const endDate = `${year}-${String(month).padStart(2, '0')}-31`;
+  const lastDayOfMonth = new Date(year, month, 0).getDate(); // day 0 of next month = last day of current
+  const endDate = `${year}-${String(month).padStart(2, '0')}-${String(lastDayOfMonth).padStart(2, '0')}`;
   const rows = await db.select().from(transactions)
     .where(and(
       eq(transactions.trainerId, trainerId),
@@ -737,7 +765,8 @@ export async function getFinancialDashboard(trainerId: number) {
 
   // Completed sessions this month
   const monthStart = `${currentYear}-${String(currentMonth).padStart(2, '0')}-01`;
-  const monthEnd = `${currentYear}-${String(currentMonth).padStart(2, '0')}-31`;
+  const lastDayOfCurrentMonth = new Date(currentYear, currentMonth, 0).getDate();
+  const monthEnd = `${currentYear}-${String(currentMonth).padStart(2, '0')}-${String(lastDayOfCurrentMonth).padStart(2, '0')}`;
   const completedThisMonth = await db.select({ count: count() }).from(appointments)
     .where(and(
       eq(appointments.trainerId, trainerId),

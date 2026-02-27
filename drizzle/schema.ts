@@ -186,28 +186,18 @@ export const bioimpedanceExams = pgTable("bioimpedanceExams", {
   clientId: integer("clientId").notNull(),
   date: date("date").notNull(),
 
-  // Core measurements
-  weight: decimal("weight", { precision: 6, scale: 2 }),           // kg
-  bmi: decimal("bmi", { precision: 5, scale: 2 }),                 // IMC kg/m²
-  bodyFatPct: decimal("bodyFatPct", { precision: 5, scale: 2 }),   // % gordura corporal
-  fatMass: decimal("fatMass", { precision: 6, scale: 2 }),         // massa gorda kg
-  leanMass: decimal("leanMass", { precision: 6, scale: 2 }),       // massa livre de gordura kg
+  // Core measurements (campos essenciais)
+  weight: decimal("weight", { precision: 6, scale: 2 }),           // peso total kg
   muscleMass: decimal("muscleMass", { precision: 6, scale: 2 }),   // massa muscular kg
-  muscleRate: decimal("muscleRate", { precision: 5, scale: 2 }),   // taxa muscular %
-  skeletalMuscleMass: decimal("skeletalMuscleMass", { precision: 6, scale: 2 }), // massa muscular esquelética kg
-  boneMass: decimal("boneMass", { precision: 5, scale: 2 }),       // massa óssea kg
-  proteinMass: decimal("proteinMass", { precision: 5, scale: 2 }), // massa protéica kg
-  proteinPct: decimal("proteinPct", { precision: 5, scale: 2 }),   // proteína %
-  moistureContent: decimal("moistureContent", { precision: 6, scale: 2 }), // teor de umidade kg
-  bodyWaterPct: decimal("bodyWaterPct", { precision: 5, scale: 2 }), // água corporal %
-  subcutaneousFatPct: decimal("subcutaneousFatPct", { precision: 5, scale: 2 }), // gordura subcutânea %
+  musclePct: decimal("musclePct", { precision: 5, scale: 2 }),     // % massa muscular
+  bodyFatPct: decimal("bodyFatPct", { precision: 5, scale: 2 }),   // % gordura corporal
   visceralFat: decimal("visceralFat", { precision: 5, scale: 1 }), // gordura visceral (número)
-  bmr: decimal("bmr", { precision: 7, scale: 0 }),                 // TMB kcal
-  metabolicAge: integer("metabolicAge"),                           // idade metabólica
-  whr: decimal("whr", { precision: 4, scale: 2 }),                 // WHR
-  idealWeight: decimal("idealWeight", { precision: 6, scale: 2 }), // peso ideal kg
-  obesityLevel: varchar("obesityLevel", { length: 100 }),          // nível de obesidade
-  bodyType: varchar("bodyType", { length: 100 }),                  // tipo de corpo
+
+  // Perimetria (cm) - armazenado como JSON flexível
+  perimetria: text("perimetria"),  // JSON: { cintura, quadril, braco, coxa, panturrilha, pescoco, torax, abdomen }
+
+  // Dobras cutâneas (mm) - armazenado como JSON flexível
+  dobras: text("dobras"),          // JSON: { tricipital, subescapular, abdominal, suprailiaca, coxa, axilarMedia, peitoral }
 
   // Report image
   imageUrl: text("imageUrl"),

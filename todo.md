@@ -337,3 +337,30 @@
 - [ ] Configurar envio de e-mail (Nodemailer/Resend/SendGrid) para notificações externas
 - [ ] Integração Stripe para pagamentos de assinatura
 - [ ] Testar fluxo completo de Consultoria no browser
+
+## Bug: Data inválida nas queries de transactions (v21)
+- [x] Corrigir getFinancialSummary: usar último dia real do mês em vez de hardcoded "31"
+- [x] Corrigir getTransactionsByTrainer: mesma correção
+- [x] Corrigir getFinancialDashboard: mesma correção
+- [x] Avaliação end-to-end completa de todas as abas
+- [x] Corrigir todos os bugs encontrados
+## Simplificação Módulo Bioimpedancia (v22)
+- [x] Schema: manter apenas massaMuscular, pesoTotal, percMassaMuscular, percGordura, gorduraVisceral, perimetria, dobras
+- [x] Schema: remover campos redundantes
+- [x] Backend: atualizar db.ts e routers.ts para novos campos
+- [x] UI: reformular formulário com apenas os campos essenciais
+- [x] UI: salvar sem estar completo (todos os campos opcionais)
+- [x] UI: gráficos comparativos com dados existentes (peso, % gordura, % muscular, visceral)
+- [x] UI: manter upload de imagem de bioimpedancia
+- [x] Migração SQL: tabela criada via runMigrations automático
+
+## Redesign de Cores: Branco + Azul Claro (v23)
+- [x] index.css: tokens CSS com fundo branco, azul claro como accent (#3B82F6 / sky-500)
+- [x] AppLayout: sidebar branca com borda sutil, ícones e texto em azul/cinza
+- [x] Botões primários: azul (#3B82F6) com hover mais escuro
+- [x] Badges e tags: tons de azul claro (bg-blue-50, text-blue-700)
+- [x] Cards: fundo branco, borda cinza-100, sombra suave
+- [x] Topbar: fundo branco com borda inferior cinza-100
+- [x] Inputs e selects: borda cinza-200, focus azul
+- [x] Bottom nav mobile: branco com ícone ativo em azul
+- [x] ThemeProvider configurado como light (App.tsx)

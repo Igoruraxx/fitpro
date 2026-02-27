@@ -1,0 +1,20 @@
+{
+  "query": "CREATE TABLE IF NOT EXISTS \"bioimpedanceExams\" (\n  \"id\" SERIAL PRIMARY KEY,\n  \"trainerId\" INTEGER NOT NULL,\n  \"clientId\" INTEGER NOT NULL REFERENCES \"clients\"(\"id\") ON DELETE CASCADE,\n  \"date\" DATE NOT NULL,\n  \"weight\" DECIMAL(6,2),\n  \"muscleMass\" DECIMAL(6,2),\n  \"musclePct\" DECIMAL(5,2),\n  \"bodyFatPct\" DECIMAL(5,2),\n  \"visceralFat\" DECIMAL(5,1),\n  \"perimetria\" TEXT,\n  \"dobras\" TEXT,\n  \"imageUrl\" TEXT,\n  \"notes\" TEXT,\n  \"createdAt\" TIMESTAMPTZ NOT NULL DEFAULT NOW()\n);",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 4PiQ8e52qW4Xjb6.root --database 5UbJ997E6SHYZid72bThxF --execute CREATE TABLE IF NOT EXISTS \"bioimpedanceExams\" (\n  \"id\" SERIAL PRIMARY KEY,\n  \"trainerId\" INTEGER NOT NULL,\n  \"clientId\" INTEGER NOT NULL REFERENCES \"clients\"(\"id\") ON DELETE CASCADE,\n  \"date\" DATE NOT NULL,\n  \"weight\" DECIMAL(6,2),\n  \"muscleMass\" DECIMAL(6,2),\n  \"musclePct\" DECIMAL(5,2),\n  \"bodyFatPct\" DECIMAL(5,2),\n  \"visceralFat\" DECIMAL(5,1),\n  \"perimetria\" TEXT,\n  \"dobras\" TEXT,\n  \"imageUrl\" TEXT,\n  \"notes\" TEXT,\n  \"createdAt\" TIMESTAMPTZ NOT NULL DEFAULT NOW()\n);",
+  "returncode": 1,
+  "logs": [
+    "ERROR 1064 (42000) at line 1: You have an error in your SQL syntax; check the manual that corresponds to your TiDB version for the right syntax to use line 1 column 46 near \"\"bioimpedanceExams\" (",
+    "  \"id\" SERIAL PRIMARY KEY,",
+    "  \"trainerId\" INTEGER NOT NULL,",
+    "  \"clientId\" INTEGER NOT NULL REFERENCES \"clients\"(\"id\") ON DELETE CASCADE,",
+    "  \"date\" DATE NOT NULL,",
+    "  \"weight\" DECIMAL(6,2),",
+    "  \"muscleMass\" DECIMAL(6,2),",
+    "  \"musclePct\" DECIMAL(5,2),",
+    "  \"bodyFatPct\" DECIMAL(5,2),",
+    "  \"visceralFat\" DECIMAL(5,1),",
+    "  \"perimetria\" TEXT,",
+    "  \"dobras\" TEXT,",
+    "  \"imag"
+  ]
+}
