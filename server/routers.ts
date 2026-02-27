@@ -412,7 +412,7 @@ export const appRouter = router({
         clientId,
         photoUrl: url,
         photoType,
-        date: new Date(date) as any,
+        date: date,
         notes,
       } as any);
       return { id, url };

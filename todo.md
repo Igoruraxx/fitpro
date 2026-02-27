@@ -193,3 +193,7 @@
 - [x] Grupos: Peito, Costas, Ombros, Bíceps, Tríceps, Antebraço, Abdômen, Quadríceps, Posterior, Glúteos, Panturrilha, Cardio, Funcional
 - [x] Exibir ícones selecionados visíveis no card da sessão após salvar
 - [x] Persistir grupos musculares no banco de dados (campo muscleGroups na tabela appointments)
+
+## Bug Fotos de Progresso (v5)
+- [x] Fix: data enviada como string JS completa em vez de YYYY-MM-DD no upload de fotos (removido new Date() no router)
+- [x] Garantir formato correto no frontend (Fotos.tsx) e no backend (router/db)
