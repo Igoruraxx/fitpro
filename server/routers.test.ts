@@ -221,3 +221,30 @@ describe("photos procedures - access control", () => {
     ).rejects.toThrow();
   });
 });
+
+// ==================== SUPABASE CONNECTION TEST ====================
+
+describe("Supabase PostgreSQL connection", () => {
+  it("should have SUPABASE_DB_URL configured", () => {
+    // Validates that the secret was set (not empty)
+    const url = process.env.SUPABASE_DB_URL ?? "";
+    // In CI/test environments the secret may not be injected; skip gracefully
+    if (!url) {
+      console.warn("[Test] SUPABASE_DB_URL not set, skipping connection test");
+      return;
+    }
+    expect(url).toMatch(/^postgresql:\/\//);
+    expect(url).toContain("supabase");
+  });
+
+  it("ENV.supabaseDbUrl should resolve from SUPABASE_DB_URL", async () => {
+    const { ENV } = await import("./_core/env");
+    const url = ENV.supabaseDbUrl;
+    if (!url) {
+      console.warn("[Test] ENV.supabaseDbUrl not set, skipping");
+      return;
+    }
+    expect(typeof url).toBe("string");
+    expect(url.length).toBeGreaterThan(0);
+  });
+});

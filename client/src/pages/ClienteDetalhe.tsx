@@ -61,28 +61,18 @@ export default function ClienteDetalhe() {
             </div>
             <div className="flex flex-wrap gap-3 mt-2 text-sm text-muted-foreground">
               {client.phone && <span className="flex items-center gap-1"><Phone className="h-3.5 w-3.5" />{client.phone}</span>}
-              {client.email && <span className="flex items-center gap-1"><Mail className="h-3.5 w-3.5" />{client.email}</span>}
+
             </div>
           </div>
         </div>
-        {client.goal && (
-          <div className="mt-4 flex items-center gap-2 text-sm">
-            <Target className="h-4 w-4 text-primary" />
-            <span className="text-muted-foreground">Objetivo:</span>
-            <span className="font-medium">{client.goal}</span>
-          </div>
-        )}
+
         {client.monthlyFee && (
           <div className="mt-2 text-sm">
             <span className="text-muted-foreground">Mensalidade:</span>
             <span className="font-bold text-primary ml-2">R$ {parseFloat(client.monthlyFee).toFixed(2)}</span>
           </div>
         )}
-        {client.notes && (
-          <div className="mt-3 p-3 rounded-lg bg-muted/50 text-sm text-muted-foreground">
-            {client.notes}
-          </div>
-        )}
+
       </div>
 
       {/* Quick stats */}

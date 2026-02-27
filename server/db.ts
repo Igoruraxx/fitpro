@@ -1,5 +1,6 @@
-import { eq, and, between, desc, asc, sql, gte, lte } from "drizzle-orm";
-import { drizzle } from "drizzle-orm/mysql2";
+import { eq, and, desc, asc, sql, count } from "drizzle-orm";
+import { drizzle } from "drizzle-orm/postgres-js";
+import postgres from "postgres";
 import {
   InsertUser, users,
   clients, InsertClient,
@@ -9,13 +10,23 @@ import {
   transactions, InsertTransaction,
 } from "../drizzle/schema";
 import { ENV } from './_core/env';
+import { nanoid } from "nanoid";
 
 let _db: ReturnType<typeof drizzle> | null = null;
 
 export async function getDb() {
-  if (!_db && process.env.DATABASE_URL) {
+  if (!_db) {
+    // Prefer SUPABASE_DB_URL (PostgreSQL), fall back to DATABASE_URL (MySQL)
+    const connStr = ENV.supabaseDbUrl || process.env.DATABASE_URL;
+
+    if (!connStr) {
+      console.warn("[Database] No connection string available");
+      return null;
+    }
     try {
-      _db = drizzle(process.env.DATABASE_URL);
+      const client = postgres(connStr, { max: 5, ssl: 'require' });
+      _db = drizzle(client);
+      console.log("[Database] Connected to", ENV.supabaseDbUrl ? "Supabase PostgreSQL" : "MySQL");
     } catch (error) {
       console.warn("[Database] Failed to connect:", error);
       _db = null;
@@ -60,7 +71,10 @@ export async function upsertUser(user: InsertUser): Promise<void> {
     if (!values.lastSignedIn) values.lastSignedIn = new Date();
     if (Object.keys(updateSet).length === 0) updateSet.lastSignedIn = new Date();
 
-    await db.insert(users).values(values).onDuplicateKeyUpdate({ set: updateSet });
+    await db.insert(users).values(values).onConflictDoUpdate({
+      target: users.openId,
+      set: updateSet,
+    });
   } catch (error) {
     console.error("[Database] Failed to upsert user:", error);
     throw error;
@@ -84,7 +98,7 @@ export async function getUserById(id: number) {
 export async function updateUserProfile(userId: number, data: Partial<InsertUser>) {
   const db = await getDb();
   if (!db) return;
-  await db.update(users).set(data).where(eq(users.id, userId));
+  await db.update(users).set({ ...data, updatedAt: new Date() }).where(eq(users.id, userId));
 }
 
 export async function getAllTrainers() {
@@ -121,14 +135,15 @@ export async function getClientById(id: number, trainerId: number) {
 export async function createClient(data: InsertClient) {
   const db = await getDb();
   if (!db) return undefined;
-  const result = await db.insert(clients).values(data);
-  return result[0].insertId;
+  const result = await db.insert(clients).values(data).returning({ id: clients.id });
+  return result[0]?.id;
 }
 
 export async function updateClient(id: number, trainerId: number, data: Partial<InsertClient>) {
   const db = await getDb();
   if (!db) return;
-  await db.update(clients).set(data).where(and(eq(clients.id, id), eq(clients.trainerId, trainerId)));
+  await db.update(clients).set({ ...data, updatedAt: new Date() })
+    .where(and(eq(clients.id, id), eq(clients.trainerId, trainerId)));
 }
 
 export async function deleteClient(id: number, trainerId: number) {
@@ -140,7 +155,7 @@ export async function deleteClient(id: number, trainerId: number) {
 export async function countClientsByTrainer(trainerId: number) {
   const db = await getDb();
   if (!db) return 0;
-  const result = await db.select({ count: sql<number>`count(*)` }).from(clients)
+  const result = await db.select({ count: count() }).from(clients)
     .where(eq(clients.trainerId, trainerId));
   return result[0]?.count ?? 0;
 }
@@ -150,12 +165,11 @@ export async function countClientsByTrainer(trainerId: number) {
 export async function getAppointmentsByTrainer(trainerId: number, startDate: string, endDate: string) {
   const db = await getDb();
   if (!db) return [];
-  // Use sql template to pass date strings directly, avoiding timezone conversion issues with new Date()
   return db.select().from(appointments)
     .where(and(
       eq(appointments.trainerId, trainerId),
-      sql`${appointments.date} >= ${startDate}`,
-      sql`${appointments.date} <= ${endDate}`
+      sql`${appointments.date} >= ${startDate}::date`,
+      sql`${appointments.date} <= ${endDate}::date`
     ))
     .orderBy(asc(appointments.date), asc(appointments.startTime));
 }
@@ -171,14 +185,15 @@ export async function getAppointmentById(id: number, trainerId: number) {
 export async function createAppointment(data: InsertAppointment) {
   const db = await getDb();
   if (!db) return undefined;
-  const result = await db.insert(appointments).values(data);
-  return result[0].insertId;
+  const result = await db.insert(appointments).values(data).returning({ id: appointments.id });
+  return result[0]?.id;
 }
 
 export async function updateAppointment(id: number, trainerId: number, data: Partial<InsertAppointment>) {
   const db = await getDb();
   if (!db) return;
-  await db.update(appointments).set(data).where(and(eq(appointments.id, id), eq(appointments.trainerId, trainerId)));
+  await db.update(appointments).set({ ...data, updatedAt: new Date() })
+    .where(and(eq(appointments.id, id), eq(appointments.trainerId, trainerId)));
 }
 
 export async function deleteAppointment(id: number, trainerId: number) {
@@ -208,8 +223,8 @@ export async function getMeasurementsByClient(trainerId: number, clientId: numbe
 export async function createMeasurement(data: InsertBodyMeasurement) {
   const db = await getDb();
   if (!db) return undefined;
-  const result = await db.insert(bodyMeasurements).values(data);
-  return result[0].insertId;
+  const result = await db.insert(bodyMeasurements).values(data).returning({ id: bodyMeasurements.id });
+  return result[0]?.id;
 }
 
 export async function deleteMeasurement(id: number, trainerId: number) {
@@ -224,7 +239,6 @@ export async function getPhotosByClient(trainerId: number, clientId: number) {
   const db = await getDb();
   if (!db) return [];
   if (clientId === 0) {
-    // Return all photos for this trainer
     return db.select().from(progressPhotos)
       .where(eq(progressPhotos.trainerId, trainerId))
       .orderBy(desc(progressPhotos.date));
@@ -237,8 +251,8 @@ export async function getPhotosByClient(trainerId: number, clientId: number) {
 export async function createProgressPhoto(data: InsertProgressPhoto) {
   const db = await getDb();
   if (!db) return undefined;
-  const result = await db.insert(progressPhotos).values(data);
-  return result[0].insertId;
+  const result = await db.insert(progressPhotos).values(data).returning({ id: progressPhotos.id });
+  return result[0]?.id;
 }
 
 export async function deleteProgressPhoto(id: number, trainerId: number) {
@@ -252,9 +266,9 @@ export async function deleteProgressPhoto(id: number, trainerId: number) {
 export async function getTransactionsByTrainer(trainerId: number, startDate?: string, endDate?: string) {
   const db = await getDb();
   if (!db) return [];
-  const conditions: any[] = [eq(transactions.trainerId, trainerId)];
-  if (startDate) conditions.push(sql`${transactions.date} >= ${startDate}`);
-  if (endDate) conditions.push(sql`${transactions.date} <= ${endDate}`);
+  const conditions: ReturnType<typeof eq>[] = [eq(transactions.trainerId, trainerId)];
+  if (startDate) conditions.push(sql`${transactions.date} >= ${startDate}::date` as any);
+  if (endDate) conditions.push(sql`${transactions.date} <= ${endDate}::date` as any);
   return db.select().from(transactions)
     .where(and(...conditions))
     .orderBy(desc(transactions.date));
@@ -263,14 +277,15 @@ export async function getTransactionsByTrainer(trainerId: number, startDate?: st
 export async function createTransaction(data: InsertTransaction) {
   const db = await getDb();
   if (!db) return undefined;
-  const result = await db.insert(transactions).values(data);
-  return result[0].insertId;
+  const result = await db.insert(transactions).values(data).returning({ id: transactions.id });
+  return result[0]?.id;
 }
 
 export async function updateTransaction(id: number, trainerId: number, data: Partial<InsertTransaction>) {
   const db = await getDb();
   if (!db) return;
-  await db.update(transactions).set(data).where(and(eq(transactions.id, id), eq(transactions.trainerId, trainerId)));
+  await db.update(transactions).set({ ...data, updatedAt: new Date() })
+    .where(and(eq(transactions.id, id), eq(transactions.trainerId, trainerId)));
 }
 
 export async function deleteTransaction(id: number, trainerId: number) {
@@ -287,8 +302,8 @@ export async function getFinancialSummary(trainerId: number, month: number, year
   const rows = await db.select().from(transactions)
     .where(and(
       eq(transactions.trainerId, trainerId),
-      sql`${transactions.date} >= ${startDate}`,
-      sql`${transactions.date} <= ${endDate}`
+      sql`${transactions.date} >= ${startDate}::date`,
+      sql`${transactions.date} <= ${endDate}::date`
     ));
   let income = 0, expenses = 0, pending = 0;
   for (const row of rows) {
@@ -306,17 +321,15 @@ export async function getDashboardStats(trainerId: number) {
   const db = await getDb();
   if (!db) return { activeClients: 0, todayCompleted: 0, attendanceRate: 0, nextSession: null };
 
-  const today = new Date();
-  const todayStr = today.toISOString().split('T')[0];
+  const todayStr = new Date().toISOString().split('T')[0];
 
-  const allClients = await db.select({ count: sql<number>`count(*)` }).from(clients)
+  const allClients = await db.select({ count: count() }).from(clients)
     .where(and(eq(clients.trainerId, trainerId), eq(clients.status, 'active')));
 
   const todayAppts = await db.select().from(appointments)
     .where(and(
       eq(appointments.trainerId, trainerId),
-      gte(appointments.date, new Date(todayStr)),
-      lte(appointments.date, new Date(todayStr))
+      sql`${appointments.date} = ${todayStr}::date`
     ));
 
   const todayCompleted = todayAppts.filter(a => a.status === 'completed').length;
@@ -327,7 +340,7 @@ export async function getDashboardStats(trainerId: number) {
     .where(and(
       eq(appointments.trainerId, trainerId),
       eq(appointments.status, 'scheduled'),
-      gte(appointments.date, new Date(todayStr))
+      sql`${appointments.date} >= ${todayStr}::date`
     ))
     .orderBy(asc(appointments.date), asc(appointments.startTime))
     .limit(1);
@@ -364,13 +377,15 @@ export async function getWeeklySessionsChart(trainerId: number) {
     weekStart.setHours(0, 0, 0, 0);
     const weekEnd = new Date(weekStart);
     weekEnd.setDate(weekStart.getDate() + 6);
-    weekEnd.setHours(23, 59, 59, 999);
 
-    const result = await db.select({ count: sql<number>`count(*)` }).from(appointments)
+    const startStr = weekStart.toISOString().split('T')[0];
+    const endStr = weekEnd.toISOString().split('T')[0];
+
+    const result = await db.select({ count: count() }).from(appointments)
       .where(and(
         eq(appointments.trainerId, trainerId),
-        gte(appointments.date, weekStart),
-        lte(appointments.date, weekEnd)
+        sql`${appointments.date} >= ${startStr}::date`,
+        sql`${appointments.date} <= ${endStr}::date`
       ));
 
     const label = `${weekStart.getDate()}/${weekStart.getMonth() + 1}`;
@@ -386,7 +401,7 @@ export async function getSessionStatusChart(trainerId: number) {
 
   const result = await db.select({
     status: appointments.status,
-    count: sql<number>`count(*)`
+    count: count()
   }).from(appointments)
     .where(eq(appointments.trainerId, trainerId))
     .groupBy(appointments.status);
@@ -409,14 +424,12 @@ export async function getTodaySessions(trainerId: number) {
   const db = await getDb();
   if (!db) return [];
 
-  const today = new Date();
-  const todayStr = today.toISOString().split('T')[0];
+  const todayStr = new Date().toISOString().split('T')[0];
 
   const appts = await db.select().from(appointments)
     .where(and(
       eq(appointments.trainerId, trainerId),
-      gte(appointments.date, new Date(todayStr)),
-      lte(appointments.date, new Date(todayStr))
+      sql`${appointments.date} = ${todayStr}::date`
     ))
     .orderBy(asc(appointments.startTime));
 
@@ -433,14 +446,26 @@ export async function getTodaySessions(trainerId: number) {
   return result;
 }
 
+// ==================== SESSIONS COUNTER ====================
+
+export async function decrementSessionsRemaining(clientId: number, trainerId: number) {
+  const db = await getDb();
+  if (!db) return;
+  await db.execute(
+    sql`UPDATE clients SET "sessionsRemaining" = GREATEST(0, "sessionsRemaining" - 1)
+        WHERE id = ${clientId} AND "trainerId" = ${trainerId}
+        AND "planType" = 'package' AND "sessionsRemaining" > 0`
+  );
+}
+
 // ==================== ADMIN STATS ====================
 
 export async function getAdminDashboardStats() {
   const db = await getDb();
   if (!db) return { totalTrainers: 0, activeSubscriptions: 0, totalClients: 0, totalAppointments: 0 };
   const trainers = await db.select().from(users).where(eq(users.role, "user"));
-  const allClients = await db.select({ count: sql<number>`count(*)` }).from(clients);
-  const allAppts = await db.select({ count: sql<number>`count(*)` }).from(appointments);
+  const allClients = await db.select({ count: count() }).from(clients);
+  const allAppts = await db.select({ count: count() }).from(appointments);
   return {
     totalTrainers: trainers.length,
     activeSubscriptions: trainers.filter(t => t.subscriptionStatus === "active").length,

@@ -128,3 +128,25 @@
 - [x] UI no modal: toggle "Repetir sessão" com opções de frequência
 - [x] Ao excluir: opção de excluir só esta ou todas as recorrentes
 - [x] Badge visual indicando que o agendamento é recorrente
+
+## Reformulação Cadastro de Alunos (v2)
+- [ ] Remover campo email do cadastro de aluno
+- [ ] Remover campos objetivo e observações
+- [ ] Plano mensal: campo dia de vencimento (1-31)
+- [ ] Plano por pacote: campo quantidade de aulas
+- [ ] Contador de sessões restantes (decrementar ao concluir sessão)
+- [ ] Ao definir sessões/semana: abrir seletor de dias e horários
+- [ ] Agendamento automático das 4 próximas semanas ao salvar aluno
+- [ ] Campo pagamento antecipado: valor e próxima data de vencimento
+- [ ] Exibir contador de sessões restantes no card do aluno
+- [ ] Exibir alerta quando pacote estiver próximo do fim
+- [ ] Atualizar router: decrementar sessionsRemaining ao marcar sessão como concluída
+- [ ] Atualizar router: createClient com novos campos
+- [ ] Migration SQL para novos campos em clients
+
+## Melhorias Módulo de Fotos (v2)
+- [ ] Upload múltiplo: 3 fotos de uma vez (Frente, Costas, Lateral)
+- [ ] Galeria vazia até selecionar um aluno
+- [ ] Modo comparativo: selecionar 2 datas e ver fotos lado a lado
+- [ ] Comparativo por tipo de foto (frente vs frente, costas vs costas)
+- [ ] Indicador de progresso no comparativo

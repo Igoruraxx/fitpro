@@ -1,24 +1,39 @@
-import { int, mysqlEnum, mysqlTable, text, timestamp, varchar, decimal, boolean, date } from "drizzle-orm/mysql-core";
+import {
+  integer, pgEnum, pgTable, text, timestamp, varchar, decimal, boolean, date, serial
+} from "drizzle-orm/pg-core";
+
+// ==================== ENUMS ====================
+export const roleEnum = pgEnum("role", ["user", "admin"]);
+export const subscriptionPlanEnum = pgEnum("subscription_plan", ["free", "basic", "pro", "premium"]);
+export const subscriptionStatusEnum = pgEnum("subscription_status", ["active", "inactive", "trial", "cancelled"]);
+export const genderEnum = pgEnum("gender", ["male", "female", "other"]);
+export const clientStatusEnum = pgEnum("client_status", ["active", "inactive", "trial"]);
+export const planTypeEnum = pgEnum("plan_type", ["monthly", "package"]);
+export const appointmentStatusEnum = pgEnum("appointment_status", ["scheduled", "completed", "cancelled", "no_show"]);
+export const recurrenceTypeEnum = pgEnum("recurrence_type", ["none", "daily", "weekly", "biweekly", "monthly"]);
+export const photoTypeEnum = pgEnum("photo_type", ["front", "back", "side_left", "side_right", "other"]);
+export const transactionTypeEnum = pgEnum("transaction_type", ["income", "expense"]);
+export const transactionStatusEnum = pgEnum("transaction_status", ["pending", "paid", "overdue", "cancelled"]);
 
 // ==================== USERS ====================
-export const users = mysqlTable("users", {
-  id: int("id").autoincrement().primaryKey(),
+export const users = pgTable("users", {
+  id: serial("id").primaryKey(),
   openId: varchar("openId", { length: 64 }).notNull().unique(),
   name: text("name"),
   email: varchar("email", { length: 320 }),
   loginMethod: varchar("loginMethod", { length: 64 }),
-  role: mysqlEnum("role", ["user", "admin"]).default("user").notNull(),
+  role: roleEnum("role").default("user").notNull(),
   phone: varchar("phone", { length: 20 }),
   photoUrl: text("photoUrl"),
   specialties: text("specialties"),
   bio: text("bio"),
   cref: varchar("cref", { length: 20 }),
-  subscriptionPlan: mysqlEnum("subscriptionPlan", ["free", "basic", "pro", "premium"]).default("free").notNull(),
-  subscriptionStatus: mysqlEnum("subscriptionStatus", ["active", "inactive", "trial", "cancelled"]).default("trial").notNull(),
+  subscriptionPlan: subscriptionPlanEnum("subscriptionPlan").default("free").notNull(),
+  subscriptionStatus: subscriptionStatusEnum("subscriptionStatus").default("trial").notNull(),
   subscriptionExpiresAt: timestamp("subscriptionExpiresAt"),
-  maxClients: int("maxClients").default(5).notNull(),
+  maxClients: integer("maxClients").default(5).notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
-  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().notNull(),
   lastSignedIn: timestamp("lastSignedIn").defaultNow().notNull(),
 });
 
@@ -26,54 +41,72 @@ export type User = typeof users.$inferSelect;
 export type InsertUser = typeof users.$inferInsert;
 
 // ==================== CLIENTS ====================
-export const clients = mysqlTable("clients", {
-  id: int("id").autoincrement().primaryKey(),
-  trainerId: int("trainerId").notNull(),
+export const clients = pgTable("clients", {
+  id: serial("id").primaryKey(),
+  trainerId: integer("trainerId").notNull(),
   name: varchar("name", { length: 255 }).notNull(),
-  email: varchar("email", { length: 320 }),
   phone: varchar("phone", { length: 20 }),
   birthDate: date("birthDate"),
-  gender: mysqlEnum("gender", ["male", "female", "other"]),
+  gender: genderEnum("gender"),
   photoUrl: text("photoUrl"),
-  notes: text("notes"),
-  goal: text("goal"),
-  status: mysqlEnum("status", ["active", "inactive", "trial"]).default("active").notNull(),
+  status: clientStatusEnum("status").default("active").notNull(),
+
+  // Plan type: monthly subscription or session package
+  planType: planTypeEnum("planType").default("monthly").notNull(),
+
+  // Monthly plan fields
   monthlyFee: decimal("monthlyFee", { precision: 10, scale: 2 }),
-  paymentDay: int("paymentDay"),
+  paymentDay: integer("paymentDay"),  // day of month (1-31) for monthly billing
+
+  // Package plan fields
+  packageSessions: integer("packageSessions"),      // total sessions purchased
+  sessionsRemaining: integer("sessionsRemaining"),   // countdown — decremented on each completed session
+  packageValue: decimal("packageValue", { precision: 10, scale: 2 }),
+
+  // Weekly schedule (shared by both plan types)
+  sessionsPerWeek: integer("sessionsPerWeek").default(3),
+  sessionDays: varchar("sessionDays", { length: 20 }),  // comma-separated weekday numbers e.g. "1,3,5"
+  sessionTime: varchar("sessionTime", { length: 5 }),   // default start time HH:MM
+  sessionDuration: integer("sessionDuration").default(60),  // minutes
+
+  // Prepaid / advance payment
+  prepaidValue: decimal("prepaidValue", { precision: 10, scale: 2 }),
+  prepaidDueDate: date("prepaidDueDate"),
+
   createdAt: timestamp("createdAt").defaultNow().notNull(),
-  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().notNull(),
 });
 
 export type Client = typeof clients.$inferSelect;
 export type InsertClient = typeof clients.$inferInsert;
 
 // ==================== APPOINTMENTS ====================
-export const appointments = mysqlTable("appointments", {
-  id: int("id").autoincrement().primaryKey(),
-  trainerId: int("trainerId").notNull(),
-  clientId: int("clientId"),
+export const appointments = pgTable("appointments", {
+  id: serial("id").primaryKey(),
+  trainerId: integer("trainerId").notNull(),
+  clientId: integer("clientId"),
   guestName: varchar("guestName", { length: 255 }),
   date: date("date").notNull(),
   startTime: varchar("startTime", { length: 5 }).notNull(), // HH:MM
-  duration: int("duration").default(60).notNull(), // minutes
-  status: mysqlEnum("status", ["scheduled", "completed", "cancelled", "no_show"]).default("scheduled").notNull(),
+  duration: integer("duration").default(60).notNull(), // minutes
+  status: appointmentStatusEnum("status").default("scheduled").notNull(),
   notes: text("notes"),
   // Recurrence fields
-  recurrenceGroupId: varchar("recurrenceGroupId", { length: 36 }), // UUID grouping recurring sessions
-  recurrenceType: mysqlEnum("recurrenceType", ["none", "daily", "weekly", "biweekly", "monthly"]).default("none").notNull(),
-  recurrenceDays: varchar("recurrenceDays", { length: 20 }), // comma-separated weekday numbers e.g. "1,3,5"
+  recurrenceGroupId: varchar("recurrenceGroupId", { length: 36 }),
+  recurrenceType: recurrenceTypeEnum("recurrenceType").default("none").notNull(),
+  recurrenceDays: varchar("recurrenceDays", { length: 20 }),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
-  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().notNull(),
 });
 
 export type Appointment = typeof appointments.$inferSelect;
 export type InsertAppointment = typeof appointments.$inferInsert;
 
 // ==================== BODY MEASUREMENTS ====================
-export const bodyMeasurements = mysqlTable("bodyMeasurements", {
-  id: int("id").autoincrement().primaryKey(),
-  trainerId: int("trainerId").notNull(),
-  clientId: int("clientId").notNull(),
+export const bodyMeasurements = pgTable("bodyMeasurements", {
+  id: serial("id").primaryKey(),
+  trainerId: integer("trainerId").notNull(),
+  clientId: integer("clientId").notNull(),
   date: date("date").notNull(),
   weight: decimal("weight", { precision: 5, scale: 2 }),
   height: decimal("height", { precision: 5, scale: 2 }),
@@ -95,12 +128,12 @@ export type BodyMeasurement = typeof bodyMeasurements.$inferSelect;
 export type InsertBodyMeasurement = typeof bodyMeasurements.$inferInsert;
 
 // ==================== PROGRESS PHOTOS ====================
-export const progressPhotos = mysqlTable("progressPhotos", {
-  id: int("id").autoincrement().primaryKey(),
-  trainerId: int("trainerId").notNull(),
-  clientId: int("clientId").notNull(),
+export const progressPhotos = pgTable("progressPhotos", {
+  id: serial("id").primaryKey(),
+  trainerId: integer("trainerId").notNull(),
+  clientId: integer("clientId").notNull(),
   photoUrl: text("photoUrl").notNull(),
-  photoType: mysqlEnum("photoType", ["front", "back", "side_left", "side_right", "other"]).default("front").notNull(),
+  photoType: photoTypeEnum("photoType").default("front").notNull(),
   date: date("date").notNull(),
   notes: text("notes"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
@@ -110,18 +143,18 @@ export type ProgressPhoto = typeof progressPhotos.$inferSelect;
 export type InsertProgressPhoto = typeof progressPhotos.$inferInsert;
 
 // ==================== FINANCIAL TRANSACTIONS ====================
-export const transactions = mysqlTable("transactions", {
-  id: int("id").autoincrement().primaryKey(),
-  trainerId: int("trainerId").notNull(),
-  clientId: int("clientId"),
-  type: mysqlEnum("type", ["income", "expense"]).notNull(),
+export const transactions = pgTable("transactions", {
+  id: serial("id").primaryKey(),
+  trainerId: integer("trainerId").notNull(),
+  clientId: integer("clientId"),
+  type: transactionTypeEnum("type").notNull(),
   category: varchar("category", { length: 100 }).notNull(),
   description: text("description"),
   amount: decimal("amount", { precision: 10, scale: 2 }).notNull(),
   date: date("date").notNull(),
-  status: mysqlEnum("status", ["pending", "paid", "overdue", "cancelled"]).default("pending").notNull(),
+  status: transactionStatusEnum("status").default("pending").notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
-  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().notNull(),
 });
 
 export type Transaction = typeof transactions.$inferSelect;

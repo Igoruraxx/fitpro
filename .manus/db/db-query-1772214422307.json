@@ -1,0 +1,9 @@
+{
+  "query": "\n-- Add new columns to clients table\nALTER TABLE `clients`\n  ADD COLUMN `planType` ENUM('monthly','package') NOT NULL DEFAULT 'monthly',\n  ADD COLUMN `packageSessions` INT,\n  ADD COLUMN `sessionsRemaining` INT,\n  ADD COLUMN `packageValue` DECIMAL(10,2),\n  ADD COLUMN `sessionsPerWeek` INT NOT NULL DEFAULT 3,\n  ADD COLUMN `sessionDays` VARCHAR(20),\n  ADD COLUMN `sessionTime` VARCHAR(5),\n  ADD COLUMN `sessionDuration` INT NOT NULL DEFAULT 60,\n  ADD COLUMN `prepaidValue` DECIMAL(10,2),\n  ADD COLUMN `prepaidDueDate` DATE;\n\n-- Remove old columns that are no longer needed\nALTER TABLE `clients`\n  DROP COLUMN `email`,\n  DROP COLUMN `notes`,\n  DROP COLUMN `goal`;\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 4PiQ8e52qW4Xjb6.root --database 5UbJ997E6SHYZid72bThxF --execute \n-- Add new columns to clients table\nALTER TABLE `clients`\n  ADD COLUMN `planType` ENUM('monthly','package') NOT NULL DEFAULT 'monthly',\n  ADD COLUMN `packageSessions` INT,\n  ADD COLUMN `sessionsRemaining` INT,\n  ADD COLUMN `packageValue` DECIMAL(10,2),\n  ADD COLUMN `sessionsPerWeek` INT NOT NULL DEFAULT 3,\n  ADD COLUMN `sessionDays` VARCHAR(20),\n  ADD COLUMN `sessionTime` VARCHAR(5),\n  ADD COLUMN `sessionDuration` INT NOT NULL DEFAULT 60,\n  ADD COLUMN `prepaidValue` DECIMAL(10,2),\n  ADD COLUMN `prepaidDueDate` DATE;\n\n-- Remove old columns that are no longer needed\nALTER TABLE `clients`\n  DROP COLUMN `email`,\n  DROP COLUMN `notes`,\n  DROP COLUMN `goal`;\n",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 2916
+}
