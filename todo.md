@@ -185,3 +185,11 @@
 - [x] Limitar dias selecionáveis pela quantidade de sessões/semana (ex: 3 sessões = máx 3 dias)
 - [x] Mostrar mensagem de erro se tentar selecionar mais dias que sessões
 - [x] Desabilitar visualmente botões de dias após atingir o limite
+
+## Bugs Agendamento + Ícones Musculares (v4)
+- [x] Bug: agendamento cria sessão em dia diferente do clicado (fix: parseISO em vez de new Date para evitar timezone UTC)
+- [x] Bug: drag-and-drop não funciona na agenda (fix: DraggableApptCard em todas as views)
+- [x] Ícones de grupos musculares selecionáveis na sessão de treino
+- [x] Grupos: Peito, Costas, Ombros, Bíceps, Tríceps, Antebraço, Abdômen, Quadríceps, Posterior, Glúteos, Panturrilha, Cardio, Funcional
+- [x] Exibir ícones selecionados visíveis no card da sessão após salvar
+- [x] Persistir grupos musculares no banco de dados (campo muscleGroups na tabela appointments)

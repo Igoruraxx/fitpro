@@ -1,6 +1,7 @@
 import { trpc } from "@/lib/trpc";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { Badge } from "@/components/ui/badge";import { Repeat2 } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Repeat2 } from "lucide-react";
 import { useState, useMemo, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -11,6 +12,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import {
   ChevronLeft, ChevronRight, Plus, Clock, List, Grid3X3, CalendarDays,
   Trash2, CheckCircle2, XCircle, UserX, Calendar, MessageCircle, GripVertical,
+  Dumbbell,
 } from "lucide-react";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
@@ -19,6 +21,7 @@ import { toast } from "sonner";
 import {
   format, addDays, subDays, startOfWeek, endOfWeek, startOfMonth, endOfMonth,
   eachDayOfInterval, isSameDay, isToday, addWeeks, subWeeks, addMonths, subMonths,
+  parseISO,
 } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import {
@@ -37,7 +40,73 @@ const timeSlots = Array.from({ length: 16 }, (_, i) => {
 
 const durations = [30, 45, 60, 90, 120];
 
+// ─── Muscle Groups ──────────────────────────────────────────────────────────
+
+const MUSCLE_GROUPS = [
+  { id: "chest",       label: "Peito",       emoji: "🫁" },
+  { id: "back",        label: "Costas",      emoji: "🔙" },
+  { id: "shoulders",   label: "Ombros",      emoji: "🏋️" },
+  { id: "biceps",      label: "Bíceps",      emoji: "💪" },
+  { id: "triceps",     label: "Tríceps",     emoji: "🦾" },
+  { id: "forearms",    label: "Antebraço",   emoji: "🤜" },
+  { id: "abs",         label: "Abdômen",     emoji: "🎯" },
+  { id: "quads",       label: "Quadríceps",  emoji: "🦵" },
+  { id: "hamstrings",  label: "Posterior",    emoji: "🦿" },
+  { id: "glutes",      label: "Glúteos",     emoji: "🍑" },
+  { id: "calves",      label: "Panturrilha", emoji: "🦶" },
+  { id: "cardio",      label: "Cardio",      emoji: "❤️" },
+  { id: "functional",  label: "Funcional",   emoji: "⚡" },
+];
+
+function getMuscleGroupLabel(id: string) {
+  return MUSCLE_GROUPS.find(m => m.id === id);
+}
+
+function MuscleGroupBadges({ groups, compact = false }: { groups: string; compact?: boolean }) {
+  if (!groups) return null;
+  const ids = groups.split(",").filter(Boolean);
+  if (ids.length === 0) return null;
+
+  if (compact) {
+    // Show only emojis in a tight row
+    return (
+      <div className="flex gap-0.5 flex-wrap">
+        {ids.slice(0, 4).map(id => {
+          const mg = getMuscleGroupLabel(id);
+          return mg ? (
+            <span key={id} className="text-[10px]" title={mg.label}>{mg.emoji}</span>
+          ) : null;
+        })}
+        {ids.length > 4 && <span className="text-[10px] text-muted-foreground">+{ids.length - 4}</span>}
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex gap-1 flex-wrap">
+      {ids.map(id => {
+        const mg = getMuscleGroupLabel(id);
+        return mg ? (
+          <span
+            key={id}
+            className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-md bg-primary/10 text-[10px] font-medium text-primary"
+            title={mg.label}
+          >
+            {mg.emoji} {mg.label}
+          </span>
+        ) : null;
+      })}
+    </div>
+  );
+}
+
 // ─── Helpers ────────────────────────────────────────────────────────────────
+
+/** Parse date string safely — avoids timezone issues with new Date("YYYY-MM-DD") */
+function safeParseDate(dateStr: string): Date {
+  // parseISO treats "YYYY-MM-DD" as local date, not UTC
+  return parseISO(dateStr);
+}
 
 function getStatusStyle(status: string) {
   switch (status) {
@@ -111,17 +180,28 @@ function DraggableApptCard({
       >
         <div className={`font-medium truncate ${compact ? "text-xs" : "text-sm"}`}>{clientName}</div>
         {!compact && (
-          <div className="text-xs opacity-70 flex items-center gap-1 mt-0.5">
-            <Clock className="h-2.5 w-2.5" />
-            {appt.startTime} · {appt.duration}min
-          </div>
+          <>
+            <div className="text-xs opacity-70 flex items-center gap-1 mt-0.5">
+              <Clock className="h-2.5 w-2.5" />
+              {appt.startTime} · {appt.duration}min
+            </div>
+            {appt.muscleGroups && (
+              <div className="mt-1">
+                <MuscleGroupBadges groups={appt.muscleGroups} compact={false} />
+              </div>
+            )}
+          </>
         )}
-        {compact && <div className="text-[10px] opacity-70">{appt.startTime}</div>}
+        {compact && (
+          <>
+            <div className="text-[10px] opacity-70">{appt.startTime}</div>
+            {appt.muscleGroups && <MuscleGroupBadges groups={appt.muscleGroups} compact={true} />}
+          </>
+        )}
       </button>
 
       {/* Action buttons */}
       <div className="absolute right-1 top-1/2 -translate-y-1/2 flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
-        {/* WhatsApp — só para não concluídos com telefone */}
         {!isCompleted && clientPhone && (
           <a
             href={buildWhatsAppUrl(clientPhone, clientName, apptDate, appt.startTime)}
@@ -134,7 +214,6 @@ function DraggableApptCard({
             <MessageCircle className="h-3.5 w-3.5" />
           </a>
         )}
-        {/* Status dropdown */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <button
@@ -166,7 +245,7 @@ function DraggableApptCard({
   );
 }
 
-// WhatsApp button standalone (always visible in list view)
+// WhatsApp button standalone
 function WhatsAppBtn({ phone, name, date, time }: { phone: string; name: string; date: Date; time: string }) {
   return (
     <a
@@ -207,7 +286,7 @@ export default function Agenda() {
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [editingAppt, setEditingAppt] = useState<any>(null);
   const [isGuest, setIsGuest] = useState(false);
-  const [activeAppt, setActiveAppt] = useState<any>(null); // for DragOverlay
+  const [activeAppt, setActiveAppt] = useState<any>(null);
 
   // Form state
   const [formClientId, setFormClientId] = useState<string>("");
@@ -216,6 +295,7 @@ export default function Agenda() {
   const [formDuration, setFormDuration] = useState(60);
   const [formNotes, setFormNotes] = useState("");
   const [formStatus, setFormStatus] = useState("scheduled");
+  const [formMuscleGroups, setFormMuscleGroups] = useState<string[]>([]);
 
   // Recurrence state
   const [isRecurring, setIsRecurring] = useState(false);
@@ -224,13 +304,14 @@ export default function Agenda() {
   const [recurrenceEndDate, setRecurrenceEndDate] = useState("");
   const [recurrenceOccurrences, setRecurrenceOccurrences] = useState(8);
   const [recurrenceMode, setRecurrenceMode] = useState<"occurrences"|"endDate">("occurrences");
-  // Delete group dialog
   const [showDeleteGroupDialog, setShowDeleteGroupDialog] = useState(false);
   const [pendingDeleteAppt, setPendingDeleteAppt] = useState<any>(null);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } })
   );
+
+  const { data: clientsList = [] } = trpc.clients.list.useQuery();
 
   const dateRange = useMemo(() => {
     if (viewMode === "day") {
@@ -250,8 +331,6 @@ export default function Agenda() {
     startDate: dateRange.start,
     endDate: dateRange.end,
   });
-
-  const { data: clientsList = [] } = trpc.clients.list.useQuery();
 
   const createMutation = trpc.appointments.create.useMutation({
     onSuccess: () => { toast.success("Agendamento criado!"); refetch(); setShowModal(false); },
@@ -292,6 +371,12 @@ export default function Agenda() {
     else setCurrentDate(d => dir > 0 ? addMonths(d, 1) : subMonths(d, 1));
   };
 
+  const toggleMuscleGroup = (id: string) => {
+    setFormMuscleGroups(prev =>
+      prev.includes(id) ? prev.filter(g => g !== id) : [...prev, id]
+    );
+  };
+
   const openNewAppt = (date?: Date, time?: string) => {
     setEditingAppt(null);
     setSelectedDate(date || currentDate);
@@ -301,6 +386,7 @@ export default function Agenda() {
     setFormDuration(60);
     setFormNotes("");
     setFormStatus("scheduled");
+    setFormMuscleGroups([]);
     setIsGuest(false);
     setIsRecurring(false);
     setRecurrenceType("weekly");
@@ -313,13 +399,14 @@ export default function Agenda() {
 
   const openEditAppt = (appt: any) => {
     setEditingAppt(appt);
-    setSelectedDate(new Date(appt.date));
+    setSelectedDate(safeParseDate(appt.date));
     setFormClientId(appt.clientId ? String(appt.clientId) : "");
     setFormGuestName(appt.guestName || "");
     setFormTime(appt.startTime);
     setFormDuration(appt.duration);
     setFormNotes(appt.notes || "");
     setFormStatus(appt.status || "scheduled");
+    setFormMuscleGroups(appt.muscleGroups ? appt.muscleGroups.split(",").filter(Boolean) : []);
     setIsGuest(!!appt.guestName && !appt.clientId);
     setShowModal(true);
   };
@@ -329,6 +416,7 @@ export default function Agenda() {
     const dateStr = format(selectedDate, "yyyy-MM-dd");
     const clientId = (!isGuest && formClientId && formClientId !== "none") ? parseInt(formClientId) : undefined;
     const guestName = isGuest ? formGuestName : undefined;
+    const muscleGroups = formMuscleGroups.length > 0 ? formMuscleGroups.join(",") : undefined;
 
     if (editingAppt) {
       updateMutation.mutate({
@@ -340,6 +428,7 @@ export default function Agenda() {
         status: formStatus as any,
         clientId,
         guestName,
+        muscleGroups,
       });
       return;
     }
@@ -352,6 +441,7 @@ export default function Agenda() {
         notes: formNotes || undefined,
         clientId,
         guestName,
+        muscleGroups,
         recurrenceType,
         recurrenceDays: recurrenceDays.length > 0 ? recurrenceDays.join(",") : undefined,
         endDate: recurrenceMode === "endDate" && recurrenceEndDate ? recurrenceEndDate : undefined,
@@ -365,6 +455,7 @@ export default function Agenda() {
         notes: formNotes || undefined,
         clientId,
         guestName,
+        muscleGroups,
       });
     }
   };
@@ -404,16 +495,17 @@ export default function Agenda() {
     if (!over) return;
 
     const apptId = parseInt(String(active.id).replace("appt-", ""));
-    const overId = String(over.id); // format: "slot-YYYY-MM-DD-HH:MM" or "day-YYYY-MM-DD"
+    const overId = String(over.id);
 
     let newDate: string | undefined;
     let newTime: string | undefined;
 
     if (overId.startsWith("slot-")) {
-      const parts = overId.replace("slot-", "").split("-");
-      // slot-2026-02-27-08:00 → parts = ["2026","02","27","08:00"]
-      newTime = parts[3];
-      newDate = parts.slice(0, 3).join("-");
+      // format: "slot-YYYY-MM-DD-HH:MM"
+      const raw = overId.replace("slot-", "");
+      // Extract time (last 5 chars: HH:MM) and date (everything before)
+      newTime = raw.slice(-5);
+      newDate = raw.slice(0, -6); // remove "-HH:MM"
     } else if (overId.startsWith("day-")) {
       newDate = overId.replace("day-", "");
     }
@@ -423,10 +515,11 @@ export default function Agenda() {
     const appt = (appointments as any[]).find((a: any) => a.id === apptId);
     if (!appt) return;
 
-    const finalDate = newDate || format(new Date(appt.date), "yyyy-MM-dd");
+    const currentApptDate = typeof appt.date === "string" ? appt.date : format(safeParseDate(appt.date), "yyyy-MM-dd");
+    const finalDate = newDate || currentApptDate;
     const finalTime = newTime || appt.startTime;
 
-    if (finalDate === format(new Date(appt.date), "yyyy-MM-dd") && finalTime === appt.startTime) return;
+    if (finalDate === currentApptDate && finalTime === appt.startTime) return;
 
     updateMutation.mutate(
       { id: apptId, date: finalDate, startTime: finalTime },
@@ -448,7 +541,7 @@ export default function Agenda() {
 
   const renderDayView = () => {
     const dayAppts = (appointments as any[]).filter((a: any) =>
-      isSameDay(new Date(a.date), currentDate)
+      isSameDay(safeParseDate(a.date), currentDate)
     );
 
     return (
@@ -501,7 +594,7 @@ export default function Agenda() {
       <div className="space-y-3">
         {days.map((day) => {
           const dayAppts = (appointments as any[])
-            .filter((a: any) => isSameDay(new Date(a.date), day))
+            .filter((a: any) => isSameDay(safeParseDate(a.date), day))
             .sort((a: any, b: any) => a.startTime.localeCompare(b.startTime));
           const today = isToday(day);
 
@@ -537,67 +630,16 @@ export default function Agenda() {
                     <div className="space-y-2">
                       {dayAppts.map((appt: any) => {
                         const { name, phone } = getClientInfo(appt);
-                        const isCompleted = appt.status === "completed";
                         return (
-                          <div
+                          <DraggableApptCard
                             key={appt.id}
-                            className={`flex items-center gap-2 rounded-lg px-3 py-2 border transition-colors ${getStatusStyle(appt.status)} ${
-                              isCompleted ? "ring-1 ring-green-500/30" : ""
-                            }`}
-                          >
-                            {/* Drag handle */}
-                            <GripVertical className="h-4 w-4 opacity-30 shrink-0 cursor-grab" />
-
-                            {/* Info */}
-                            <div className="flex-1 min-w-0 cursor-pointer" onClick={() => openEditAppt(appt)}>
-                              <div className="font-medium text-sm truncate flex items-center gap-1.5">
-                                {isCompleted && <CheckCircle2 className="h-3.5 w-3.5 text-green-400 shrink-0" />}
-                                {name}
-                              </div>
-                              <div className="text-xs opacity-70 flex items-center gap-1">
-                                <Clock className="h-2.5 w-2.5" /> {appt.startTime} · {appt.duration}min
-                              </div>
-                            </div>
-
-                            {/* Actions */}
-                            <div className="flex items-center gap-1 shrink-0">
-                              {/* WhatsApp — sempre visível se não concluído e tem telefone */}
-                              {!isCompleted && phone && (
-                                <WhatsAppBtn phone={phone} name={name} date={day} time={appt.startTime} />
-                              )}
-
-                              {/* Status dropdown */}
-                              <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                  <button
-                                    onClick={(e) => e.stopPropagation()}
-                                    className={`text-[10px] px-2 py-0.5 rounded-full border font-medium transition-opacity hover:opacity-80 ${getStatusStyle(appt.status)}`}
-                                  >
-                                    {STATUS_LABELS[appt.status] || appt.status}
-                                  </button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end" className="w-40">
-                                  {STATUS_OPTIONS.map((opt) => (
-                                    <DropdownMenuItem
-                                      key={opt.value}
-                                      onClick={(e) => { e.stopPropagation(); quickUpdateStatus(appt.id, opt.value); }}
-                                      className={`cursor-pointer ${opt.color}`}
-                                    >
-                                      <opt.icon className="h-3.5 w-3.5 mr-2" />
-                                      {opt.label}
-                                    </DropdownMenuItem>
-                                  ))}
-                                </DropdownMenuContent>
-                              </DropdownMenu>
-
-                              <Button
-                                variant="ghost" size="icon" className="h-7 w-7 text-destructive"
-                                onClick={(e) => { e.stopPropagation(); deleteMutation.mutate({ id: appt.id }); }}
-                              >
-                                <Trash2 className="h-3 w-3" />
-                              </Button>
-                            </div>
-                          </div>
+                            appt={appt}
+                            clientName={name}
+                            clientPhone={phone}
+                            apptDate={day}
+                            onEdit={() => openEditAppt(appt)}
+                            onStatusChange={quickUpdateStatus}
+                          />
                         );
                       })}
                     </div>
@@ -622,53 +664,31 @@ export default function Agenda() {
         <div className="grid grid-cols-7 gap-1 min-w-[560px]">
           {days.map((day) => {
             const dayAppts = (appointments as any[])
-              .filter((a: any) => isSameDay(new Date(a.date), day))
+              .filter((a: any) => isSameDay(safeParseDate(a.date), day))
               .sort((a: any, b: any) => a.startTime.localeCompare(b.startTime));
             const today = isToday(day);
 
             return (
               <DroppableSlot key={day.toISOString()} id={`day-${format(day, "yyyy-MM-dd")}`} className="space-y-1">
-                {/* Day header */}
                 <div className={`text-center p-2 rounded-lg ${today ? "bg-primary text-primary-foreground" : ""}`}>
                   <div className="text-xs font-medium">{format(day, "EEE", { locale: ptBR })}</div>
                   <div className="text-lg font-bold">{format(day, "d")}</div>
                 </div>
 
-                {/* Appointments */}
                 <div className="space-y-1 min-h-[120px]">
                   {dayAppts.map((appt: any) => {
                     const { name, phone } = getClientInfo(appt);
-                    const isCompleted = appt.status === "completed";
                     return (
-                      <div
+                      <DraggableApptCard
                         key={appt.id}
-                        className={`group relative rounded-md border text-xs transition-all ${getStatusStyle(appt.status)} ${
-                          isCompleted ? "ring-1 ring-green-500/30" : ""
-                        }`}
-                      >
-                        <button
-                          onClick={() => openEditAppt(appt)}
-                          className="w-full text-left px-2 py-1.5"
-                        >
-                          <div className="font-medium truncate flex items-center gap-1">
-                            {isCompleted && <CheckCircle2 className="h-2.5 w-2.5 text-green-400 shrink-0" />}
-                            {name}
-                          </div>
-                          <div className="opacity-70">{appt.startTime}</div>
-                        </button>
-                        {/* WhatsApp inline */}
-                        {!isCompleted && phone && (
-                          <a
-                            href={buildWhatsAppUrl(phone, name, day, appt.startTime)}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            onClick={(e) => e.stopPropagation()}
-                            className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity h-5 w-5 flex items-center justify-center rounded bg-green-500/20 text-green-400"
-                          >
-                            <MessageCircle className="h-3 w-3" />
-                          </a>
-                        )}
-                      </div>
+                        appt={appt}
+                        clientName={name}
+                        clientPhone={phone}
+                        apptDate={day}
+                        onEdit={() => openEditAppt(appt)}
+                        onStatusChange={quickUpdateStatus}
+                        compact={true}
+                      />
                     );
                   })}
 
@@ -697,7 +717,7 @@ export default function Agenda() {
     const days = eachDayOfInterval({ start: calStart, end: calEnd });
 
     const totalAppts = (appointments as any[]).length;
-    const withAppts = new Set((appointments as any[]).map((a: any) => format(new Date(a.date), "yyyy-MM-dd"))).size;
+    const withAppts = new Set((appointments as any[]).map((a: any) => format(safeParseDate(a.date), "yyyy-MM-dd"))).size;
     const freeDays = eachDayOfInterval({ start: monthStart, end: monthEnd }).length - withAppts;
 
     return (
@@ -721,7 +741,10 @@ export default function Agenda() {
           ))}
           {days.map((day) => {
             const dayStr = format(day, "yyyy-MM-dd");
-            const dayAppts = (appointments as any[]).filter((a: any) => format(new Date(a.date), "yyyy-MM-dd") === dayStr);
+            const dayAppts = (appointments as any[]).filter((a: any) => {
+              const apptDate = typeof a.date === "string" ? a.date : format(safeParseDate(a.date), "yyyy-MM-dd");
+              return apptDate === dayStr;
+            });
             const today = isToday(day);
             const inMonth = day.getMonth() === currentDate.getMonth();
             const allCompleted = dayAppts.length > 0 && dayAppts.every((a: any) => a.status === "completed");
@@ -734,13 +757,15 @@ export default function Agenda() {
                 className={`aspect-square rounded-lg flex flex-col items-center justify-center text-sm transition-colors relative ${
                   !inMonth ? "text-muted-foreground/30" :
                   today ? "bg-primary text-primary-foreground font-bold" :
-                  "text-foreground hover:bg-accent"
+                  "hover:bg-accent/30 text-foreground"
                 }`}
               >
                 {format(day, "d")}
                 {dayAppts.length > 0 && (
-                  <div className={`absolute bottom-1 w-1.5 h-1.5 rounded-full ${
-                    allCompleted ? "bg-green-400" : someCompleted ? "bg-yellow-400" : "bg-primary"
+                  <div className={`w-1.5 h-1.5 rounded-full mt-0.5 ${
+                    allCompleted ? "bg-green-400" :
+                    someCompleted ? "bg-yellow-400" :
+                    "bg-primary"
                   }`} />
                 )}
               </button>
@@ -766,7 +791,6 @@ export default function Agenda() {
     { key: "month", label: "Mês",   icon: CalendarDays },
   ];
 
-  // Get active appt info for DragOverlay
   const activeApptInfo = activeAppt ? getClientInfo(activeAppt) : null;
 
   return (
@@ -840,13 +864,14 @@ export default function Agenda() {
             <div className={`rounded-lg border px-3 py-2 text-sm shadow-xl cursor-grabbing ${getStatusStyle(activeAppt.status)}`}>
               <div className="font-medium">{activeApptInfo.name}</div>
               <div className="text-xs opacity-70">{activeAppt.startTime} · {activeAppt.duration}min</div>
+              {activeAppt.muscleGroups && <MuscleGroupBadges groups={activeAppt.muscleGroups} compact={true} />}
             </div>
           )}
         </DragOverlay>
 
         {/* ─── Modal Agendar / Editar ─── */}
         <Dialog open={showModal} onOpenChange={setShowModal}>
-          <DialogContent className="sm:max-w-md">
+          <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>
                 {editingAppt ? "Editar Atendimento" : "Agendar Atendimento"}
@@ -917,6 +942,39 @@ export default function Agenda() {
                 </div>
               </div>
 
+              {/* Grupos Musculares */}
+              <div>
+                <div className="flex items-center gap-2 mb-2">
+                  <Dumbbell className="h-4 w-4 text-primary" />
+                  <Label className="text-sm font-medium">Membros Treinados</Label>
+                </div>
+                <div className="grid grid-cols-3 sm:grid-cols-4 gap-1.5">
+                  {MUSCLE_GROUPS.map((mg) => {
+                    const isSelected = formMuscleGroups.includes(mg.id);
+                    return (
+                      <button
+                        key={mg.id}
+                        type="button"
+                        onClick={() => toggleMuscleGroup(mg.id)}
+                        className={`flex items-center gap-1 px-2 py-1.5 rounded-lg text-xs font-medium border transition-all ${
+                          isSelected
+                            ? "border-primary bg-primary/15 text-primary shadow-sm shadow-primary/20"
+                            : "border-border bg-card text-muted-foreground hover:bg-accent/30 hover:border-primary/30"
+                        }`}
+                      >
+                        <span className="text-sm">{mg.emoji}</span>
+                        <span className="truncate">{mg.label}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+                {formMuscleGroups.length > 0 && (
+                  <p className="text-xs text-muted-foreground mt-1.5">
+                    {formMuscleGroups.length} grupo{formMuscleGroups.length !== 1 ? "s" : ""} selecionado{formMuscleGroups.length !== 1 ? "s" : ""}
+                  </p>
+                )}
+              </div>
+
               {/* Observações */}
               <div>
                 <Label className="text-sm font-medium">Observações</Label>
@@ -944,13 +1002,10 @@ export default function Agenda() {
 
                   {isRecurring && (
                     <div className="space-y-3 pt-1">
-                      {/* Tipo de recorrência */}
                       <div>
                         <Label className="text-xs text-muted-foreground">Frequência</Label>
                         <Select value={recurrenceType} onValueChange={(v) => setRecurrenceType(v as any)}>
-                          <SelectTrigger className="mt-1 h-8 text-sm">
-                            <SelectValue />
-                          </SelectTrigger>
+                          <SelectTrigger className="mt-1 h-8 text-sm"><SelectValue /></SelectTrigger>
                           <SelectContent>
                             <SelectItem value="daily">Diária</SelectItem>
                             <SelectItem value="weekly">Semanal</SelectItem>
@@ -960,7 +1015,6 @@ export default function Agenda() {
                         </Select>
                       </div>
 
-                      {/* Dias da semana (só para semanal) */}
                       {recurrenceType === "weekly" && (
                         <div>
                           <Label className="text-xs text-muted-foreground">Dias da semana</Label>
@@ -985,7 +1039,6 @@ export default function Agenda() {
                         </div>
                       )}
 
-                      {/* Modo de término */}
                       <div>
                         <Label className="text-xs text-muted-foreground">Término</Label>
                         <div className="flex gap-2 mt-1">
@@ -1015,14 +1068,10 @@ export default function Agenda() {
                           <Label className="text-xs text-muted-foreground">Número de sessões</Label>
                           <div className="flex items-center gap-2 mt-1">
                             <button type="button" onClick={() => setRecurrenceOccurrences(n => Math.max(2, n - 1))}
-                              className="w-7 h-7 rounded border border-border text-sm hover:bg-accent flex items-center justify-center">
-                              -
-                            </button>
+                              className="w-7 h-7 rounded border border-border text-sm hover:bg-accent flex items-center justify-center">-</button>
                             <span className="text-sm font-medium w-8 text-center">{recurrenceOccurrences}</span>
                             <button type="button" onClick={() => setRecurrenceOccurrences(n => Math.min(52, n + 1))}
-                              className="w-7 h-7 rounded border border-border text-sm hover:bg-accent flex items-center justify-center">
-                              +
-                            </button>
+                              className="w-7 h-7 rounded border border-border text-sm hover:bg-accent flex items-center justify-center">+</button>
                             <span className="text-xs text-muted-foreground">sessões</span>
                           </div>
                         </div>
@@ -1038,7 +1087,6 @@ export default function Agenda() {
                         </div>
                       )}
 
-                      {/* Preview */}
                       <div className="bg-primary/5 rounded p-2 text-xs text-muted-foreground">
                         <Repeat2 className="h-3 w-3 inline mr-1 text-primary" />
                         {recurrenceMode === "occurrences"
@@ -1080,7 +1128,7 @@ export default function Agenda() {
                 </div>
               )}
 
-              {/* Botão Concluir Sessão — destaque verde */}
+              {/* Botão Concluir Sessão */}
               {editingAppt && editingAppt.status !== "completed" && (
                 <Button
                   className="w-full bg-green-600 hover:bg-green-700 text-white"
@@ -1092,12 +1140,12 @@ export default function Agenda() {
                 </Button>
               )}
 
-              {/* WhatsApp no modal — se não concluído e tem telefone */}
+              {/* WhatsApp no modal */}
               {editingAppt && editingAppt.status !== "completed" && (() => {
                 const { name, phone } = getClientInfo(editingAppt);
                 return phone ? (
                   <a
-                    href={buildWhatsAppUrl(phone, name, new Date(editingAppt.date), editingAppt.startTime)}
+                    href={buildWhatsAppUrl(phone, name, safeParseDate(editingAppt.date), editingAppt.startTime)}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="w-full flex items-center justify-center gap-2 rounded-md border border-green-500/40 bg-green-500/10 text-green-400 hover:bg-green-500/20 transition-colors py-2 text-sm font-medium"

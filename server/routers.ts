@@ -191,6 +191,7 @@ export const appRouter = router({
       startTime: z.string(),
       duration: z.number().default(60),
       notes: z.string().optional(),
+      muscleGroups: z.string().optional(),
     })).mutation(async ({ ctx, input }) => {
       const id = await createAppointment({ ...input, date: input.date, trainerId: ctx.user.id } as any);
       return { id };
@@ -204,6 +205,7 @@ export const appRouter = router({
       duration: z.number().optional(),
       status: z.enum(["scheduled", "completed", "cancelled", "no_show"]).optional(),
       notes: z.string().optional(),
+      muscleGroups: z.string().optional(),
     })).mutation(async ({ ctx, input }) => {
       const { id, ...rest } = input;
       // Get previous status to detect transition to 'completed'
@@ -241,6 +243,7 @@ export const appRouter = router({
       startTime: z.string(),
       duration: z.number().default(60),
       notes: z.string().optional(),
+      muscleGroups: z.string().optional(),
       recurrenceType: z.enum(["daily", "weekly", "biweekly", "monthly"]),
       recurrenceDays: z.string().optional(), // "1,3,5" for Mon,Wed,Fri
     })).mutation(async ({ ctx, input }) => {
@@ -262,6 +265,7 @@ export const appRouter = router({
           startTime: input.startTime,
           duration: input.duration,
           notes: input.notes ?? null,
+          muscleGroups: input.muscleGroups ?? null,
           recurrenceGroupId: groupId,
           recurrenceType: input.recurrenceType,
           recurrenceDays: input.recurrenceDays ?? null,

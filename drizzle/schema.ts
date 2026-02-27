@@ -107,6 +107,7 @@ export const appointments = pgTable("appointments", {
   duration: integer("duration").default(60).notNull(), // minutes
   status: appointmentStatusEnum("status").default("scheduled").notNull(),
   notes: text("notes"),
+  muscleGroups: text("muscleGroups"), // comma-separated: chest,back,shoulders,biceps,triceps,forearms,abs,quads,hamstrings,glutes,calves,cardio,functional
   // Recurrence fields
   recurrenceGroupId: varchar("recurrenceGroupId", { length: 36 }),
   recurrenceType: recurrenceTypeEnum("recurrenceType").default("none").notNull(),
