@@ -1,12 +1,10 @@
 import { useAuth } from "@/_core/hooks/useAuth";
-import { getLoginUrl } from "@/const";
 import { useIsMobile } from "@/hooks/useMobile";
 import {
   LayoutDashboard, Calendar, Users, TrendingUp, DollarSign, User,
   LogOut, Shield, Loader2, Dumbbell, Image, ChevronRight,
 } from "lucide-react";
 import { useLocation } from "wouter";
-import { Button } from "./ui/button";
 import { Avatar, AvatarFallback } from "./ui/avatar";
 import {
   DropdownMenu,
@@ -15,6 +13,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "./ui/dropdown-menu";
+import { useEffect } from "react";
 
 const navItems = [
   { icon: LayoutDashboard, label: "Dashboard", path: "/dashboard" },
@@ -56,6 +55,13 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const [location, setLocation] = useLocation();
   const isMobile = useIsMobile();
 
+  // Redirect to login if not authenticated
+  useEffect(() => {
+    if (!loading && !user) {
+      window.location.href = "/login";
+    }
+  }, [loading, user]);
+
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -65,29 +71,10 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   }
 
   if (!user) {
+    // Show loading while redirecting
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="flex flex-col items-center gap-6 p-8 max-w-md w-full text-center">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="p-3 rounded-2xl bg-primary/20">
-              <Dumbbell className="h-10 w-10 text-primary" />
-            </div>
-            <div className="text-left">
-              <h1 className="text-3xl font-extrabold text-primary tracking-tight">FITPRO</h1>
-              <p className="text-xs text-muted-foreground uppercase tracking-widest">Agenda Personal</p>
-            </div>
-          </div>
-          <p className="text-muted-foreground">
-            Gerencie seus alunos, agenda, evolução e finanças em um só lugar.
-          </p>
-          <Button
-            onClick={() => { window.location.href = getLoginUrl(); }}
-            size="lg"
-            className="w-full"
-          >
-            Entrar com Manus
-          </Button>
-        </div>
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     );
   }
@@ -121,15 +108,13 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           {/* Right actions */}
           <div className="flex items-center gap-2">
             {user.role === "admin" && (
-              <Button
-                variant="ghost"
-                size="sm"
+              <button
                 onClick={() => setLocation("/admin")}
-                className="text-muted-foreground hover:text-primary"
+                className="flex items-center gap-1 text-muted-foreground hover:text-primary transition-colors text-sm px-2 py-1 rounded-lg hover:bg-accent/50"
               >
                 <Shield className="h-4 w-4" />
                 {!isMobile && <span className="ml-1">Admin</span>}
-              </Button>
+              </button>
             )}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -171,9 +156,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           <nav className="w-56 border-r border-border bg-card/30 flex flex-col shrink-0">
             <div className="flex-1 p-3 space-y-0.5 overflow-y-auto">
               {navItems.map((item) => {
-                const isActive = location === item.path || (item.path !== "/" && item.path !== "/dashboard" && location.startsWith(item.path));
-                const isExactActive = location === item.path;
-                const active = item.path === "/" ? location === "/" : item.path === "/dashboard" ? location === "/dashboard" : isActive;
+                const active = item.path === "/" ? location === "/" : item.path === "/dashboard" ? location === "/dashboard" : location.startsWith(item.path);
                 return (
                   <button
                     key={item.path}

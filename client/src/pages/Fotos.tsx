@@ -11,18 +11,30 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Upload, ImageIcon, Trash2, Filter, X, ZoomIn } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Upload, ImageIcon, Trash2, X, ZoomIn, GitCompare, Users, ChevronLeft, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
-const PHOTO_TYPE_LABELS: Record<string, string> = {
-  front: "Frente",
-  back: "Costas",
-  side_left: "Lateral Esq.",
-  side_right: "Lateral Dir.",
-  other: "Outro",
-};
+const PHOTO_TYPES = [
+  { value: "front", label: "Frente" },
+  { value: "back", label: "Costas" },
+  { value: "side_left", label: "Lateral Esq." },
+  { value: "side_right", label: "Lateral Dir." },
+  { value: "other", label: "Outro" },
+];
+
+const PHOTO_TYPE_LABELS: Record<string, string> = Object.fromEntries(
+  PHOTO_TYPES.map(t => [t.value, t.label])
+);
+
+// Multi-upload slot: one per photo type
+interface UploadSlot {
+  type: string;
+  file: File | null;
+  preview: string | null;
+}
 
 function PhotoSkeleton() {
   return (
@@ -33,33 +45,45 @@ function PhotoSkeleton() {
 }
 
 export default function Fotos() {
-  const [filterClientId, setFilterClientId] = useState<string>("all");
+  const [filterClientId, setFilterClientId] = useState<string>("");
+  const [mode, setMode] = useState<"gallery" | "compare">("gallery");
   const [showUpload, setShowUpload] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<any>(null);
   const [lightbox, setLightbox] = useState<any>(null);
   const [isDragging, setIsDragging] = useState(false);
+  const [activeSlotIdx, setActiveSlotIdx] = useState(0);
 
   // Upload form
   const [uploadClientId, setUploadClientId] = useState<string>("");
-  const [uploadType, setUploadType] = useState("front");
   const [uploadDate, setUploadDate] = useState(() => format(new Date(), "yyyy-MM-dd"));
   const [uploadNotes, setUploadNotes] = useState("");
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Multi-upload slots: front, back, side_left by default
+  const [slots, setSlots] = useState<UploadSlot[]>([
+    { type: "front", file: null, preview: null },
+    { type: "back", file: null, preview: null },
+    { type: "side_left", file: null, preview: null },
+  ]);
+
+  // Compare mode state
+  const [compareDate1, setCompareDate1] = useState<string>("");
+  const [compareDate2, setCompareDate2] = useState<string>("");
+  const [compareType, setCompareType] = useState<string>("front");
+
+  const utils = trpc.useUtils();
   const { data: clients = [] } = trpc.clients.list.useQuery();
-  const { data: photos = [], isLoading, refetch } = trpc.photos.listAll.useQuery({
-    clientId: filterClientId !== "all" ? parseInt(filterClientId) : undefined,
-  });
+
+  // Only load photos when a client is selected
+  const { data: photos = [], isLoading } = trpc.photos.listAll.useQuery(
+    { clientId: filterClientId ? parseInt(filterClientId) : undefined },
+    { enabled: !!filterClientId }
+  );
 
   const uploadMutation = trpc.photos.upload.useMutation({
     onSuccess: () => {
-      toast.success("Foto enviada com sucesso!");
-      refetch();
-      setShowUpload(false);
-      resetUploadForm();
+      utils.photos.listAll.invalidate();
     },
     onError: (e) => toast.error(e.message),
   });
@@ -67,7 +91,7 @@ export default function Fotos() {
   const deleteMutation = trpc.photos.delete.useMutation({
     onSuccess: () => {
       toast.success("Foto excluída!");
-      refetch();
+      utils.photos.listAll.invalidate();
       setDeleteTarget(null);
     },
     onError: (e) => toast.error(e.message),
@@ -75,14 +99,16 @@ export default function Fotos() {
 
   const resetUploadForm = () => {
     setUploadClientId("");
-    setUploadType("front");
     setUploadDate(format(new Date(), "yyyy-MM-dd"));
     setUploadNotes("");
-    setSelectedFile(null);
-    setPreviewUrl(null);
+    setSlots([
+      { type: "front", file: null, preview: null },
+      { type: "back", file: null, preview: null },
+      { type: "side_left", file: null, preview: null },
+    ]);
   };
 
-  const handleFileSelect = (file: File) => {
+  const handleFileSelect = (file: File, slotIdx: number) => {
     if (!file.type.startsWith("image/")) {
       toast.error("Selecione apenas arquivos de imagem.");
       return;
@@ -91,43 +117,66 @@ export default function Fotos() {
       toast.error("Arquivo muito grande. Máximo 16MB.");
       return;
     }
-    setSelectedFile(file);
     const url = URL.createObjectURL(file);
-    setPreviewUrl(url);
+    setSlots(prev => prev.map((s, i) => i === slotIdx ? { ...s, file, preview: url } : s));
   };
 
-  const handleDrop = useCallback((e: React.DragEvent) => {
+  const handleDrop = useCallback((e: React.DragEvent, slotIdx: number) => {
     e.preventDefault();
     setIsDragging(false);
     const file = e.dataTransfer.files[0];
-    if (file) handleFileSelect(file);
+    if (file) handleFileSelect(file, slotIdx);
   }, []);
 
   const handleUpload = async () => {
-    if (!selectedFile || !uploadClientId) {
-      toast.error("Selecione um aluno e uma foto.");
+    const filledSlots = slots.filter(s => s.file !== null);
+    if (!uploadClientId || filledSlots.length === 0) {
+      toast.error("Selecione um aluno e pelo menos uma foto.");
       return;
     }
     setUploading(true);
-    try {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const base64 = (e.target?.result as string).split(",")[1];
-        uploadMutation.mutate({
-          clientId: parseInt(uploadClientId),
-          photoType: uploadType as any,
-          date: uploadDate,
-          notes: uploadNotes || undefined,
-          fileBase64: base64,
-          fileName: selectedFile.name,
-          mimeType: selectedFile.type,
+    let successCount = 0;
+    let errorCount = 0;
+
+    for (const slot of filledSlots) {
+      if (!slot.file) continue;
+      try {
+        await new Promise<void>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = async (e) => {
+            const base64 = (e.target?.result as string).split(",")[1];
+            try {
+              await uploadMutation.mutateAsync({
+                clientId: parseInt(uploadClientId),
+                photoType: slot.type as any,
+                date: uploadDate,
+                notes: uploadNotes || undefined,
+                fileBase64: base64,
+                fileName: slot.file!.name,
+                mimeType: slot.file!.type,
+              });
+              successCount++;
+              resolve();
+            } catch (err) {
+              errorCount++;
+              reject(err);
+            }
+          };
+          reader.readAsDataURL(slot.file!);
         });
-        setUploading(false);
-      };
-      reader.readAsDataURL(selectedFile);
-    } catch {
-      setUploading(false);
-      toast.error("Erro ao processar imagem.");
+      } catch {
+        // continue with next slot
+      }
+    }
+
+    setUploading(false);
+    if (successCount > 0) toast.success(`${successCount} foto${successCount > 1 ? "s" : ""} enviada${successCount > 1 ? "s" : ""} com sucesso!`);
+    if (errorCount > 0) toast.error(`${errorCount} foto${errorCount > 1 ? "s" : ""} não puderam ser enviadas.`);
+    if (successCount > 0) {
+      setShowUpload(false);
+      resetUploadForm();
+      // Set filter to the uploaded client
+      setFilterClientId(uploadClientId);
     }
   };
 
@@ -136,104 +185,246 @@ export default function Fotos() {
     return c?.name || "Aluno";
   };
 
+  // Get unique dates for compare mode
+  const uniqueDates = Array.from(new Set(photos.map((p: any) => p.date as string))).sort().reverse();
+
+  // Photos for compare mode
+  const comparePhotos1 = photos.filter((p: any) => p.date === compareDate1 && p.photoType === compareType);
+  const comparePhotos2 = photos.filter((p: any) => p.date === compareDate2 && p.photoType === compareType);
+
+  const selectedClient = clients.find((c: any) => String(c.id) === filterClientId);
+
   return (
     <div className="space-y-4 p-4 md:p-0">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <h2 className="text-2xl font-bold">Fotos de Progresso</h2>
-          <p className="text-sm text-muted-foreground">{photos.length} foto{photos.length !== 1 ? "s" : ""} registrada{photos.length !== 1 ? "s" : ""}</p>
+          <p className="text-sm text-muted-foreground">
+            {filterClientId
+              ? `${photos.length} foto${photos.length !== 1 ? "s" : ""} de ${selectedClient?.name || "aluno"}`
+              : "Selecione um aluno para ver as fotos"}
+          </p>
         </div>
-        <Button onClick={() => setShowUpload(true)}>
-          <Upload className="h-4 w-4 mr-2" /> Adicionar Foto
-        </Button>
+        <div className="flex gap-2">
+          {filterClientId && photos.length > 0 && (
+            <Button
+              variant={mode === "compare" ? "default" : "outline"}
+              onClick={() => setMode(mode === "compare" ? "gallery" : "compare")}
+            >
+              <GitCompare className="h-4 w-4 mr-2" />
+              {mode === "compare" ? "Galeria" : "Comparar"}
+            </Button>
+          )}
+          <Button onClick={() => setShowUpload(true)}>
+            <Upload className="h-4 w-4 mr-2" /> Adicionar Fotos
+          </Button>
+        </div>
       </div>
 
-      {/* Filter */}
+      {/* Client selector */}
       <div className="flex items-center gap-2">
-        <Filter className="h-4 w-4 text-muted-foreground shrink-0" />
-        <Select value={filterClientId} onValueChange={setFilterClientId}>
-          <SelectTrigger className="w-48">
-            <SelectValue placeholder="Filtrar por aluno" />
+        <Users className="h-4 w-4 text-muted-foreground shrink-0" />
+        <Select value={filterClientId} onValueChange={(v) => { setFilterClientId(v); setMode("gallery"); }}>
+          <SelectTrigger className="w-56">
+            <SelectValue placeholder="Selecione um aluno" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">Todos os alunos</SelectItem>
             {clients.map((c: any) => (
               <SelectItem key={c.id} value={String(c.id)}>{c.name}</SelectItem>
             ))}
           </SelectContent>
         </Select>
-        {filterClientId !== "all" && (
-          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setFilterClientId("all")}>
+        {filterClientId && (
+          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => { setFilterClientId(""); setMode("gallery"); }}>
             <X className="h-4 w-4" />
           </Button>
         )}
       </div>
 
-      {/* Gallery grid */}
-      {isLoading ? (
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-          {[...Array(8)].map((_, i) => <PhotoSkeleton key={i} />)}
-        </div>
-      ) : photos.length === 0 ? (
+      {/* No client selected */}
+      {!filterClientId && (
         <div className="flex flex-col items-center justify-center py-20 text-center">
-          <ImageIcon className="h-16 w-16 text-muted-foreground/20 mb-4" />
-          <h3 className="text-lg font-medium text-muted-foreground">Nenhuma foto registrada</h3>
+          <Users className="h-16 w-16 text-muted-foreground/20 mb-4" />
+          <h3 className="text-lg font-medium text-muted-foreground">Selecione um aluno</h3>
           <p className="text-sm text-muted-foreground/70 mt-1">
-            {filterClientId !== "all" ? "Este aluno não tem fotos ainda." : "Adicione fotos de progresso dos seus alunos."}
+            Escolha um aluno acima para visualizar as fotos de progresso.
           </p>
-          <Button className="mt-4" onClick={() => setShowUpload(true)}>
-            <Upload className="h-4 w-4 mr-2" /> Adicionar Foto
-          </Button>
-        </div>
-      ) : (
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-          {photos.map((photo: any) => (
-            <div
-              key={photo.id}
-              className="relative aspect-[3/4] rounded-xl overflow-hidden group cursor-pointer border border-border"
-              onClick={() => setLightbox(photo)}
-            >
-              <img
-                src={photo.photoUrl}
-                alt={`Foto de ${getClientName(photo.clientId)}`}
-                className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-                loading="lazy"
-              />
-              {/* Hover overlay */}
-              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                <div className="absolute bottom-0 left-0 right-0 p-3">
-                  <p className="text-white text-xs font-semibold truncate">{getClientName(photo.clientId)}</p>
-                  <p className="text-white/70 text-[10px]">{PHOTO_TYPE_LABELS[photo.photoType] || photo.photoType}</p>
-                  <p className="text-white/60 text-[10px]">
-                    {format(new Date(photo.date), "d MMM yyyy", { locale: ptBR })}
-                  </p>
-                </div>
-                <div className="absolute top-2 right-2 flex gap-1">
-                  <button
-                    className="p-1.5 rounded-lg bg-white/20 hover:bg-white/30 transition-colors"
-                    onClick={(e) => { e.stopPropagation(); setLightbox(photo); }}
-                  >
-                    <ZoomIn className="h-3.5 w-3.5 text-white" />
-                  </button>
-                  <button
-                    className="p-1.5 rounded-lg bg-red-500/70 hover:bg-red-500 transition-colors"
-                    onClick={(e) => { e.stopPropagation(); setDeleteTarget(photo); }}
-                  >
-                    <Trash2 className="h-3.5 w-3.5 text-white" />
-                  </button>
-                </div>
-              </div>
-            </div>
-          ))}
         </div>
       )}
 
-      {/* Upload Modal */}
+      {/* Gallery mode */}
+      {filterClientId && mode === "gallery" && (
+        <>
+          {isLoading ? (
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+              {[...Array(6)].map((_, i) => <PhotoSkeleton key={i} />)}
+            </div>
+          ) : photos.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-20 text-center">
+              <ImageIcon className="h-16 w-16 text-muted-foreground/20 mb-4" />
+              <h3 className="text-lg font-medium text-muted-foreground">Nenhuma foto registrada</h3>
+              <p className="text-sm text-muted-foreground/70 mt-1">
+                Este aluno ainda não tem fotos de progresso.
+              </p>
+              <Button className="mt-4" onClick={() => setShowUpload(true)}>
+                <Upload className="h-4 w-4 mr-2" /> Adicionar Fotos
+              </Button>
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+              {photos.map((photo: any) => (
+                <div
+                  key={photo.id}
+                  className="relative aspect-[3/4] rounded-xl overflow-hidden group cursor-pointer border border-border"
+                  onClick={() => setLightbox(photo)}
+                >
+                  <img
+                    src={photo.photoUrl}
+                    alt={`Foto de ${getClientName(photo.clientId)}`}
+                    className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                    loading="lazy"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                    <div className="absolute bottom-0 left-0 right-0 p-3">
+                      <p className="text-white text-xs font-semibold">{PHOTO_TYPE_LABELS[photo.photoType] || photo.photoType}</p>
+                      <p className="text-white/60 text-[10px]">
+                        {format(new Date(photo.date), "d MMM yyyy", { locale: ptBR })}
+                      </p>
+                    </div>
+                    <div className="absolute top-2 right-2 flex gap-1">
+                      <button
+                        className="p-1.5 rounded-lg bg-white/20 hover:bg-white/30 transition-colors"
+                        onClick={(e) => { e.stopPropagation(); setLightbox(photo); }}
+                      >
+                        <ZoomIn className="h-3.5 w-3.5 text-white" />
+                      </button>
+                      <button
+                        className="p-1.5 rounded-lg bg-red-500/70 hover:bg-red-500 transition-colors"
+                        onClick={(e) => { e.stopPropagation(); setDeleteTarget(photo); }}
+                      >
+                        <Trash2 className="h-3.5 w-3.5 text-white" />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </>
+      )}
+
+      {/* Compare mode */}
+      {filterClientId && mode === "compare" && (
+        <div className="space-y-4">
+          {/* Compare controls */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 p-4 rounded-xl border border-border bg-card/50">
+            <div>
+              <Label className="text-xs text-muted-foreground">Tipo de foto</Label>
+              <Select value={compareType} onValueChange={setCompareType}>
+                <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {PHOTO_TYPES.map(t => (
+                    <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label className="text-xs text-muted-foreground">Data 1 (antes)</Label>
+              <Select value={compareDate1} onValueChange={setCompareDate1}>
+                <SelectTrigger className="mt-1"><SelectValue placeholder="Selecione" /></SelectTrigger>
+                <SelectContent>
+                  {uniqueDates.map(d => (
+                    <SelectItem key={d} value={d}>
+                      {format(new Date(d), "d MMM yyyy", { locale: ptBR })}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label className="text-xs text-muted-foreground">Data 2 (depois)</Label>
+              <Select value={compareDate2} onValueChange={setCompareDate2}>
+                <SelectTrigger className="mt-1"><SelectValue placeholder="Selecione" /></SelectTrigger>
+                <SelectContent>
+                  {uniqueDates.map(d => (
+                    <SelectItem key={d} value={d}>
+                      {format(new Date(d), "d MMM yyyy", { locale: ptBR })}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          {/* Comparison view */}
+          {compareDate1 && compareDate2 ? (
+            <div className="grid grid-cols-2 gap-4">
+              {/* Before */}
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <Badge variant="outline" className="text-xs">Antes</Badge>
+                  <span className="text-xs text-muted-foreground">
+                    {format(new Date(compareDate1), "d MMM yyyy", { locale: ptBR })}
+                  </span>
+                </div>
+                {comparePhotos1.length > 0 ? (
+                  <div className="aspect-[3/4] rounded-xl overflow-hidden border border-border">
+                    <img
+                      src={comparePhotos1[0].photoUrl}
+                      alt="Antes"
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                ) : (
+                  <div className="aspect-[3/4] rounded-xl border border-dashed border-border flex items-center justify-center">
+                    <p className="text-xs text-muted-foreground text-center px-4">
+                      Sem foto de {PHOTO_TYPE_LABELS[compareType]} nesta data
+                    </p>
+                  </div>
+                )}
+              </div>
+
+              {/* After */}
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <Badge className="text-xs">Depois</Badge>
+                  <span className="text-xs text-muted-foreground">
+                    {format(new Date(compareDate2), "d MMM yyyy", { locale: ptBR })}
+                  </span>
+                </div>
+                {comparePhotos2.length > 0 ? (
+                  <div className="aspect-[3/4] rounded-xl overflow-hidden border border-border">
+                    <img
+                      src={comparePhotos2[0].photoUrl}
+                      alt="Depois"
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                ) : (
+                  <div className="aspect-[3/4] rounded-xl border border-dashed border-border flex items-center justify-center">
+                    <p className="text-xs text-muted-foreground text-center px-4">
+                      Sem foto de {PHOTO_TYPE_LABELS[compareType]} nesta data
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
+          ) : (
+            <div className="flex flex-col items-center justify-center py-12 text-center">
+              <GitCompare className="h-12 w-12 text-muted-foreground/20 mb-3" />
+              <p className="text-sm text-muted-foreground">Selecione duas datas para comparar as fotos</p>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Upload Modal — Multi-upload */}
       <Dialog open={showUpload} onOpenChange={(v) => { setShowUpload(v); if (!v) resetUploadForm(); }}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Adicionar Foto de Progresso</DialogTitle>
+            <DialogTitle>Adicionar Fotos de Progresso</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
             <div>
@@ -250,87 +441,102 @@ export default function Fotos() {
               </Select>
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <Label>Tipo de foto</Label>
-                <Select value={uploadType} onValueChange={setUploadType}>
-                  <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="front">Frente</SelectItem>
-                    <SelectItem value="back">Costas</SelectItem>
-                    <SelectItem value="side_left">Lateral Esq.</SelectItem>
-                    <SelectItem value="side_right">Lateral Dir.</SelectItem>
-                    <SelectItem value="other">Outro</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label>Data</Label>
-                <Input
-                  type="date"
-                  className="mt-1"
-                  value={uploadDate}
-                  onChange={(e) => setUploadDate(e.target.value)}
-                />
-              </div>
+            <div>
+              <Label>Data das fotos</Label>
+              <Input
+                type="date"
+                className="mt-1"
+                value={uploadDate}
+                onChange={(e) => setUploadDate(e.target.value)}
+              />
             </div>
 
-            {/* Drop zone */}
-            <div
-              className={`relative border-2 border-dashed rounded-xl transition-colors ${
-                isDragging
-                  ? "border-primary bg-primary/10"
-                  : "border-border hover:border-primary/50"
-              }`}
-              onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
-              onDragLeave={() => setIsDragging(false)}
-              onDrop={handleDrop}
-              onClick={() => fileInputRef.current?.click()}
-            >
+            {/* Multi-slot upload */}
+            <div>
+              <Label className="text-sm font-medium">Fotos (selecione até 3 ângulos)</Label>
+              <div className="grid grid-cols-3 gap-2 mt-2">
+                {slots.map((slot, idx) => (
+                  <div key={idx} className="space-y-1">
+                    <Select
+                      value={slot.type}
+                      onValueChange={(v) => setSlots(prev => prev.map((s, i) => i === idx ? { ...s, type: v } : s))}
+                    >
+                      <SelectTrigger className="h-7 text-xs"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        {PHOTO_TYPES.map(t => (
+                          <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <div
+                      className={`relative aspect-[3/4] rounded-lg border-2 border-dashed cursor-pointer transition-colors overflow-hidden ${
+                        isDragging && activeSlotIdx === idx
+                          ? "border-primary bg-primary/10"
+                          : slot.preview
+                          ? "border-border"
+                          : "border-border/50 hover:border-primary/50 hover:bg-accent/20"
+                      }`}
+                      onClick={() => { setActiveSlotIdx(idx); fileInputRef.current?.click(); }}
+                      onDragOver={(e) => { e.preventDefault(); setIsDragging(true); setActiveSlotIdx(idx); }}
+                      onDragLeave={() => setIsDragging(false)}
+                      onDrop={(e) => handleDrop(e, idx)}
+                    >
+                      {slot.preview ? (
+                        <>
+                          <img src={slot.preview} alt="" className="w-full h-full object-cover" />
+                          <button
+                            className="absolute top-1 right-1 p-1 rounded-full bg-black/50 hover:bg-black/70 transition-colors"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSlots(prev => prev.map((s, i) => i === idx ? { ...s, file: null, preview: null } : s));
+                            }}
+                          >
+                            <X className="h-3 w-3 text-white" />
+                          </button>
+                        </>
+                      ) : (
+                        <div className="absolute inset-0 flex flex-col items-center justify-center gap-1">
+                          <Upload className="h-5 w-5 text-muted-foreground/50" />
+                          <span className="text-[10px] text-muted-foreground/50 text-center px-1">Clique ou arraste</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
               <input
                 ref={fileInputRef}
                 type="file"
                 accept="image/*"
                 className="hidden"
-                onChange={(e) => { const f = e.target.files?.[0]; if (f) handleFileSelect(f); }}
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) handleFileSelect(file, activeSlotIdx);
+                  e.target.value = "";
+                }}
               />
-              {previewUrl ? (
-                <div className="relative">
-                  <img src={previewUrl} alt="Preview" className="w-full h-48 object-cover rounded-xl" />
-                  <button
-                    className="absolute top-2 right-2 p-1 rounded-full bg-black/50 hover:bg-black/70"
-                    onClick={(e) => { e.stopPropagation(); setSelectedFile(null); setPreviewUrl(null); }}
-                  >
-                    <X className="h-4 w-4 text-white" />
-                  </button>
-                </div>
-              ) : (
-                <div className="flex flex-col items-center justify-center py-10 cursor-pointer">
-                  <Upload className="h-8 w-8 text-muted-foreground mb-2" />
-                  <p className="text-sm font-medium">Clique ou arraste uma foto</p>
-                  <p className="text-xs text-muted-foreground mt-1">PNG, JPG, WEBP · Máx. 16MB</p>
-                </div>
-              )}
             </div>
 
             <div>
-              <Label>Observações</Label>
+              <Label>Observações (opcional)</Label>
               <Input
                 className="mt-1"
-                placeholder="Notas opcionais..."
                 value={uploadNotes}
                 onChange={(e) => setUploadNotes(e.target.value)}
+                placeholder="Notas sobre as fotos..."
               />
             </div>
 
-            <div className="flex gap-3 pt-1">
-              <Button variant="outline" className="flex-1" onClick={() => setShowUpload(false)}>Cancelar</Button>
+            <div className="flex gap-3 pt-2">
+              <Button variant="outline" className="flex-1" onClick={() => { setShowUpload(false); resetUploadForm(); }}>
+                Cancelar
+              </Button>
               <Button
                 className="flex-1"
                 onClick={handleUpload}
-                disabled={!selectedFile || !uploadClientId || uploading || uploadMutation.isPending}
+                disabled={uploading || !uploadClientId || slots.every(s => !s.file)}
               >
-                {uploading || uploadMutation.isPending ? "Enviando..." : "Salvar Foto"}
+                {uploading ? "Enviando..." : `Enviar ${slots.filter(s => s.file).length} foto${slots.filter(s => s.file).length !== 1 ? "s" : ""}`}
               </Button>
             </div>
           </div>
@@ -340,27 +546,26 @@ export default function Fotos() {
       {/* Lightbox */}
       {lightbox && (
         <div
-          className="fixed inset-0 z-[100] bg-black/90 flex items-center justify-center p-4"
+          className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center p-4"
           onClick={() => setLightbox(null)}
         >
-          <button
-            className="absolute top-4 right-4 p-2 rounded-full bg-white/10 hover:bg-white/20 transition-colors"
-            onClick={() => setLightbox(null)}
-          >
-            <X className="h-5 w-5 text-white" />
-          </button>
-          <div className="max-w-lg w-full" onClick={(e) => e.stopPropagation()}>
+          <div className="relative max-w-2xl w-full" onClick={(e) => e.stopPropagation()}>
+            <button
+              className="absolute -top-10 right-0 text-white/70 hover:text-white transition-colors"
+              onClick={() => setLightbox(null)}
+            >
+              <X className="h-6 w-6" />
+            </button>
             <img
               src={lightbox.photoUrl}
-              alt="Foto de progresso"
-              className="w-full rounded-xl object-contain max-h-[70vh]"
+              alt="Foto em tamanho completo"
+              className="w-full rounded-xl object-contain max-h-[80vh]"
             />
             <div className="mt-3 text-center">
-              <p className="text-white font-semibold">{getClientName(lightbox.clientId)}</p>
+              <p className="text-white font-medium">{getClientName(lightbox.clientId)}</p>
               <p className="text-white/60 text-sm">
-                {PHOTO_TYPE_LABELS[lightbox.photoType]} · {format(new Date(lightbox.date), "d 'de' MMMM yyyy", { locale: ptBR })}
+                {PHOTO_TYPE_LABELS[lightbox.photoType]} · {format(new Date(lightbox.date), "d 'de' MMMM 'de' yyyy", { locale: ptBR })}
               </p>
-              {lightbox.notes && <p className="text-white/50 text-xs mt-1">{lightbox.notes}</p>}
             </div>
           </div>
         </div>

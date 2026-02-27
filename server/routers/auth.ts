@@ -1,13 +1,13 @@
 import { z } from "zod";
-import { publicProcedure, protectedProcedure, router } from "../_core/trpc";import { TRPCError } from "@trpc/server";
+import { publicProcedure, protectedProcedure, router } from "../_core/trpc";
+import { TRPCError } from "@trpc/server";
+import { SignJWT } from "jose";
 import {
   hashPassword,
   verifyPassword,
   isValidEmail,
-  isValidPassword,
   getPasswordErrorMessage,
   getTokenExpiration,
-  generateToken,
 } from "../auth";
 import {
   createUser,
@@ -17,9 +17,27 @@ import {
   deleteAuthToken,
   updateUserEmailVerified,
   updateUserPassword,
+  getUserById,
 } from "../db";
 import { getSessionCookieOptions } from "../_core/cookies";
-import { COOKIE_NAME } from "@shared/const";
+import { COOKIE_NAME, ONE_YEAR_MS } from "@shared/const";
+import { ENV } from "../_core/env";
+
+function getSessionSecret() {
+  return new TextEncoder().encode(ENV.cookieSecret);
+}
+
+async function createSessionToken(userId: number): Promise<string> {
+  const issuedAt = Date.now();
+  const expiresInMs = ONE_YEAR_MS;
+  const expirationSeconds = Math.floor((issuedAt + expiresInMs) / 1000);
+  const secretKey = getSessionSecret();
+
+  return new SignJWT({ userId })
+    .setProtectedHeader({ alg: "HS256", typ: "JWT" })
+    .setExpirationTime(expirationSeconds)
+    .sign(secretKey);
+}
 
 const registerSchema = z.object({
   email: z.string().email("E-mail inválido"),
@@ -79,25 +97,26 @@ export const authRouter = router({
       const passwordHash = await hashPassword(input.password);
       const user = await createUser(input.email, passwordHash, input.name);
 
-      // Create email confirmation token
-      const token = await createAuthToken(
+      // Create email confirmation token (stored for future email sending)
+      await createAuthToken(
         user.id,
         "email_confirmation",
         getTokenExpiration("email_confirmation")
       );
 
-      // TODO: Send confirmation email with token
+      // For now, auto-confirm email (remove this when email sending is configured)
+      await updateUserEmailVerified(user.id);
 
       return {
         success: true,
-        message: "Cadastro realizado! Verifique seu e-mail para confirmar a conta.",
+        message: "Cadastro realizado com sucesso! Você já pode fazer login.",
         userId: user.id,
       };
     }),
 
   login: publicProcedure
     .input(loginSchema)
-    .mutation(async ({ input }) => {
+    .mutation(async ({ input, ctx }) => {
       // Find user by email
       const user = await getUserByEmail(input.email);
       if (!user || !user.passwordHash) {
@@ -124,7 +143,15 @@ export const authRouter = router({
         });
       }
 
-      // TODO: Create session/JWT token and set cookie
+      // Create JWT session token
+      const sessionToken = await createSessionToken(user.id);
+
+      // Set session cookie
+      const cookieOptions = getSessionCookieOptions(ctx.req);
+      ctx.res.cookie(COOKIE_NAME, sessionToken, {
+        ...cookieOptions,
+        maxAge: ONE_YEAR_MS,
+      });
 
       return {
         success: true,
@@ -132,6 +159,7 @@ export const authRouter = router({
           id: user.id,
           email: user.email,
           name: user.name,
+          role: user.role,
         },
       };
     }),
@@ -190,7 +218,7 @@ export const authRouter = router({
       }
 
       // Create password reset token
-      const token = await createAuthToken(
+      await createAuthToken(
         user.id,
         "password_reset",
         getTokenExpiration("password_reset")
@@ -251,17 +279,6 @@ export const authRouter = router({
       return {
         success: true,
         message: "Senha redefinida com sucesso! Você já pode fazer login com a nova senha.",
-      };
-    }),
-
-  // Placeholder for Google OAuth
-  googleAuth: publicProcedure
-    .input(z.object({ googleId: z.string(), email: z.string(), name: z.string() }))
-    .mutation(async ({ input }) => {
-      // TODO: Implement Google OAuth flow
-      return {
-        success: false,
-        message: "Google OAuth ainda não está implementado",
       };
     }),
 

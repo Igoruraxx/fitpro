@@ -130,26 +130,26 @@
 - [x] Badge visual indicando que o agendamento é recorrente
 
 ## Reformulação Cadastro de Alunos (v2)
-- [ ] Remover campo email do cadastro de aluno
-- [ ] Remover campos objetivo e observações
-- [ ] Plano mensal: campo dia de vencimento (1-31)
-- [ ] Plano por pacote: campo quantidade de aulas
-- [ ] Contador de sessões restantes (decrementar ao concluir sessão)
-- [ ] Ao definir sessões/semana: abrir seletor de dias e horários
-- [ ] Agendamento automático das 4 próximas semanas ao salvar aluno
-- [ ] Campo pagamento antecipado: valor e próxima data de vencimento
-- [ ] Exibir contador de sessões restantes no card do aluno
-- [ ] Exibir alerta quando pacote estiver próximo do fim
-- [ ] Atualizar router: decrementar sessionsRemaining ao marcar sessão como concluída
-- [ ] Atualizar router: createClient com novos campos
-- [ ] Migration SQL para novos campos em clients
+- [x] Remover campo email do cadastro de aluno
+- [x] Remover campos objetivo e observações
+- [x] Plano mensal: campo dia de vencimento (1-31)
+- [x] Plano por pacote: campo quantidade de aulas
+- [x] Contador de sessões restantes (decrementar ao concluir sessão)
+- [x] Ao definir sessões/semana: abrir seletor de dias e horários
+- [x] Agendamento automático das 4 próximas semanas ao salvar aluno
+- [x] Campo pagamento antecipado: valor e próxima data de vencimento
+- [x] Exibir contador de sessões restantes no card do aluno
+- [x] Exibir alerta quando pacote estiver próximo do fim
+- [x] Atualizar router: decrementar sessionsRemaining ao marcar sessão como concluída
+- [x] Atualizar router: createClient com novos campos
+- [x] Migration SQL para novos campos em clients (já existia no schema)
 
 ## Melhorias Módulo de Fotos (v2)
-- [ ] Upload múltiplo: 3 fotos de uma vez (Frente, Costas, Lateral)
-- [ ] Galeria vazia até selecionar um aluno
-- [ ] Modo comparativo: selecionar 2 datas e ver fotos lado a lado
-- [ ] Comparativo por tipo de foto (frente vs frente, costas vs costas)
-- [ ] Indicador de p## Autenticação Própria (E-mail/Senha)
+- [x] Upload múltiplo: 3 fotos de uma vez (Frente, Costas, Lateral)
+- [x] Galeria vazia até selecionar um aluno
+- [x] Modo comparativo: selecionar 2 datas e ver fotos lado a lado
+- [x] Comparativo por tipo de foto (frente vs frente, costas vs costas)
+- [x] Indicador de p## Autenticação Própria (E-mail/Senha)
 - [x] Tabela auth_tokens no Supabase (confirmação de e-mail e reset de senha)
 - [x] Campo passwordHash na tabela users
 - [x] Campo emailVerified na tabela users
@@ -167,5 +167,16 @@
 - [x] Integração de rotas de autenticação no App.tsx
 - [x] Testes para páginas de autenticação (38 testes)
 - [ ] Configurar envio de e-mail (Nodemailer/Resend/SendGrid)
-- [ ] Remover dependência do Manus OAuth das rotas protegidas
-- [ ] Atualizar AppLayout para usar novo sistema de auth
+- [x] Remover dependência do Manus OAuth das rotas protegidas
+- [x] Atualizar AppLayout para usar novo sistema de auth
+
+## Remoção do Manus OAuth (v4)
+- [x] Remover botão "Entrar com Manus" da Home
+- [x] Substituir Home por redirect para /login
+- [x] Remover Manus OAuth do server/_core/oauth.ts (manter estrutura, desativar fluxo)
+- [x] Criar AuthContext próprio com login/logout/me via tRPC
+- [x] Atualizar AppLayout para usar AuthContext próprio
+- [x] Atualizar protectedProcedure para usar JWT próprio (não Manus session)
+- [x] Redirecionar para /login se não autenticado
+- [x] Redirecionar para / após login bem-sucedido
+- [x] Logout limpa cookie JWT e redireciona para /login

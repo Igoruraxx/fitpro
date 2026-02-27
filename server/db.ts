@@ -547,3 +547,33 @@ export async function updateUserPassword(userId: number, passwordHash: string): 
 
   await db.update(users).set({ passwordHash }).where(eq(users.id, userId));
 }
+
+// ==================== CLIENT SESSION MANAGEMENT ====================
+
+/**
+ * Decrements sessionsRemaining for package-plan clients.
+ * Called when an appointment is marked as completed.
+ * Returns the new sessionsRemaining value, or null if not applicable.
+ */
+export async function decrementClientSessions(clientId: number, trainerId: number): Promise<number | null> {
+  const db = await getDb();
+  if (!db) return null;
+
+  const result = await db.select({
+    planType: clients.planType,
+    sessionsRemaining: clients.sessionsRemaining,
+  }).from(clients)
+    .where(and(eq(clients.id, clientId), eq(clients.trainerId, trainerId)))
+    .limit(1);
+
+  const client = result[0];
+  if (!client || client.planType !== "package") return null;
+  if (client.sessionsRemaining === null || client.sessionsRemaining <= 0) return 0;
+
+  const newCount = client.sessionsRemaining - 1;
+  await db.update(clients)
+    .set({ sessionsRemaining: newCount, updatedAt: new Date() })
+    .where(and(eq(clients.id, clientId), eq(clients.trainerId, trainerId)));
+
+  return newCount;
+}

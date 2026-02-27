@@ -7,7 +7,7 @@ import { z } from "zod";
 import {
   getClientsByTrainer, getClientById, createClient, updateClient, deleteClient, countClientsByTrainer,
   getAppointmentsByTrainer, getAppointmentById, createAppointment, updateAppointment, deleteAppointment,
-  deleteAppointmentsByGroup,
+  deleteAppointmentsByGroup, decrementClientSessions,
   getMeasurementsByClient, createMeasurement, deleteMeasurement,
   getPhotosByClient, createProgressPhoto, deleteProgressPhoto,
   getTransactionsByTrainer, createTransaction, updateTransaction, deleteTransaction, getFinancialSummary,
@@ -104,16 +104,27 @@ export const appRouter = router({
     }),
     create: protectedProcedure.input(z.object({
       name: z.string().min(1),
-      email: z.string().optional(),
       phone: z.string().optional(),
       birthDate: z.string().optional(),
       gender: z.enum(["male", "female", "other"]).optional(),
       photoUrl: z.string().optional(),
-      notes: z.string().optional(),
-      goal: z.string().optional(),
       status: z.enum(["active", "inactive", "trial"]).optional(),
+      planType: z.enum(["monthly", "package"]).optional(),
+      // Monthly plan
       monthlyFee: z.string().optional(),
       paymentDay: z.number().optional(),
+      // Package plan
+      packageSessions: z.number().optional(),
+      sessionsRemaining: z.number().optional(),
+      packageValue: z.string().optional(),
+      // Session schedule
+      sessionsPerWeek: z.number().optional(),
+      sessionDays: z.string().optional(),
+      sessionTime: z.string().optional(),
+      sessionDuration: z.number().optional(),
+      // Prepaid
+      prepaidValue: z.string().optional(),
+      prepaidDueDate: z.string().optional(),
     })).mutation(async ({ ctx, input }) => {
       const count = await countClientsByTrainer(ctx.user.id);
       if (count >= ctx.user.maxClients) {
@@ -125,16 +136,27 @@ export const appRouter = router({
     update: protectedProcedure.input(z.object({
       id: z.number(),
       name: z.string().optional(),
-      email: z.string().optional(),
       phone: z.string().optional(),
       birthDate: z.string().optional(),
       gender: z.enum(["male", "female", "other"]).optional(),
       photoUrl: z.string().optional(),
-      notes: z.string().optional(),
-      goal: z.string().optional(),
       status: z.enum(["active", "inactive", "trial"]).optional(),
+      planType: z.enum(["monthly", "package"]).optional(),
+      // Monthly plan
       monthlyFee: z.string().optional(),
       paymentDay: z.number().optional(),
+      // Package plan
+      packageSessions: z.number().optional(),
+      sessionsRemaining: z.number().optional(),
+      packageValue: z.string().optional(),
+      // Session schedule
+      sessionsPerWeek: z.number().optional(),
+      sessionDays: z.string().optional(),
+      sessionTime: z.string().optional(),
+      sessionDuration: z.number().optional(),
+      // Prepaid
+      prepaidValue: z.string().optional(),
+      prepaidDueDate: z.string().optional(),
     })).mutation(async ({ ctx, input }) => {
       const { id, birthDate, ...rest } = input;
       const data: Record<string, unknown> = { ...rest };
@@ -184,8 +206,14 @@ export const appRouter = router({
       notes: z.string().optional(),
     })).mutation(async ({ ctx, input }) => {
       const { id, ...rest } = input;
+      // Get previous status to detect transition to 'completed'
+      const prevAppt = await getAppointmentById(id, ctx.user.id);
       // Pass date as string directly to avoid timezone conversion issues
       await updateAppointment(id, ctx.user.id, rest as any);
+      // Decrement sessionsRemaining for package-plan clients when session is completed
+      if (input.status === 'completed' && prevAppt?.status !== 'completed' && prevAppt?.clientId) {
+        await decrementClientSessions(prevAppt.clientId, ctx.user.id);
+      }
       return { success: true };
     }),
     delete: protectedProcedure.input(z.object({

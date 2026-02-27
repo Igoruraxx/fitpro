@@ -39,8 +39,8 @@ export default function Login() {
       });
 
       toast.success("Login realizado com sucesso!");
-      // Redirect to dashboard after successful login
-      setLocation("/dashboard");
+      // Use window.location for full page reload so cookie is recognized
+      window.location.href = "/dashboard";
     } catch (error: any) {
       if (error.data?.code === "UNAUTHORIZED") {
         form.setError("password", { message: "E-mail ou senha inválidos" });

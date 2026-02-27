@@ -47,8 +47,8 @@ export default function Register() {
         password: values.password,
       });
 
-      toast.success("Cadastro realizado! Verifique seu e-mail para confirmar a conta.");
-      setLocation("/confirm-email");
+      toast.success("Cadastro realizado com sucesso! Faça login para continuar.");
+      window.location.href = "/login";
     } catch (error: any) {
       if (error.data?.code === "CONFLICT") {
         form.setError("email", { message: "Este e-mail já está registrado" });
