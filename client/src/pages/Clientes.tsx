@@ -505,10 +505,10 @@ export default function Clientes() {
                 <div>
                   <Label>Dia de vencimento</Label>
                   <Select value={paymentDay} onValueChange={setPaymentDay}>
-                    <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+                    <SelectTrigger className="mt-1"><SelectValue placeholder="Selecione o dia" /></SelectTrigger>
                     <SelectContent>
-                      {[1,5,10,15,20,25,28,30].map(d => (
-                        <SelectItem key={d} value={String(d)}>Dia {d}</SelectItem>
+                      {Array.from({ length: 31 }, (_, i) => i + 1).map(d => (
+                        <SelectItem key={d} value={String(d)}>Dia {String(d).padStart(2, "0")}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>

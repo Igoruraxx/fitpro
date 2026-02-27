@@ -322,3 +322,8 @@
 - [x] Remover modal de criação manual de receita
 - [x] Manter apenas: Gerar Cobranças, dar baixa, WhatsApp, editar status
 - [x] Financeiro mostra receitas vinculadas a alunos (geradas automaticamente)
+
+## Campo de Dia de Vencimento (v20)
+- [x] Adicionar seletor de dia (01-31) no cadastro para plano Mensalidade
+- [x] Usar esse dia para gerar cobranças automáticas
+- [ ] Testar geração de cobranças com dia de vencimento
