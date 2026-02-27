@@ -149,4 +149,20 @@
 - [ ] Galeria vazia até selecionar um aluno
 - [ ] Modo comparativo: selecionar 2 datas e ver fotos lado a lado
 - [ ] Comparativo por tipo de foto (frente vs frente, costas vs costas)
-- [ ] Indicador de progresso no comparativo
+- [ ] Indicador de p## Autenticação Própria (E-mail/Senha)
+- [x] Tabela auth_tokens no Supabase (confirmação de e-mail e reset de senha)
+- [x] Campo passwordHash na tabela users
+- [x] Campo emailVerified na tabela users
+- [x] Campo googleId na tabela users (para Google OAuth futuro)
+- [x] Endpoint register (cadastro com e-mail/senha)
+- [x] Endpoint login (autenticação com e-mail/senha)
+- [x] Endpoint confirmEmail (confirmação via token)
+- [x] Endpoint forgotPassword (envio de e-mail de recuperação)
+- [x] Endpoint resetPassword (nova senha via token)
+- [x] Preparação para Google OAuth (campo googleId + endpoint)de Cadastro (/register)
+- [ ] Página de Login (/login)
+- [ ] Página de Confirmação de E-mail (/confirm-email)
+- [ ] Página de Recuperação de Conta (/forgot-password)
+- [ ] Página de Nova Senha (/reset-password)
+- [ ] Remover dependência do Manus OAuth das rotas protegidas
+- [ ] Atualizar AppLayout para usar novo sistema de auth

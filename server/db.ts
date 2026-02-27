@@ -8,6 +8,7 @@ import {
   bodyMeasurements, InsertBodyMeasurement,
   progressPhotos, InsertProgressPhoto,
   transactions, InsertTransaction,
+  authTokens, InsertAuthToken,
 } from "../drizzle/schema";
 import { ENV } from './_core/env';
 import { nanoid } from "nanoid";
@@ -472,4 +473,77 @@ export async function getAdminDashboardStats() {
     totalClients: allClients[0]?.count ?? 0,
     totalAppointments: allAppts[0]?.count ?? 0,
   };
+}
+
+// ==================== AUTH ====================
+
+export async function createAuthToken(userId: number, type: "email_confirmation" | "password_reset", expiresAt: Date): Promise<string> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  const token = nanoid(32);
+  await db.insert(authTokens).values({
+    userId,
+    token,
+    type,
+    expiresAt,
+  });
+
+  return token;
+}
+
+export async function getAuthToken(token: string) {
+  const db = await getDb();
+  if (!db) return null;
+
+  const result = await db.select().from(authTokens).where(eq(authTokens.token, token)).limit(1);
+  return result.length > 0 ? result[0] : null;
+}
+
+export async function deleteAuthToken(token: string): Promise<void> {
+  const db = await getDb();
+  if (!db) return;
+
+  await db.delete(authTokens).where(eq(authTokens.token, token));
+}
+
+export async function getUserByEmail(email: string) {
+  const db = await getDb();
+  if (!db) return null;
+
+  const result = await db.select().from(users).where(eq(users.email, email)).limit(1);
+  return result.length > 0 ? result[0] : null;
+}
+
+export async function createUser(email: string, passwordHash: string, name?: string): Promise<typeof users.$inferSelect> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  const result = await db.insert(users).values({
+    email,
+    passwordHash,
+    name,
+    emailVerified: false,
+    loginMethod: "email",
+    role: "user",
+    subscriptionPlan: "free",
+    subscriptionStatus: "trial",
+    maxClients: 5,
+  }).returning();
+
+  return result[0];
+}
+
+export async function updateUserEmailVerified(userId: number): Promise<void> {
+  const db = await getDb();
+  if (!db) return;
+
+  await db.update(users).set({ emailVerified: true }).where(eq(users.id, userId));
+}
+
+export async function updateUserPassword(userId: number, passwordHash: string): Promise<void> {
+  const db = await getDb();
+  if (!db) return;
+
+  await db.update(users).set({ passwordHash }).where(eq(users.id, userId));
 }

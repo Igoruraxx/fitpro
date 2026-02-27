@@ -18,9 +18,12 @@ export const transactionStatusEnum = pgEnum("transaction_status", ["pending", "p
 // ==================== USERS ====================
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
-  openId: varchar("openId", { length: 64 }).notNull().unique(),
+  openId: varchar("openId", { length: 64 }).unique(),
+  email: varchar("email", { length: 320 }).unique(),
+  passwordHash: text("passwordHash"),
+  emailVerified: boolean("emailVerified").default(false).notNull(),
+  googleId: varchar("googleId", { length: 255 }).unique(),
   name: text("name"),
-  email: varchar("email", { length: 320 }),
   loginMethod: varchar("loginMethod", { length: 64 }),
   role: roleEnum("role").default("user").notNull(),
   phone: varchar("phone", { length: 20 }),
@@ -39,6 +42,19 @@ export const users = pgTable("users", {
 
 export type User = typeof users.$inferSelect;
 export type InsertUser = typeof users.$inferInsert;
+
+// ==================== AUTH TOKENS ====================
+export const authTokens = pgTable("auth_tokens", {
+  id: serial("id").primaryKey(),
+  userId: integer("userId").notNull().references(() => users.id, { onDelete: "cascade" }),
+  token: varchar("token", { length: 255 }).notNull().unique(),
+  type: varchar("type", { length: 50 }).notNull(), // 'email_confirmation' | 'password_reset'
+  expiresAt: timestamp("expiresAt").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type AuthToken = typeof authTokens.$inferSelect;
+export type InsertAuthToken = typeof authTokens.$inferInsert;
 
 // ==================== CLIENTS ====================
 export const clients = pgTable("clients", {
