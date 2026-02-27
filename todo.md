@@ -106,3 +106,15 @@
 - [x] Nome e cargo do treinador no rodapé da sidebar
 - [x] Ícone de haltere no branding
 - [x] Header com título da página atual
+
+## Melhorias na Agenda (v3)
+- [x] View Dia como padrão inicial
+- [x] Reordenar views: Dia → Lista → Semana → Mês
+- [x] Drag and drop para arrastar agendamentos entre horários (view Dia)
+- [x] Drag and drop na view Lista
+- [x] Drag and drop na view Semana
+- [x] Modal de edição ao clicar no agendamento
+- [x] Botão "Concluir sessão" no modal de edição
+- [x] Card verde para agendamentos concluídos
+- [x] Botão WhatsApp visível nos agendamentos não concluídos
+- [x] Endpoint updateAppointment no router tRPC (já existia)
