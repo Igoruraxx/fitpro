@@ -292,3 +292,9 @@
 - [x] Listagem de alunos redesenhada com badges clean
 - [x] Financas redesenhada: cards de métricas com ícones coloridos, gráfico clean
 - [x] Mobile: bottom nav refinada com indicador de rota ativa
+
+## Bug: Aba Clientes não carrega (v15)
+- [x] Investigar erro no console/logs
+- [x] Corrigir causa raiz: SelectItem com value="" causava crash do React
+- [x] Corrigir lógica de filtros para usar value="all" em vez de string vazia
+- [x] Testar carregamento da aba

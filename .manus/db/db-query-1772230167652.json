@@ -1,0 +1,49 @@
+{
+  "query": "SELECT column_name FROM information_schema.columns WHERE table_name = 'transactions' ORDER BY ordinal_position;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 4PiQ8e52qW4Xjb6.root --database 5UbJ997E6SHYZid72bThxF --execute SELECT column_name FROM information_schema.columns WHERE table_name = 'transactions' ORDER BY ordinal_position;",
+  "rows": [
+    {
+      "column_name": "id"
+    },
+    {
+      "column_name": "trainerId"
+    },
+    {
+      "column_name": "clientId"
+    },
+    {
+      "column_name": "type"
+    },
+    {
+      "column_name": "category"
+    },
+    {
+      "column_name": "description"
+    },
+    {
+      "column_name": "amount"
+    },
+    {
+      "column_name": "date"
+    },
+    {
+      "column_name": "status"
+    },
+    {
+      "column_name": "createdAt"
+    },
+    {
+      "column_name": "updatedAt"
+    },
+    {
+      "column_name": "dueDate"
+    },
+    {
+      "column_name": "paidAt"
+    }
+  ],
+  "messages": [],
+  "stdout": "column_name\nid\ntrainerId\nclientId\ntype\ncategory\ndescription\namount\ndate\nstatus\ncreatedAt\nupdatedAt\ndueDate\npaidAt\n",
+  "stderr": "",
+  "execution_time_ms": 352
+}
