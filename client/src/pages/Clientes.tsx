@@ -73,6 +73,8 @@ function getNextWeekdayDate(weekday: number): string {
 
 export default function Clientes() {
   const [search, setSearch] = useState("");
+  const [filterStatus, setFilterStatus] = useState<string>("");
+  const [filterPlanType, setFilterPlanType] = useState<string>("");
   const [showModal, setShowModal] = useState(false);
   const [editing, setEditing] = useState<any>(null);
   const [deleteTarget, setDeleteTarget] = useState<any>(null);
@@ -130,10 +132,12 @@ export default function Clientes() {
     onError: (e) => toast.error(e.message),
   });
 
-  const filtered = clients.filter((c: any) =>
-    c.name.toLowerCase().includes(search.toLowerCase()) ||
-    (c.phone && c.phone.includes(search))
-  );
+  const filtered = clients.filter((c: any) => {
+    const matchesSearch = c.name.toLowerCase().includes(search.toLowerCase()) || (c.phone && c.phone.includes(search));
+    const matchesStatus = !filterStatus || c.status === filterStatus;
+    const matchesPlanType = !filterPlanType || c.planType === filterPlanType;
+    return matchesSearch && matchesStatus && matchesPlanType;
+  });
 
   const resetForm = () => {
     setName(""); setPhone(""); setGender(""); setStatus("active");
@@ -252,15 +256,42 @@ export default function Clientes() {
         </Button>
       </div>
 
-      {/* Search */}
-      <div className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-        <Input
-          placeholder="Buscar por nome ou telefone..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="pl-10"
-        />
+      {/* Search and Filters */}
+      <div className="space-y-3">
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Buscar por nome ou telefone..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="pl-10"
+          />
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <Select value={filterStatus} onValueChange={setFilterStatus}>
+            <SelectTrigger className="w-40"><SelectValue placeholder="Status" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="">Todos os status</SelectItem>
+              <SelectItem value="active">Ativo</SelectItem>
+              <SelectItem value="inactive">Inativo</SelectItem>
+              <SelectItem value="trial">Pausado</SelectItem>
+            </SelectContent>
+          </Select>
+          <Select value={filterPlanType} onValueChange={setFilterPlanType}>
+            <SelectTrigger className="w-40"><SelectValue placeholder="Tipo de Plano" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="">Todos os planos</SelectItem>
+              <SelectItem value="monthly">Mensalidade</SelectItem>
+              <SelectItem value="package">Pacote</SelectItem>
+              <SelectItem value="consulting">Consultoria</SelectItem>
+            </SelectContent>
+          </Select>
+          {(filterStatus || filterPlanType) && (
+            <Button variant="outline" size="sm" onClick={() => { setFilterStatus(""); setFilterPlanType(""); }}>
+              Limpar filtros
+            </Button>
+          )}
+        </div>
       </div>
 
       {/* List */}

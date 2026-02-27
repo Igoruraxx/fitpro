@@ -258,3 +258,13 @@
 - [x] Criar secoes separadas para cada data
 - [x] Exibir data como cabecalho de secao
 - [x] Manter funcionalidade de comparativo e filtro por aluno
+
+## Filtros Avancados + Relatorio de Planos (v12)
+- [x] Adicionar filtros rapidos na listagem de alunos (status: Ativo/Inativo/Pausado)
+- [x] Adicionar filtros por tipo de plano (Mensal/Pacote/Consultoria)
+- [x] Combinar multiplos filtros (status + plano)
+- [x] Criar pagina Relatorio de Planos (/relatorio-planos)
+- [x] Dashboard com distribuicao de alunos por tipo de plano (grafico de pizza)
+- [x] Dashboard com receita esperada por tipo de plano (grafico de barras)
+- [x] Exibir metricas: total de alunos, receita total, receita media por tipo
+- [x] Adicionar rota e menu item para Relatorio de Planos

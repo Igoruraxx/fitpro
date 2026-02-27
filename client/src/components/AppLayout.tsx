@@ -2,7 +2,7 @@ import { useAuth } from "@/_core/hooks/useAuth";
 import { useIsMobile } from "@/hooks/useMobile";
 import {
   LayoutDashboard, Calendar, Users, TrendingUp, DollarSign, User,
-  LogOut, Shield, Loader2, Dumbbell, Image, ChevronRight, Activity,
+  LogOut, Shield, Loader2, Dumbbell, Image, ChevronRight, Activity, BarChart3,
 } from "lucide-react";
 import { useLocation } from "wouter";
 import { Avatar, AvatarFallback } from "./ui/avatar";
@@ -20,9 +20,10 @@ const navItems = [
   { icon: Calendar, label: "Agenda", path: "/" },
   { icon: Users, label: "Alunos", path: "/clientes" },
   { icon: Image, label: "Fotos", path: "/fotos" },
-  { icon: Activity, label: "Bioimpedância", path: "/bioimpedancia" },
-  { icon: TrendingUp, label: "Evolução", path: "/evolucao" },
-  { icon: DollarSign, label: "Finanças", path: "/financas" },
+  { icon: Activity, label: "Bioimpedancia", path: "/bioimpedancia" },
+  { icon: TrendingUp, label: "Evolucao", path: "/evolucao" },
+  { icon: BarChart3, label: "Relatorio de Planos", path: "/relatorio-planos" },
+  { icon: DollarSign, label: "Financas", path: "/financas" },
   { icon: User, label: "Perfil", path: "/perfil" },
 ];
 
@@ -40,9 +41,10 @@ const PAGE_TITLES: Record<string, string> = {
   "/": "Agenda",
   "/clientes": "Alunos",
   "/fotos": "Fotos de Progresso",
-  "/bioimpedancia": "Bioimpedância",
-  "/evolucao": "Evolução",
-  "/financas": "Finanças",
+  "/bioimpedancia": "Bioimpedancia",
+  "/evolucao": "Evolucao",
+  "/relatorio-planos": "Relatorio de Planos",
+  "/financas": "Financas",
   "/perfil": "Perfil",
   "/admin": "Painel Admin",
 };
