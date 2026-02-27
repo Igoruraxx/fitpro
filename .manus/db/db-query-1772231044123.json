@@ -1,0 +1,76 @@
+{
+  "query": "SELECT column_name FROM information_schema.columns WHERE table_name = 'clients' ORDER BY ordinal_position;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 4PiQ8e52qW4Xjb6.root --database 5UbJ997E6SHYZid72bThxF --execute SELECT column_name FROM information_schema.columns WHERE table_name = 'clients' ORDER BY ordinal_position;",
+  "rows": [
+    {
+      "column_name": "id"
+    },
+    {
+      "column_name": "trainerId"
+    },
+    {
+      "column_name": "name"
+    },
+    {
+      "column_name": "phone"
+    },
+    {
+      "column_name": "birthDate"
+    },
+    {
+      "column_name": "gender"
+    },
+    {
+      "column_name": "photoUrl"
+    },
+    {
+      "column_name": "status"
+    },
+    {
+      "column_name": "monthlyFee"
+    },
+    {
+      "column_name": "paymentDay"
+    },
+    {
+      "column_name": "createdAt"
+    },
+    {
+      "column_name": "updatedAt"
+    },
+    {
+      "column_name": "planType"
+    },
+    {
+      "column_name": "packageSessions"
+    },
+    {
+      "column_name": "sessionsRemaining"
+    },
+    {
+      "column_name": "packageValue"
+    },
+    {
+      "column_name": "sessionsPerWeek"
+    },
+    {
+      "column_name": "sessionDays"
+    },
+    {
+      "column_name": "sessionTime"
+    },
+    {
+      "column_name": "sessionDuration"
+    },
+    {
+      "column_name": "prepaidValue"
+    },
+    {
+      "column_name": "prepaidDueDate"
+    }
+  ],
+  "messages": [],
+  "stdout": "column_name\nid\ntrainerId\nname\nphone\nbirthDate\ngender\nphotoUrl\nstatus\nmonthlyFee\npaymentDay\ncreatedAt\nupdatedAt\nplanType\npackageSessions\nsessionsRemaining\npackageValue\nsessionsPerWeek\nsessionDays\nsessionTime\nsessionDuration\nprepaidValue\nprepaidDueDate\n",
+  "stderr": "",
+  "execution_time_ms": 461
+}

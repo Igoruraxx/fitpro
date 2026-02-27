@@ -1,0 +1,120 @@
+{
+  "query": "SELECT column_name, data_type, is_nullable FROM information_schema.columns WHERE table_name = 'clients' ORDER BY ordinal_position;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 4PiQ8e52qW4Xjb6.root --database 5UbJ997E6SHYZid72bThxF --execute SELECT column_name, data_type, is_nullable FROM information_schema.columns WHERE table_name = 'clients' ORDER BY ordinal_position;",
+  "rows": [
+    {
+      "column_name": "id",
+      "data_type": "int",
+      "is_nullable": "NO"
+    },
+    {
+      "column_name": "trainerId",
+      "data_type": "int",
+      "is_nullable": "NO"
+    },
+    {
+      "column_name": "name",
+      "data_type": "varchar",
+      "is_nullable": "NO"
+    },
+    {
+      "column_name": "phone",
+      "data_type": "varchar",
+      "is_nullable": "YES"
+    },
+    {
+      "column_name": "birthDate",
+      "data_type": "date",
+      "is_nullable": "YES"
+    },
+    {
+      "column_name": "gender",
+      "data_type": "enum",
+      "is_nullable": "YES"
+    },
+    {
+      "column_name": "photoUrl",
+      "data_type": "text",
+      "is_nullable": "YES"
+    },
+    {
+      "column_name": "status",
+      "data_type": "enum",
+      "is_nullable": "NO"
+    },
+    {
+      "column_name": "monthlyFee",
+      "data_type": "decimal",
+      "is_nullable": "YES"
+    },
+    {
+      "column_name": "paymentDay",
+      "data_type": "int",
+      "is_nullable": "YES"
+    },
+    {
+      "column_name": "createdAt",
+      "data_type": "timestamp",
+      "is_nullable": "NO"
+    },
+    {
+      "column_name": "updatedAt",
+      "data_type": "timestamp",
+      "is_nullable": "NO"
+    },
+    {
+      "column_name": "planType",
+      "data_type": "enum",
+      "is_nullable": "NO"
+    },
+    {
+      "column_name": "packageSessions",
+      "data_type": "int",
+      "is_nullable": "YES"
+    },
+    {
+      "column_name": "sessionsRemaining",
+      "data_type": "int",
+      "is_nullable": "YES"
+    },
+    {
+      "column_name": "packageValue",
+      "data_type": "decimal",
+      "is_nullable": "YES"
+    },
+    {
+      "column_name": "sessionsPerWeek",
+      "data_type": "int",
+      "is_nullable": "NO"
+    },
+    {
+      "column_name": "sessionDays",
+      "data_type": "varchar",
+      "is_nullable": "YES"
+    },
+    {
+      "column_name": "sessionTime",
+      "data_type": "varchar",
+      "is_nullable": "YES"
+    },
+    {
+      "column_name": "sessionDuration",
+      "data_type": "int",
+      "is_nullable": "NO"
+    },
+    {
+      "column_name": "prepaidValue",
+      "data_type": "decimal",
+      "is_nullable": "YES"
+    },
+    {
+      "column_name": "prepaidDueDate",
+      "data_type": "date",
+      "is_nullable": "YES"
+    }
+  ],
+  "messages": [],
+  "stdout": "column_name\tdata_type\tis_nullable\nid\tint\tNO\ntrainerId\tint\tNO\nname\tvarchar\tNO\nphone\tvarchar\tYES\nbirthDate\tdate\tYES\ngender\tenum\tYES\nphotoUrl\ttext\tYES\nstatus\tenum\tNO\nmonthlyFee\tdecimal\tYES\npaymentDay\tint\tYES\ncreatedAt\ttimestamp\tNO\nupdatedAt\ttimestamp\tNO\nplanType\tenum\tNO\npackageSessions\tint\tYES\nsessionsRemaining\tint\tYES\npackageValue\tdecimal\tYES\nsessionsPerWeek\tint\tNO\nsessionDays\tvarchar\tYES\nsessionTime\tvarchar\tYES\nsessionDuration\tint\tNO\nprepaidValue\tdecimal\tYES\nprepaidDueDate\tdate\tYES\n",
+  "stderr": "",
+  "execution_time_ms": 970
+}

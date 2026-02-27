@@ -298,3 +298,27 @@
 - [x] Corrigir causa raiz: SelectItem com value="" causava crash do React
 - [x] Corrigir lógica de filtros para usar value="all" em vez de string vazia
 - [x] Testar carregamento da aba
+
+## Correção End-to-End + Refatoração Financeiro (v16)
+- [ ] Sincronizar schema clients com banco (campos faltando: prepaidValue, prepaidDueDate, etc.)
+- [ ] Verificar e aplicar migração de todas as colunas faltantes
+- [ ] Refatorar financeiro: apenas entradas (receitas), remover saídas/despesas
+- [ ] Dar baixa automática por aluno de acordo com plano (Mensal/Pacote/Consultoria)
+- [ ] Botão "Dar baixa" individual por aluno na aba financeiro
+- [ ] Corrigir inconsistências visuais (dark mode, badges, mobile)
+- [ ] Verificação end-to-end de todas as abas
+
+## Bug: Botões de Tipo de Plano com texto extravasando (v17)
+- [ ] Corrigir layout dos 3 botões (Mensalidade/Pacote/Consultoria) para comportar o texto
+- [ ] Garantir responsividade no mobile
+
+## Bug: Alinhamento botões plano + erro enum consulting (v18)
+- [x] Corrigir alinhamento: botões de plano com ícone centralizado acima do texto
+- [x] Corrigir enum plan_type no banco: adicionar valor "consulting"
+- [x] Testar update de cliente com planType=consulting
+
+## Financeiro: apenas receitas automáticas dos alunos (v19)
+- [x] Remover botão "Nova Receita" manual do financeiro
+- [x] Remover modal de criação manual de receita
+- [x] Manter apenas: Gerar Cobranças, dar baixa, WhatsApp, editar status
+- [x] Financeiro mostra receitas vinculadas a alunos (geradas automaticamente)

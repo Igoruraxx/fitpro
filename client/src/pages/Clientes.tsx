@@ -456,38 +456,38 @@ export default function Clientes() {
                 <button
                   type="button"
                   onClick={() => setPlanType("monthly")}
-                  className={`flex items-center gap-2 p-3 rounded-lg border text-sm font-medium transition-colors ${
+                  className={`flex flex-col items-center justify-center gap-1 py-3 px-1 rounded-lg border font-medium transition-colors text-center min-h-[72px] w-full ${
                     planType === "monthly"
                       ? "border-primary bg-primary/10 text-primary"
                       : "border-border bg-card text-muted-foreground hover:bg-accent/30"
                   }`}
                 >
-                  <CreditCard className="h-4 w-4" />
-                  Mensalidade
+                  <CreditCard className="h-4 w-4 shrink-0" />
+                  <span className="text-[11px] leading-tight break-words w-full text-center">Mensalidade</span>
                 </button>
                 <button
                   type="button"
                   onClick={() => setPlanType("package")}
-                  className={`flex items-center gap-2 p-3 rounded-lg border text-sm font-medium transition-colors ${
+                  className={`flex flex-col items-center justify-center gap-1 py-3 px-1 rounded-lg border font-medium transition-colors text-center min-h-[72px] w-full ${
                     planType === "package"
                       ? "border-primary bg-primary/10 text-primary"
                       : "border-border bg-card text-muted-foreground hover:bg-accent/30"
                   }`}
                 >
-                  <Package className="h-4 w-4" />
-                  Pacote
+                  <Package className="h-4 w-4 shrink-0" />
+                  <span className="text-[11px] leading-tight break-words w-full text-center">Pacote</span>
                 </button>
                 <button
                   type="button"
                   onClick={() => setPlanType("consulting")}
-                  className={`flex items-center gap-2 p-3 rounded-lg border text-sm font-medium transition-colors ${
+                  className={`flex flex-col items-center justify-center gap-1 py-3 px-1 rounded-lg border font-medium transition-colors text-center min-h-[72px] w-full ${
                     planType === "consulting"
-                      ? "border-purple-500/50 bg-purple-500/10 text-purple-400"
+                      ? "border-purple-500/50 bg-purple-500/10 text-purple-600 dark:text-purple-400"
                       : "border-border bg-card text-muted-foreground hover:bg-accent/30"
                   }`}
                 >
-                  <Briefcase className="h-4 w-4" />
-                  Consultoria
+                  <Briefcase className="h-4 w-4 shrink-0" />
+                  <span className="text-[11px] leading-tight break-words w-full text-center">Consultoria</span>
                 </button>
               </div>
               {planType === "consulting" && (
