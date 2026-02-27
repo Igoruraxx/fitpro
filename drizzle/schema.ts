@@ -58,6 +58,10 @@ export const appointments = mysqlTable("appointments", {
   duration: int("duration").default(60).notNull(), // minutes
   status: mysqlEnum("status", ["scheduled", "completed", "cancelled", "no_show"]).default("scheduled").notNull(),
   notes: text("notes"),
+  // Recurrence fields
+  recurrenceGroupId: varchar("recurrenceGroupId", { length: 36 }), // UUID grouping recurring sessions
+  recurrenceType: mysqlEnum("recurrenceType", ["none", "daily", "weekly", "biweekly", "monthly"]).default("none").notNull(),
+  recurrenceDays: varchar("recurrenceDays", { length: 20 }), // comma-separated weekday numbers e.g. "1,3,5"
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });

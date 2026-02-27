@@ -6,14 +6,71 @@ import { z } from "zod";
 import {
   getClientsByTrainer, getClientById, createClient, updateClient, deleteClient, countClientsByTrainer,
   getAppointmentsByTrainer, getAppointmentById, createAppointment, updateAppointment, deleteAppointment,
+  deleteAppointmentsByGroup,
   getMeasurementsByClient, createMeasurement, deleteMeasurement,
   getPhotosByClient, createProgressPhoto, deleteProgressPhoto,
   getTransactionsByTrainer, createTransaction, updateTransaction, deleteTransaction, getFinancialSummary,
   updateUserProfile, getAllTrainers, getAdminDashboardStats,
   getDashboardStats, getWeeklySessionsChart, getSessionStatusChart, getTodaySessions,
 } from "./db";
+import { nanoid } from "nanoid";
 import { storagePut } from "./storage";
 import { notifyOwner } from "./_core/notification";
+
+// ==================== RECURRENCE HELPER ====================
+/**
+ * Generates an array of YYYY-MM-DD date strings for recurring appointments.
+ * Supports daily, weekly (with specific weekdays), biweekly, and monthly patterns.
+ */
+function generateRecurringDates(
+  startDate: string,
+  recurrenceType: "daily" | "weekly" | "biweekly" | "monthly",
+  recurrenceDays: string | undefined,
+  endDate: string | undefined,
+  maxOccurrences: number
+): string[] {
+  const dates: string[] = [];
+  const start = new Date(startDate + "T12:00:00"); // noon to avoid DST issues
+  const end = endDate ? new Date(endDate + "T23:59:59") : null;
+  const limit = Math.min(maxOccurrences, 52); // safety cap at 52 occurrences
+
+  // Parse allowed weekdays (0=Sun,1=Mon,...,6=Sat)
+  const allowedDays = recurrenceDays
+    ? recurrenceDays.split(",").map(Number)
+    : null;
+
+  const fmt = (d: Date) =>
+    `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+
+  if (recurrenceType === "weekly" && allowedDays && allowedDays.length > 0) {
+    // Walk day by day for up to 52 weeks, collecting matching weekdays
+    const cursor = new Date(start);
+    let weeks = 0;
+    while (dates.length < limit) {
+      if (end && cursor > end) break;
+      if (allowedDays.includes(cursor.getDay())) {
+        if (cursor >= start) dates.push(fmt(cursor));
+      }
+      cursor.setDate(cursor.getDate() + 1);
+      // Stop after scanning 52 weeks
+      weeks = Math.floor((cursor.getTime() - start.getTime()) / (7 * 24 * 3600 * 1000));
+      if (weeks > 52) break;
+    }
+  } else {
+    const cursor = new Date(start);
+    while (dates.length < limit) {
+      if (end && cursor > end) break;
+      dates.push(fmt(cursor));
+      switch (recurrenceType) {
+        case "daily":    cursor.setDate(cursor.getDate() + 1); break;
+        case "weekly":   cursor.setDate(cursor.getDate() + 7); break;
+        case "biweekly": cursor.setDate(cursor.getDate() + 14); break;
+        case "monthly":  cursor.setMonth(cursor.getMonth() + 1); break;
+      }
+    }
+  }
+  return dates;
+}
 
 export const appRouter = router({
   system: systemRouter,
@@ -132,15 +189,64 @@ export const appRouter = router({
       status: z.enum(["scheduled", "completed", "cancelled", "no_show"]).optional(),
       notes: z.string().optional(),
     })).mutation(async ({ ctx, input }) => {
-      const { id, date, ...rest } = input;
-      const data: Record<string, unknown> = { ...rest };
-      if (date) data.date = new Date(date);
-      await updateAppointment(id, ctx.user.id, data as any);
+      const { id, ...rest } = input;
+      // Pass date as string directly to avoid timezone conversion issues
+      await updateAppointment(id, ctx.user.id, rest as any);
       return { success: true };
     }),
-    delete: protectedProcedure.input(z.object({ id: z.number() })).mutation(async ({ ctx, input }) => {
+    delete: protectedProcedure.input(z.object({
+      id: z.number(),
+      deleteGroup: z.boolean().optional(),
+    })).mutation(async ({ ctx, input }) => {
+      if (input.deleteGroup) {
+        // Get the appointment to find its recurrenceGroupId
+        const appt = await getAppointmentById(input.id, ctx.user.id);
+        if (appt?.recurrenceGroupId) {
+          await deleteAppointmentsByGroup(appt.recurrenceGroupId, ctx.user.id);
+          return { success: true, deleted: 'group' };
+        }
+      }
       await deleteAppointment(input.id, ctx.user.id);
-      return { success: true };
+      return { success: true, deleted: 'single' };
+    }),
+    // Create multiple recurring appointments at once
+    createRecurring: protectedProcedure.input(z.object({
+      clientId: z.number().optional(),
+      guestName: z.string().optional(),
+      startDate: z.string(),           // YYYY-MM-DD first occurrence
+      endDate: z.string().optional(),  // YYYY-MM-DD last possible date
+      occurrences: z.number().optional().default(8), // max occurrences if no endDate
+      startTime: z.string(),
+      duration: z.number().default(60),
+      notes: z.string().optional(),
+      recurrenceType: z.enum(["daily", "weekly", "biweekly", "monthly"]),
+      recurrenceDays: z.string().optional(), // "1,3,5" for Mon,Wed,Fri
+    })).mutation(async ({ ctx, input }) => {
+      const groupId = nanoid();
+      const dates = generateRecurringDates(
+        input.startDate,
+        input.recurrenceType,
+        input.recurrenceDays,
+        input.endDate,
+        input.occurrences ?? 8
+      );
+      const ids: number[] = [];
+      for (const date of dates) {
+        const id = await createAppointment({
+          trainerId: ctx.user.id,
+          clientId: input.clientId ?? null,
+          guestName: input.guestName ?? null,
+          date: date as any,
+          startTime: input.startTime,
+          duration: input.duration,
+          notes: input.notes ?? null,
+          recurrenceGroupId: groupId,
+          recurrenceType: input.recurrenceType,
+          recurrenceDays: input.recurrenceDays ?? null,
+        } as any);
+        if (id) ids.push(id);
+      }
+      return { success: true, count: ids.length, groupId };
     }),
   }),
 

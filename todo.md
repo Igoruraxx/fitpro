@@ -118,3 +118,13 @@
 - [x] Card verde para agendamentos concluídos
 - [x] Botão WhatsApp visível nos agendamentos não concluídos
 - [x] Endpoint updateAppointment no router tRPC (já existia)
+
+## Recorrência de Agendamentos
+- [x] Campo recurrenceGroupId na tabela appointments (agrupa sessões recorrentes)
+- [x] Endpoint createRecurring no router tRPC
+- [x] Lógica de geração de datas (diária, semanal, quinzenal, mensal)
+- [x] Seleção de dias da semana para recorrência semanal
+- [x] Configuração de data de término ou número de ocorrências
+- [x] UI no modal: toggle "Repetir sessão" com opções de frequência
+- [x] Ao excluir: opção de excluir só esta ou todas as recorrentes
+- [x] Badge visual indicando que o agendamento é recorrente

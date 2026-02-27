@@ -15,6 +15,13 @@
       "when": 1772208927536,
       "tag": "0001_next_namorita",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "5",
+      "when": 1772213698315,
+      "tag": "0002_chief_giant_girl",
+      "breakpoints": true
     }
   ]
 }

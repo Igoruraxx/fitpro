@@ -150,11 +150,12 @@ export async function countClientsByTrainer(trainerId: number) {
 export async function getAppointmentsByTrainer(trainerId: number, startDate: string, endDate: string) {
   const db = await getDb();
   if (!db) return [];
+  // Use sql template to pass date strings directly, avoiding timezone conversion issues with new Date()
   return db.select().from(appointments)
     .where(and(
       eq(appointments.trainerId, trainerId),
-      gte(appointments.date, new Date(startDate)),
-      lte(appointments.date, new Date(endDate))
+      sql`${appointments.date} >= ${startDate}`,
+      sql`${appointments.date} <= ${endDate}`
     ))
     .orderBy(asc(appointments.date), asc(appointments.startTime));
 }
@@ -184,6 +185,14 @@ export async function deleteAppointment(id: number, trainerId: number) {
   const db = await getDb();
   if (!db) return;
   await db.delete(appointments).where(and(eq(appointments.id, id), eq(appointments.trainerId, trainerId)));
+}
+
+export async function deleteAppointmentsByGroup(groupId: string, trainerId: number) {
+  const db = await getDb();
+  if (!db) return;
+  await db.delete(appointments).where(
+    and(eq(appointments.recurrenceGroupId, groupId), eq(appointments.trainerId, trainerId))
+  );
 }
 
 // ==================== BODY MEASUREMENTS ====================
@@ -243,9 +252,9 @@ export async function deleteProgressPhoto(id: number, trainerId: number) {
 export async function getTransactionsByTrainer(trainerId: number, startDate?: string, endDate?: string) {
   const db = await getDb();
   if (!db) return [];
-  const conditions = [eq(transactions.trainerId, trainerId)];
-  if (startDate) conditions.push(gte(transactions.date, new Date(startDate)));
-  if (endDate) conditions.push(lte(transactions.date, new Date(endDate)));
+  const conditions: any[] = [eq(transactions.trainerId, trainerId)];
+  if (startDate) conditions.push(sql`${transactions.date} >= ${startDate}`);
+  if (endDate) conditions.push(sql`${transactions.date} <= ${endDate}`);
   return db.select().from(transactions)
     .where(and(...conditions))
     .orderBy(desc(transactions.date));
@@ -278,8 +287,8 @@ export async function getFinancialSummary(trainerId: number, month: number, year
   const rows = await db.select().from(transactions)
     .where(and(
       eq(transactions.trainerId, trainerId),
-      gte(transactions.date, new Date(startDate)),
-      lte(transactions.date, new Date(endDate))
+      sql`${transactions.date} >= ${startDate}`,
+      sql`${transactions.date} <= ${endDate}`
     ));
   let income = 0, expenses = 0, pending = 0;
   for (const row of rows) {

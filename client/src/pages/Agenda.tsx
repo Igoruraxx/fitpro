@@ -1,4 +1,6 @@
 import { trpc } from "@/lib/trpc";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { Badge } from "@/components/ui/badge";import { Repeat2 } from "lucide-react";
 import { useState, useMemo, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -215,6 +217,17 @@ export default function Agenda() {
   const [formNotes, setFormNotes] = useState("");
   const [formStatus, setFormStatus] = useState("scheduled");
 
+  // Recurrence state
+  const [isRecurring, setIsRecurring] = useState(false);
+  const [recurrenceType, setRecurrenceType] = useState<"daily"|"weekly"|"biweekly"|"monthly">("weekly");
+  const [recurrenceDays, setRecurrenceDays] = useState<number[]>([]);
+  const [recurrenceEndDate, setRecurrenceEndDate] = useState("");
+  const [recurrenceOccurrences, setRecurrenceOccurrences] = useState(8);
+  const [recurrenceMode, setRecurrenceMode] = useState<"occurrences"|"endDate">("occurrences");
+  // Delete group dialog
+  const [showDeleteGroupDialog, setShowDeleteGroupDialog] = useState(false);
+  const [pendingDeleteAppt, setPendingDeleteAppt] = useState<any>(null);
+
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } })
   );
@@ -245,6 +258,15 @@ export default function Agenda() {
     onError: (e) => toast.error(e.message),
   });
 
+  const createRecurringMutation = trpc.appointments.createRecurring.useMutation({
+    onSuccess: (data) => {
+      toast.success(`${data.count} sessões recorrentes criadas! 🔁`);
+      refetch();
+      setShowModal(false);
+    },
+    onError: (e) => toast.error(e.message),
+  });
+
   const updateMutation = trpc.appointments.update.useMutation({
     onSuccess: () => { toast.success("Salvo!"); refetch(); setShowModal(false); },
     onError: (e) => toast.error(e.message),
@@ -254,6 +276,15 @@ export default function Agenda() {
     onSuccess: () => { toast.success("Excluído!"); refetch(); setShowModal(false); },
     onError: (e) => toast.error(e.message),
   });
+
+  const handleDeleteClick = (appt: any) => {
+    if (appt.recurrenceGroupId) {
+      setPendingDeleteAppt(appt);
+      setShowDeleteGroupDialog(true);
+    } else {
+      deleteMutation.mutate({ id: appt.id });
+    }
+  };
 
   const navigate = (dir: number) => {
     if (viewMode === "day") setCurrentDate(d => dir > 0 ? addDays(d, 1) : subDays(d, 1));
@@ -271,6 +302,12 @@ export default function Agenda() {
     setFormNotes("");
     setFormStatus("scheduled");
     setIsGuest(false);
+    setIsRecurring(false);
+    setRecurrenceType("weekly");
+    setRecurrenceDays([]);
+    setRecurrenceEndDate("");
+    setRecurrenceOccurrences(8);
+    setRecurrenceMode("occurrences");
     setShowModal(true);
   };
 
@@ -289,18 +326,47 @@ export default function Agenda() {
 
   const handleSubmit = () => {
     if (!selectedDate) return;
-    const payload: any = {
-      date: format(selectedDate, "yyyy-MM-dd"),
-      startTime: formTime,
-      duration: formDuration,
-      notes: formNotes || undefined,
-      status: formStatus as any,
-    };
-    if (isGuest) payload.guestName = formGuestName;
-    else if (formClientId && formClientId !== "none") payload.clientId = parseInt(formClientId);
+    const dateStr = format(selectedDate, "yyyy-MM-dd");
+    const clientId = (!isGuest && formClientId && formClientId !== "none") ? parseInt(formClientId) : undefined;
+    const guestName = isGuest ? formGuestName : undefined;
 
-    if (editingAppt) updateMutation.mutate({ id: editingAppt.id, ...payload });
-    else createMutation.mutate(payload);
+    if (editingAppt) {
+      updateMutation.mutate({
+        id: editingAppt.id,
+        date: dateStr,
+        startTime: formTime,
+        duration: formDuration,
+        notes: formNotes || undefined,
+        status: formStatus as any,
+        clientId,
+        guestName,
+      });
+      return;
+    }
+
+    if (isRecurring) {
+      createRecurringMutation.mutate({
+        startDate: dateStr,
+        startTime: formTime,
+        duration: formDuration,
+        notes: formNotes || undefined,
+        clientId,
+        guestName,
+        recurrenceType,
+        recurrenceDays: recurrenceDays.length > 0 ? recurrenceDays.join(",") : undefined,
+        endDate: recurrenceMode === "endDate" && recurrenceEndDate ? recurrenceEndDate : undefined,
+        occurrences: recurrenceMode === "occurrences" ? recurrenceOccurrences : 52,
+      });
+    } else {
+      createMutation.mutate({
+        date: dateStr,
+        startTime: formTime,
+        duration: formDuration,
+        notes: formNotes || undefined,
+        clientId,
+        guestName,
+      });
+    }
   };
 
   const markCompleted = () => {
@@ -862,6 +928,142 @@ export default function Agenda() {
                 />
               </div>
 
+              {/* ─── Recorrência (só ao criar) ─── */}
+              {!editingAppt && (
+                <div className="border border-border rounded-lg p-3 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Repeat2 className="h-4 w-4 text-primary" />
+                      <Label className="text-sm font-medium cursor-pointer">Repetir sessão</Label>
+                    </div>
+                    <Checkbox
+                      checked={isRecurring}
+                      onCheckedChange={(v) => setIsRecurring(!!v)}
+                    />
+                  </div>
+
+                  {isRecurring && (
+                    <div className="space-y-3 pt-1">
+                      {/* Tipo de recorrência */}
+                      <div>
+                        <Label className="text-xs text-muted-foreground">Frequência</Label>
+                        <Select value={recurrenceType} onValueChange={(v) => setRecurrenceType(v as any)}>
+                          <SelectTrigger className="mt-1 h-8 text-sm">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="daily">Diária</SelectItem>
+                            <SelectItem value="weekly">Semanal</SelectItem>
+                            <SelectItem value="biweekly">Quinzenal</SelectItem>
+                            <SelectItem value="monthly">Mensal</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      {/* Dias da semana (só para semanal) */}
+                      {recurrenceType === "weekly" && (
+                        <div>
+                          <Label className="text-xs text-muted-foreground">Dias da semana</Label>
+                          <div className="flex gap-1 mt-1 flex-wrap">
+                            {["Dom","Seg","Ter","Qua","Qui","Sex","Sáb"].map((d, i) => (
+                              <button
+                                key={i}
+                                type="button"
+                                onClick={() => setRecurrenceDays(prev =>
+                                  prev.includes(i) ? prev.filter(x => x !== i) : [...prev, i]
+                                )}
+                                className={`px-2 py-1 rounded text-xs font-medium border transition-colors ${
+                                  recurrenceDays.includes(i)
+                                    ? "bg-primary text-primary-foreground border-primary"
+                                    : "border-border text-muted-foreground hover:border-primary/50"
+                                }`}
+                              >
+                                {d}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Modo de término */}
+                      <div>
+                        <Label className="text-xs text-muted-foreground">Término</Label>
+                        <div className="flex gap-2 mt-1">
+                          <button
+                            type="button"
+                            onClick={() => setRecurrenceMode("occurrences")}
+                            className={`flex-1 py-1.5 rounded text-xs border transition-colors ${
+                              recurrenceMode === "occurrences" ? "bg-primary/20 text-primary border-primary/50" : "border-border text-muted-foreground"
+                            }`}
+                          >
+                            Nº de sessões
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setRecurrenceMode("endDate")}
+                            className={`flex-1 py-1.5 rounded text-xs border transition-colors ${
+                              recurrenceMode === "endDate" ? "bg-primary/20 text-primary border-primary/50" : "border-border text-muted-foreground"
+                            }`}
+                          >
+                            Data final
+                          </button>
+                        </div>
+                      </div>
+
+                      {recurrenceMode === "occurrences" ? (
+                        <div>
+                          <Label className="text-xs text-muted-foreground">Número de sessões</Label>
+                          <div className="flex items-center gap-2 mt-1">
+                            <button type="button" onClick={() => setRecurrenceOccurrences(n => Math.max(2, n - 1))}
+                              className="w-7 h-7 rounded border border-border text-sm hover:bg-accent flex items-center justify-center">
+                              -
+                            </button>
+                            <span className="text-sm font-medium w-8 text-center">{recurrenceOccurrences}</span>
+                            <button type="button" onClick={() => setRecurrenceOccurrences(n => Math.min(52, n + 1))}
+                              className="w-7 h-7 rounded border border-border text-sm hover:bg-accent flex items-center justify-center">
+                              +
+                            </button>
+                            <span className="text-xs text-muted-foreground">sessões</span>
+                          </div>
+                        </div>
+                      ) : (
+                        <div>
+                          <Label className="text-xs text-muted-foreground">Data final</Label>
+                          <Input
+                            type="date"
+                            className="mt-1 h-8 text-sm"
+                            value={recurrenceEndDate}
+                            onChange={(e) => setRecurrenceEndDate(e.target.value)}
+                          />
+                        </div>
+                      )}
+
+                      {/* Preview */}
+                      <div className="bg-primary/5 rounded p-2 text-xs text-muted-foreground">
+                        <Repeat2 className="h-3 w-3 inline mr-1 text-primary" />
+                        {recurrenceMode === "occurrences"
+                          ? `Serão criadas ${recurrenceOccurrences} sess${recurrenceOccurrences === 1 ? "ão" : "ões"} recorrentes`
+                          : recurrenceEndDate
+                            ? `Sessões até ${recurrenceEndDate}`
+                            : "Defina a data final"
+                        }
+                        {recurrenceType === "weekly" && recurrenceDays.length > 0 && (
+                          <span> · dias: {recurrenceDays.map(d => ["Dom","Seg","Ter","Qua","Qui","Sex","Sáb"][d]).join(", ")}</span>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Badge recorrência ao editar */}
+              {editingAppt?.recurrenceGroupId && (
+                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <Repeat2 className="h-3.5 w-3.5 text-primary" />
+                  <span>Esta sessão faz parte de uma série recorrente</span>
+                </div>
+              )}
+
               {/* Status (só ao editar) */}
               {editingAppt && (
                 <div>
@@ -924,16 +1126,51 @@ export default function Agenda() {
               {editingAppt && (
                 <Button
                   variant="destructive" className="w-full"
-                  onClick={() => deleteMutation.mutate({ id: editingAppt.id })}
+                  onClick={() => handleDeleteClick(editingAppt)}
                   disabled={deleteMutation.isPending}
                 >
-                  <Trash2 className="h-4 w-4 mr-2" /> Excluir Agendamento
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  {editingAppt.recurrenceGroupId ? "Excluir Sessão..." : "Excluir Agendamento"}
                 </Button>
               )}
             </div>
           </DialogContent>
         </Dialog>
       </div>
+
+      {/* ─── AlertDialog: excluir sessão única ou toda a série ─── */}
+      <AlertDialog open={showDeleteGroupDialog} onOpenChange={setShowDeleteGroupDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir agendamento recorrente</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta sessão faz parte de uma série recorrente. Deseja excluir apenas esta sessão ou todas as sessões da série?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="flex-col sm:flex-row gap-2">
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <Button
+              variant="outline"
+              className="border-destructive/50 text-destructive hover:bg-destructive/10"
+              onClick={() => {
+                if (pendingDeleteAppt) deleteMutation.mutate({ id: pendingDeleteAppt.id });
+                setShowDeleteGroupDialog(false);
+              }}
+            >
+              Só esta sessão
+            </Button>
+            <AlertDialogAction
+              className="bg-destructive hover:bg-destructive/90"
+              onClick={() => {
+                if (pendingDeleteAppt) deleteMutation.mutate({ id: pendingDeleteAppt.id, deleteGroup: true });
+                setShowDeleteGroupDialog(false);
+              }}
+            >
+              Toda a série
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </DndContext>
   );
 }

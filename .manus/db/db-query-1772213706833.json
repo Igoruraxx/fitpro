@@ -1,0 +1,9 @@
+{
+  "query": "ALTER TABLE `appointments` ADD `recurrenceGroupId` varchar(36);\nALTER TABLE `appointments` ADD `recurrenceType` enum('none','daily','weekly','biweekly','monthly') DEFAULT 'none' NOT NULL;\nALTER TABLE `appointments` ADD `recurrenceDays` varchar(20);",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 4PiQ8e52qW4Xjb6.root --database 5UbJ997E6SHYZid72bThxF --execute ALTER TABLE `appointments` ADD `recurrenceGroupId` varchar(36);\nALTER TABLE `appointments` ADD `recurrenceType` enum('none','daily','weekly','biweekly','monthly') DEFAULT 'none' NOT NULL;\nALTER TABLE `appointments` ADD `recurrenceDays` varchar(20);",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 1322
+}
