@@ -9,6 +9,7 @@ import {
   progressPhotos, InsertProgressPhoto,
   transactions, InsertTransaction,
   authTokens, InsertAuthToken,
+  bioimpedanceExams, InsertBioimpedanceExam,
 } from "../drizzle/schema";
 import { ENV } from './_core/env';
 import { nanoid } from "nanoid";
@@ -576,4 +577,187 @@ export async function decrementClientSessions(clientId: number, trainerId: numbe
     .where(and(eq(clients.id, clientId), eq(clients.trainerId, trainerId)));
 
   return newCount;
+}
+
+// ==================== FINANCIAL DASHBOARD ====================
+
+/**
+ * Returns a comprehensive financial dashboard for a trainer.
+ * Rules:
+ * - Only ACTIVE clients count (status = 'active')
+ * - Consulting clients (clientType = 'consulting') are excluded from session/plan revenue
+ * - Monthly plan: revenue = monthlyFee per active training client
+ * - Package plan: revenue = packageValue per active training client with sessionsRemaining > 0
+ * - Overdue: monthly clients whose paymentDay has already passed this month
+ * - Expiring packages: training clients with sessionsRemaining <= 3
+ */
+export async function getFinancialDashboard(trainerId: number) {
+  const db = await getDb();
+  if (!db) return null;
+
+  const today = new Date();
+  const currentDay = today.getDate();
+  const currentMonth = today.getMonth() + 1;
+  const currentYear = today.getFullYear();
+
+  // Get all clients for this trainer
+  const allClients = await db.select().from(clients).where(eq(clients.trainerId, trainerId));
+
+  // Filter: only active training clients count for financial
+  const activeTraining = allClients.filter(c => c.status === 'active' && c.clientType === 'training');
+  const activeConsulting = allClients.filter(c => c.status === 'active' && c.clientType === 'consulting');
+  const inactiveClients = allClients.filter(c => c.status === 'inactive');
+
+  // Monthly plan clients (active training only)
+  const monthlyClients = activeTraining.filter(c => c.planType === 'monthly');
+  const packageClients = activeTraining.filter(c => c.planType === 'package');
+
+  // Monthly revenue expected
+  const monthlyRevenue = monthlyClients.reduce((sum, c) => sum + (parseFloat(c.monthlyFee || '0') || 0), 0);
+
+  // Package revenue (active packages with sessions remaining)
+  const packageRevenue = packageClients
+    .filter(c => (c.sessionsRemaining ?? 0) > 0)
+    .reduce((sum, c) => sum + (parseFloat(c.packageValue || '0') || 0), 0);
+
+  // Overdue: monthly clients whose paymentDay has passed this month
+  const overdueClients = monthlyClients.filter(c => {
+    const day = c.paymentDay ?? 5;
+    return day < currentDay;
+  });
+  const overdueAmount = overdueClients.reduce((sum, c) => sum + (parseFloat(c.monthlyFee || '0') || 0), 0);
+
+  // Expiring packages: training clients with sessionsRemaining <= 3
+  const expiringPackages = packageClients.filter(c => {
+    const rem = c.sessionsRemaining ?? 0;
+    return rem <= 3 && rem >= 0;
+  });
+
+  // Completed sessions this month
+  const monthStart = `${currentYear}-${String(currentMonth).padStart(2, '0')}-01`;
+  const monthEnd = `${currentYear}-${String(currentMonth).padStart(2, '0')}-31`;
+  const completedThisMonth = await db.select({ count: count() }).from(appointments)
+    .where(and(
+      eq(appointments.trainerId, trainerId),
+      eq(appointments.status, 'completed'),
+      sql`${appointments.date} >= ${monthStart}::date`,
+      sql`${appointments.date} <= ${monthEnd}::date`
+    ));
+
+  // Revenue last 6 months (from transactions)
+  const sixMonthsAgo = new Date(today);
+  sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 5);
+  const sixMonthsAgoStr = `${sixMonthsAgo.getFullYear()}-${String(sixMonthsAgo.getMonth() + 1).padStart(2, '0')}-01`;
+
+  const recentTransactions = await db.select().from(transactions)
+    .where(and(
+      eq(transactions.trainerId, trainerId),
+      eq(transactions.type, 'income'),
+      eq(transactions.status, 'paid'),
+      sql`${transactions.date} >= ${sixMonthsAgoStr}::date`
+    ));
+
+  // Group by month
+  const monthlyChart: Record<string, number> = {};
+  for (let i = 5; i >= 0; i--) {
+    const d = new Date(today);
+    d.setMonth(d.getMonth() - i);
+    const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+    monthlyChart[key] = 0;
+  }
+  for (const t of recentTransactions) {
+    const dateStr = typeof t.date === 'string' ? t.date : (t.date as Date).toISOString().split('T')[0];
+    const key = dateStr.substring(0, 7); // YYYY-MM
+    if (key in monthlyChart) monthlyChart[key] += parseFloat(t.amount);
+  }
+
+  const chartData = Object.entries(monthlyChart).map(([month, value]) => ({
+    month,
+    value: Math.round(value * 100) / 100,
+  }));
+
+  return {
+    summary: {
+      totalActiveClients: activeTraining.length + activeConsulting.length,
+      activeTrainingClients: activeTraining.length,
+      activeConsultingClients: activeConsulting.length,
+      inactiveClients: inactiveClients.length,
+      monthlyPlanClients: monthlyClients.length,
+      packagePlanClients: packageClients.length,
+    },
+    revenue: {
+      monthlyExpected: Math.round(monthlyRevenue * 100) / 100,
+      packageActive: Math.round(packageRevenue * 100) / 100,
+      totalExpected: Math.round((monthlyRevenue + packageRevenue) * 100) / 100,
+    },
+    overdue: {
+      count: overdueClients.length,
+      amount: Math.round(overdueAmount * 100) / 100,
+      clients: overdueClients.map(c => ({
+        id: c.id,
+        name: c.name,
+        fee: parseFloat(c.monthlyFee || '0'),
+        paymentDay: c.paymentDay,
+        phone: c.phone,
+      })),
+    },
+    expiringPackages: {
+      count: expiringPackages.length,
+      clients: expiringPackages.map(c => ({
+        id: c.id,
+        name: c.name,
+        sessionsRemaining: c.sessionsRemaining ?? 0,
+        packageSessions: c.packageSessions ?? 0,
+        phone: c.phone,
+      })),
+    },
+    completedSessionsThisMonth: completedThisMonth[0]?.count ?? 0,
+    chartData,
+    allClients: allClients.map(c => ({
+      id: c.id,
+      name: c.name,
+      status: c.status,
+      clientType: c.clientType,
+      planType: c.planType,
+      monthlyFee: c.monthlyFee ? parseFloat(c.monthlyFee) : null,
+      paymentDay: c.paymentDay,
+      packageSessions: c.packageSessions,
+      sessionsRemaining: c.sessionsRemaining,
+      packageValue: c.packageValue ? parseFloat(c.packageValue) : null,
+      phone: c.phone,
+    })),
+  };
+}
+
+// ==================== BIOIMPEDANCE EXAMS ====================
+
+export async function getBioimpedanceByClient(trainerId: number, clientId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(bioimpedanceExams)
+    .where(and(eq(bioimpedanceExams.trainerId, trainerId), eq(bioimpedanceExams.clientId, clientId)))
+    .orderBy(desc(bioimpedanceExams.date));
+}
+
+export async function createBioimpedanceExam(data: InsertBioimpedanceExam) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const result = await db.insert(bioimpedanceExams).values(data).returning({ id: bioimpedanceExams.id });
+  return result[0];
+}
+
+export async function updateBioimpedanceExam(id: number, trainerId: number, data: Partial<InsertBioimpedanceExam>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.update(bioimpedanceExams).set(data)
+    .where(and(eq(bioimpedanceExams.id, id), eq(bioimpedanceExams.trainerId, trainerId)));
+  return { success: true };
+}
+
+export async function deleteBioimpedanceExam(id: number, trainerId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.delete(bioimpedanceExams)
+    .where(and(eq(bioimpedanceExams.id, id), eq(bioimpedanceExams.trainerId, trainerId)));
+  return { success: true };
 }

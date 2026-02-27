@@ -210,3 +210,36 @@
 - [x] Corrigir drag-and-drop: usar setActivatorNodeRef no handle, MouseSensor+TouchSensor em vez de PointerSensor
 - [x] Handle visível no hover com área de clique dedicada (left-0 top-0 bottom-0 w-5)
 - [x] Funciona nas views Dia, Lista e Semana
+
+## Dashboard Financeiro + Tipo de Aluno (v8)
+- [x] Adicionar campo clientType (training/consulting) na tabela clients
+- [x] Adicionar campo status (active/inactive) na tabela clients (já existia)
+- [x] Atualizar router clients.create/update para suportar novos campos
+- [x] Atualizar Clientes.tsx: campo tipo (Treino/Consultoria) e status (Ativo/Inativo)
+- [x] Consultoria: não gera sessões na agenda, não conta no financeiro de sessões
+- [x] Inativo: não conta no financeiro
+- [x] Criar página Financeiro.tsx com dashboard completo
+- [x] Financeiro: receita mensal esperada (planos ativos)
+- [x] Financeiro: receita mensal de pacotes (sessões ativas)
+- [x] Financeiro: total de alunos ativos por tipo
+- [x] Financeiro: inadimplência (planos com vencimento passado)
+- [x] Financeiro: pacotes próximos do fim (≤3 sessões restantes)
+- [x] Financeiro: projeção de receita próximo mês
+- [x] Financeiro: gráfico de receita mensal (últimos 6 meses)
+- [x] Adicionar rota /financas no App.tsx
+- [x] Adicionar item Finanças no sidebar do AppLayout
+
+## Módulo Bioimpedância (v9)
+- [x] Tabela bioimpedanceExams no schema e banco (PostgreSQL Supabase)
+- [x] Campos: peso, IMC, gorduraCorporal%, massaGorda, massaLivreGordura, massaMuscular, taxaMuscular, massaMuscularEsqueletica, massaOssea, massaProteica, proteina%, umidade, aguaCorporal%, gorduraSubcutanea%, gorduraVisceral, TMB, idadeMetabolica, WHR, pesoIdeal, nivelObesidade, tipoCorpo, imageUrl, notes
+- [x] Cálculo automático: % gordura = (massaGorda / peso) * 100
+- [x] Cálculo automático: massaGorda = peso - massaLivreGordura (se informado)
+- [x] Cálculo automático: IMC = peso / (altura²) usando altura do aluno
+- [x] Endpoints tRPC: bioimpedance.list, create, update, delete
+- [x] Página /bioimpedancia com seletor de aluno
+- [x] Aba "Gráficos" com evolução de peso, % gordura, massa muscular, gordura visceral
+- [x] Aba "Exames" com lista de exames e botão para ver detalhes
+- [x] Formulário completo com todos os campos do Fitdays
+- [x] Upload de imagem do laudo (comprimida com compressImage)
+- [x] Botão "Gerar Relatório PDF" (placeholder por ora)
+- [x] Rota /bioimpedancia no App.tsx e sidebar (desktop + mobile)

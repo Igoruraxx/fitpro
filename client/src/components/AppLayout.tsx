@@ -2,7 +2,7 @@ import { useAuth } from "@/_core/hooks/useAuth";
 import { useIsMobile } from "@/hooks/useMobile";
 import {
   LayoutDashboard, Calendar, Users, TrendingUp, DollarSign, User,
-  LogOut, Shield, Loader2, Dumbbell, Image, ChevronRight,
+  LogOut, Shield, Loader2, Dumbbell, Image, ChevronRight, Activity,
 } from "lucide-react";
 import { useLocation } from "wouter";
 import { Avatar, AvatarFallback } from "./ui/avatar";
@@ -20,6 +20,7 @@ const navItems = [
   { icon: Calendar, label: "Agenda", path: "/" },
   { icon: Users, label: "Alunos", path: "/clientes" },
   { icon: Image, label: "Fotos", path: "/fotos" },
+  { icon: Activity, label: "Bioimpedância", path: "/bioimpedancia" },
   { icon: TrendingUp, label: "Evolução", path: "/evolucao" },
   { icon: DollarSign, label: "Finanças", path: "/financas" },
   { icon: User, label: "Perfil", path: "/perfil" },
@@ -27,11 +28,11 @@ const navItems = [
 
 // Mobile bottom nav shows only the 5 most important items
 const mobileNavItems = [
-  { icon: LayoutDashboard, label: "Dashboard", path: "/dashboard" },
   { icon: Calendar, label: "Agenda", path: "/" },
   { icon: Users, label: "Alunos", path: "/clientes" },
+  { icon: DollarSign, label: "Finanças", path: "/financas" },
   { icon: Image, label: "Fotos", path: "/fotos" },
-  { icon: User, label: "Perfil", path: "/perfil" },
+  { icon: Activity, label: "Bio", path: "/bioimpedancia" },
 ];
 
 const PAGE_TITLES: Record<string, string> = {
@@ -39,6 +40,7 @@ const PAGE_TITLES: Record<string, string> = {
   "/": "Agenda",
   "/clientes": "Alunos",
   "/fotos": "Fotos de Progresso",
+  "/bioimpedancia": "Bioimpedância",
   "/evolucao": "Evolução",
   "/financas": "Finanças",
   "/perfil": "Perfil",

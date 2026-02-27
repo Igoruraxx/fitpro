@@ -14,7 +14,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Plus, Search, Phone, Trash2, Edit, Users, Calendar, Package, CreditCard, Clock, AlertTriangle } from "lucide-react";
+import { Plus, Search, Phone, Trash2, Edit, Users, Calendar, Package, CreditCard, Clock, AlertTriangle, Briefcase, Dumbbell } from "lucide-react";
 import { toast } from "sonner";
 import { useLocation } from "wouter";
 
@@ -28,6 +28,16 @@ const STATUS_LABELS: Record<string, string> = {
   active: "Ativo",
   inactive: "Inativo",
   trial: "Pausado",
+};
+
+const CLIENT_TYPE_STYLES: Record<string, string> = {
+  training: "bg-blue-500/20 text-blue-400 border border-blue-500/30",
+  consulting: "bg-purple-500/20 text-purple-400 border border-purple-500/30",
+};
+
+const CLIENT_TYPE_LABELS: Record<string, string> = {
+  training: "Treino",
+  consulting: "Consultoria",
 };
 
 const WEEKDAYS = [
@@ -73,6 +83,7 @@ export default function Clientes() {
   const [phone, setPhone] = useState("");
   const [gender, setGender] = useState<string>("");
   const [status, setStatus] = useState("active");
+  const [clientType, setClientType] = useState("training");
   const [planType, setPlanType] = useState("monthly");
 
   // Monthly plan
@@ -126,7 +137,7 @@ export default function Clientes() {
   );
 
   const resetForm = () => {
-    setName(""); setPhone(""); setGender(""); setStatus("active");
+    setName(""); setPhone(""); setGender(""); setStatus("active"); setClientType("training");
     setPlanType("monthly"); setMonthlyFee(""); setPaymentDay("5");
     setPackageSessions("10"); setPackageValue("");
     setSessionsPerWeek("3"); setSelectedDays(["1", "3", "5"]);
@@ -143,7 +154,7 @@ export default function Clientes() {
   const openEdit = (c: any) => {
     setEditing(c);
     setName(c.name); setPhone(c.phone || ""); setGender(c.gender || "");
-    setStatus(c.status || "active"); setPlanType(c.planType || "monthly");
+    setStatus(c.status || "active"); setClientType(c.clientType || "training"); setPlanType(c.planType || "monthly");
     setMonthlyFee(c.monthlyFee || ""); setPaymentDay(String(c.paymentDay || 5));
     setPackageSessions(String(c.packageSessions || 10)); setPackageValue(c.packageValue || "");
     setSessionsPerWeek(String(c.sessionsPerWeek || 3));
@@ -173,19 +184,23 @@ export default function Clientes() {
 
   const handleSubmit = async () => {
     if (!name.trim()) { toast.error("Nome é obrigatório"); return; }
-    if (selectedDays.length === 0) { toast.error("Selecione pelo menos um dia de treino"); return; }
-
+    const isConsulting = clientType === "consulting";
+    if (!isConsulting && selectedDays.length === 0) { toast.error("Selecione pelo menos um dia de treino"); return; }
     const payload: any = {
       name,
       phone: phone || undefined,
       gender: gender || undefined,
       status: status as any,
+      clientType: clientType as any,
       planType: planType as any,
-      sessionsPerWeek: parseInt(sessionsPerWeek) || 3,
-      sessionDays: selectedDays.sort().join(","),
-      sessionTime,
-      sessionDuration: parseInt(sessionDuration) || 60,
     };
+    // Only add session schedule for training clients
+    if (!isConsulting) {
+      payload.sessionsPerWeek = parseInt(sessionsPerWeek) || 3;
+      payload.sessionDays = selectedDays.sort().join(",");
+      payload.sessionTime = sessionTime;
+      payload.sessionDuration = parseInt(sessionDuration) || 60;
+    }
 
     if (planType === "monthly") {
       payload.monthlyFee = monthlyFee || undefined;
@@ -204,7 +219,7 @@ export default function Clientes() {
     } else {
       const result = await createMutation.mutateAsync(payload);
       // Auto-schedule sessions for the next 4 weeks
-      if (autoSchedule && result?.id && selectedDays.length > 0) {
+      if (autoSchedule && result?.id && selectedDays.length > 0 && !isConsulting) {
         const today = new Date().toISOString().split("T")[0];
         const fourWeeksLater = new Date();
         fourWeeksLater.setDate(fourWeeksLater.getDate() + 28);
@@ -293,6 +308,11 @@ export default function Clientes() {
                     <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${STATUS_STYLES[client.status] || ""}`}>
                       {STATUS_LABELS[client.status] || client.status}
                     </span>
+                    {client.clientType === "consulting" && (
+                      <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${CLIENT_TYPE_STYLES.consulting}`}>
+                        Consultoria
+                      </span>
+                    )}
                     {sessionsLow && (
                       <span className="flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full font-medium bg-orange-500/20 text-orange-400 border border-orange-500/30">
                         <AlertTriangle className="h-2.5 w-2.5" />
@@ -306,7 +326,11 @@ export default function Clientes() {
                         <Phone className="h-3 w-3" /> {client.phone}
                       </span>
                     )}
-                    {client.sessionDays && (
+                    {client.clientType === "consulting" ? (
+                      <span className="flex items-center gap-1">
+                        <Briefcase className="h-3 w-3" /> Consultoria
+                      </span>
+                    ) : client.sessionDays && (
                       <span className="flex items-center gap-1">
                         <Calendar className="h-3 w-3" />
                         {client.sessionsPerWeek}x/sem · {client.sessionTime}
@@ -383,17 +407,51 @@ export default function Clientes() {
               </div>
             </div>
 
-            {/* Status */}
-            <div>
-              <Label>Status</Label>
-              <Select value={status} onValueChange={setStatus}>
-                <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="active">Ativo</SelectItem>
-                  <SelectItem value="inactive">Inativo</SelectItem>
-                  <SelectItem value="trial">Pausado</SelectItem>
-                </SelectContent>
-              </Select>
+            {/* Type + Status */}
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label>Tipo de Aluno</Label>
+                <div className="grid grid-cols-2 gap-1.5 mt-1">
+                  <button
+                    type="button"
+                    onClick={() => setClientType("training")}
+                    className={`flex items-center justify-center gap-1.5 p-2 rounded-lg border text-xs font-medium transition-colors ${
+                      clientType === "training"
+                        ? "border-blue-500/50 bg-blue-500/10 text-blue-400"
+                        : "border-border bg-card text-muted-foreground hover:bg-accent/30"
+                    }`}
+                  >
+                    <Dumbbell className="h-3.5 w-3.5" />
+                    Treino
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setClientType("consulting")}
+                    className={`flex items-center justify-center gap-1.5 p-2 rounded-lg border text-xs font-medium transition-colors ${
+                      clientType === "consulting"
+                        ? "border-purple-500/50 bg-purple-500/10 text-purple-400"
+                        : "border-border bg-card text-muted-foreground hover:bg-accent/30"
+                    }`}
+                  >
+                    <Briefcase className="h-3.5 w-3.5" />
+                    Consultoria
+                  </button>
+                </div>
+                {clientType === "consulting" && (
+                  <p className="text-[10px] text-muted-foreground mt-1">Não gera sessões na agenda</p>
+                )}
+              </div>
+              <div>
+                <Label>Status</Label>
+                <Select value={status} onValueChange={setStatus}>
+                  <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="active">Ativo</SelectItem>
+                    <SelectItem value="inactive">Inativo</SelectItem>
+                    <SelectItem value="trial">Pausado</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
 
             {/* Plan Type */}
@@ -462,8 +520,8 @@ export default function Clientes() {
               </div>
             )}
 
-            {/* Session Schedule */}
-            <div className="border-t border-border pt-4">
+            {/* Session Schedule — only for training clients */}
+            {clientType !== "consulting" && (<div className="border-t border-border pt-4">
               <Label className="text-sm font-semibold text-foreground">Horário de Treino</Label>
 
               {/* Days of week */}
@@ -542,7 +600,7 @@ export default function Clientes() {
                 </Select>
               </div>
               </div>
-            </div>
+            </div>)}
 
             {/* Prepaid */}
             <div className="border-t border-border pt-4">

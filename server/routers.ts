@@ -10,9 +10,10 @@ import {
   deleteAppointmentsByGroup, decrementClientSessions,
   getMeasurementsByClient, createMeasurement, deleteMeasurement,
   getPhotosByClient, createProgressPhoto, deleteProgressPhoto,
-  getTransactionsByTrainer, createTransaction, updateTransaction, deleteTransaction, getFinancialSummary,
+  getTransactionsByTrainer, createTransaction, updateTransaction, deleteTransaction, getFinancialSummary, getFinancialDashboard,
   updateUserProfile, getAllTrainers, getAdminDashboardStats,
   getDashboardStats, getWeeklySessionsChart, getSessionStatusChart, getTodaySessions,
+  getBioimpedanceByClient, createBioimpedanceExam, updateBioimpedanceExam, deleteBioimpedanceExam,
 } from "./db";
 import { nanoid } from "nanoid";
 import { storagePut } from "./storage";
@@ -76,6 +77,84 @@ function generateRecurringDates(
 export const appRouter = router({
   system: systemRouter,
 
+  // ==================== BIOIMPEDANCE ====================
+  bioimpedance: router({
+    list: protectedProcedure.input(z.object({ clientId: z.number() })).query(async ({ ctx, input }) => {
+      return getBioimpedanceByClient(ctx.user.id, input.clientId);
+    }),
+    create: protectedProcedure.input(z.object({
+      clientId: z.number(),
+      date: z.string(),
+      weight: z.string().optional(),
+      bmi: z.string().optional(),
+      bodyFatPct: z.string().optional(),
+      fatMass: z.string().optional(),
+      leanMass: z.string().optional(),
+      muscleMass: z.string().optional(),
+      muscleRate: z.string().optional(),
+      skeletalMuscleMass: z.string().optional(),
+      boneMass: z.string().optional(),
+      proteinMass: z.string().optional(),
+      proteinPct: z.string().optional(),
+      moistureContent: z.string().optional(),
+      bodyWaterPct: z.string().optional(),
+      subcutaneousFatPct: z.string().optional(),
+      visceralFat: z.string().optional(),
+      bmr: z.string().optional(),
+      metabolicAge: z.number().optional(),
+      whr: z.string().optional(),
+      idealWeight: z.string().optional(),
+      obesityLevel: z.string().optional(),
+      bodyType: z.string().optional(),
+      imageBase64: z.string().optional(),
+      notes: z.string().optional(),
+    })).mutation(async ({ ctx, input }) => {
+      let imageUrl: string | undefined;
+      if (input.imageBase64) {
+        const base64Data = input.imageBase64.replace(/^data:image\/\w+;base64,/, '');
+        const buffer = Buffer.from(base64Data, 'base64');
+        const ext = input.imageBase64.startsWith('data:image/png') ? 'png' : 'jpg';
+        const key = `bio/${ctx.user.id}/${input.clientId}/${Date.now()}.${ext}`;
+        const { url } = await storagePut(key, buffer, `image/${ext}`);
+        imageUrl = url;
+      }
+      const { imageBase64, ...rest } = input;
+      return createBioimpedanceExam({ ...rest, trainerId: ctx.user.id, imageUrl });
+    }),
+    update: protectedProcedure.input(z.object({
+      id: z.number(),
+      date: z.string().optional(),
+      weight: z.string().optional(),
+      bmi: z.string().optional(),
+      bodyFatPct: z.string().optional(),
+      fatMass: z.string().optional(),
+      leanMass: z.string().optional(),
+      muscleMass: z.string().optional(),
+      muscleRate: z.string().optional(),
+      skeletalMuscleMass: z.string().optional(),
+      boneMass: z.string().optional(),
+      proteinMass: z.string().optional(),
+      proteinPct: z.string().optional(),
+      moistureContent: z.string().optional(),
+      bodyWaterPct: z.string().optional(),
+      subcutaneousFatPct: z.string().optional(),
+      visceralFat: z.string().optional(),
+      bmr: z.string().optional(),
+      metabolicAge: z.number().optional(),
+      whr: z.string().optional(),
+      idealWeight: z.string().optional(),
+      obesityLevel: z.string().optional(),
+      bodyType: z.string().optional(),
+      notes: z.string().optional(),
+    })).mutation(async ({ ctx, input }) => {
+      const { id, ...data } = input;
+      return updateBioimpedanceExam(id, ctx.user.id, data);
+    }),
+    delete: protectedProcedure.input(z.object({ id: z.number() })).mutation(async ({ ctx, input }) => {
+      return deleteBioimpedanceExam(input.id, ctx.user.id);
+    }),
+  }),
+
   auth: authRouter,
 
   // ==================== PROFILE ====================
@@ -109,6 +188,7 @@ export const appRouter = router({
       gender: z.enum(["male", "female", "other"]).optional(),
       photoUrl: z.string().optional(),
       status: z.enum(["active", "inactive", "trial"]).optional(),
+      clientType: z.enum(["training", "consulting"]).optional(),
       planType: z.enum(["monthly", "package"]).optional(),
       // Monthly plan
       monthlyFee: z.string().optional(),
@@ -141,6 +221,7 @@ export const appRouter = router({
       gender: z.enum(["male", "female", "other"]).optional(),
       photoUrl: z.string().optional(),
       status: z.enum(["active", "inactive", "trial"]).optional(),
+      clientType: z.enum(["training", "consulting"]).optional(),
       planType: z.enum(["monthly", "package"]).optional(),
       // Monthly plan
       monthlyFee: z.string().optional(),
@@ -373,6 +454,9 @@ export const appRouter = router({
       year: z.number(),
     })).query(async ({ ctx, input }) => {
       return getFinancialSummary(ctx.user.id, input.month, input.year);
+    }),
+    dashboard: protectedProcedure.query(async ({ ctx }) => {
+      return getFinancialDashboard(ctx.user.id);
     }),
   }),
 

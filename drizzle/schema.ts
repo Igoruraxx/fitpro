@@ -9,6 +9,7 @@ export const subscriptionStatusEnum = pgEnum("subscription_status", ["active", "
 export const genderEnum = pgEnum("gender", ["male", "female", "other"]);
 export const clientStatusEnum = pgEnum("client_status", ["active", "inactive", "trial"]);
 export const planTypeEnum = pgEnum("plan_type", ["monthly", "package"]);
+export const clientTypeEnum = pgEnum("client_type", ["training", "consulting"]);
 export const appointmentStatusEnum = pgEnum("appointment_status", ["scheduled", "completed", "cancelled", "no_show"]);
 export const recurrenceTypeEnum = pgEnum("recurrence_type", ["none", "daily", "weekly", "biweekly", "monthly"]);
 export const photoTypeEnum = pgEnum("photo_type", ["front", "back", "side_left", "side_right", "other"]);
@@ -66,6 +67,9 @@ export const clients = pgTable("clients", {
   gender: genderEnum("gender"),
   photoUrl: text("photoUrl"),
   status: clientStatusEnum("status").default("active").notNull(),
+
+  // Client type: training (has sessions) or consulting (no sessions in agenda)
+  clientType: clientTypeEnum("clientType").default("training").notNull(),
 
   // Plan type: monthly subscription or session package
   planType: planTypeEnum("planType").default("monthly").notNull(),
@@ -176,3 +180,42 @@ export const transactions = pgTable("transactions", {
 
 export type Transaction = typeof transactions.$inferSelect;
 export type InsertTransaction = typeof transactions.$inferInsert;
+
+// ==================== BIOIMPEDANCE EXAMS ====================
+export const bioimpedanceExams = pgTable("bioimpedanceExams", {
+  id: serial("id").primaryKey(),
+  trainerId: integer("trainerId").notNull(),
+  clientId: integer("clientId").notNull(),
+  date: date("date").notNull(),
+
+  // Core measurements
+  weight: decimal("weight", { precision: 6, scale: 2 }),           // kg
+  bmi: decimal("bmi", { precision: 5, scale: 2 }),                 // IMC kg/m²
+  bodyFatPct: decimal("bodyFatPct", { precision: 5, scale: 2 }),   // % gordura corporal
+  fatMass: decimal("fatMass", { precision: 6, scale: 2 }),         // massa gorda kg
+  leanMass: decimal("leanMass", { precision: 6, scale: 2 }),       // massa livre de gordura kg
+  muscleMass: decimal("muscleMass", { precision: 6, scale: 2 }),   // massa muscular kg
+  muscleRate: decimal("muscleRate", { precision: 5, scale: 2 }),   // taxa muscular %
+  skeletalMuscleMass: decimal("skeletalMuscleMass", { precision: 6, scale: 2 }), // massa muscular esquelética kg
+  boneMass: decimal("boneMass", { precision: 5, scale: 2 }),       // massa óssea kg
+  proteinMass: decimal("proteinMass", { precision: 5, scale: 2 }), // massa protéica kg
+  proteinPct: decimal("proteinPct", { precision: 5, scale: 2 }),   // proteína %
+  moistureContent: decimal("moistureContent", { precision: 6, scale: 2 }), // teor de umidade kg
+  bodyWaterPct: decimal("bodyWaterPct", { precision: 5, scale: 2 }), // água corporal %
+  subcutaneousFatPct: decimal("subcutaneousFatPct", { precision: 5, scale: 2 }), // gordura subcutânea %
+  visceralFat: decimal("visceralFat", { precision: 5, scale: 1 }), // gordura visceral (número)
+  bmr: decimal("bmr", { precision: 7, scale: 0 }),                 // TMB kcal
+  metabolicAge: integer("metabolicAge"),                           // idade metabólica
+  whr: decimal("whr", { precision: 4, scale: 2 }),                 // WHR
+  idealWeight: decimal("idealWeight", { precision: 6, scale: 2 }), // peso ideal kg
+  obesityLevel: varchar("obesityLevel", { length: 100 }),          // nível de obesidade
+  bodyType: varchar("bodyType", { length: 100 }),                  // tipo de corpo
+
+  // Report image
+  imageUrl: text("imageUrl"),
+  notes: text("notes"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type BioimpedanceExam = typeof bioimpedanceExams.$inferSelect;
+export type InsertBioimpedanceExam = typeof bioimpedanceExams.$inferInsert;
