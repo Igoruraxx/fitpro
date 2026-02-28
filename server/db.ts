@@ -161,11 +161,94 @@ export async function getClientById(id: number, trainerId: number) {
   return result.length > 0 ? result[0] : undefined;
 }
 
+/**
+ * Creates or refreshes the current-month pending charge for a client.
+ * Called automatically on create and update.
+ * - monthly plan: uses monthlyFee + paymentDay
+ * - package plan: uses packageValue as a one-time charge
+ * - consulting / inactive: no charge
+ */
+export async function upsertCurrentMonthCharge(trainerId: number, clientId: number, clientData: Partial<InsertClient>) {
+  const db = await getDb();
+  if (!db) return;
+
+  const planType = clientData.planType;
+  const status = clientData.status;
+
+  // Only active monthly/package clients get charges
+  if (status === 'inactive' || planType === 'consulting') return;
+
+  const now = new Date();
+  const month = now.getMonth() + 1;
+  const year = now.getFullYear();
+
+  let amount: string | null = null;
+  let dueDate: string | null = null;
+  let category = 'Mensalidade';
+
+  if (planType === 'monthly' && clientData.monthlyFee && clientData.paymentDay) {
+    amount = String(clientData.monthlyFee);
+    const lastDay = new Date(year, month, 0).getDate();
+    const validDay = Math.min(Number(clientData.paymentDay), lastDay);
+    dueDate = `${year}-${String(month).padStart(2, '0')}-${String(validDay).padStart(2, '0')}`;
+    category = 'Mensalidade';
+  } else if (planType === 'package' && clientData.packageValue) {
+    amount = String(clientData.packageValue);
+    // Due date = today for package (one-time)
+    dueDate = now.toISOString().split('T')[0];
+    category = 'Pacote de Sessões';
+  }
+
+  if (!amount || !dueDate) return;
+
+  // Check if a pending charge already exists for this client in this month
+  const startDate = `${year}-${String(month).padStart(2, '0')}-01`;
+  const lastDay = new Date(year, month, 0).getDate();
+  const endDate = `${year}-${String(month).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
+
+  const existing = await db.select({ id: transactions.id, status: transactions.status })
+    .from(transactions)
+    .where(and(
+      eq(transactions.trainerId, trainerId),
+      eq(transactions.clientId, clientId),
+      eq(transactions.type, 'income'),
+      sql`${transactions.dueDate} >= ${startDate}::date`,
+      sql`${transactions.dueDate} <= ${endDate}::date`,
+      sql`${transactions.status} IN ('pending', 'overdue')`
+    ));
+
+  if (existing.length > 0) {
+    // Update existing pending charge with new amount/dueDate
+    await db.update(transactions)
+      .set({ amount, dueDate, updatedAt: new Date() })
+      .where(eq(transactions.id, existing[0].id));
+  } else {
+    // Create new charge
+    const clientRow = await getClientById(clientId, trainerId);
+    const clientName = clientRow?.name ?? 'Aluno';
+    await db.insert(transactions).values({
+      trainerId,
+      clientId,
+      type: 'income',
+      category,
+      description: `${category} - ${clientName}`,
+      amount,
+      date: dueDate,
+      dueDate,
+      status: 'pending',
+    });
+  }
+}
+
 export async function createClient(data: InsertClient) {
   const db = await getDb();
   if (!db) return undefined;
   const result = await db.insert(clients).values(data).returning({ id: clients.id });
-  return result[0]?.id;
+  const clientId = result[0]?.id;
+  if (clientId) {
+    await upsertCurrentMonthCharge(data.trainerId, clientId, data);
+  }
+  return clientId;
 }
 
 export async function updateClient(id: number, trainerId: number, data: Partial<InsertClient>) {
@@ -173,6 +256,17 @@ export async function updateClient(id: number, trainerId: number, data: Partial<
   if (!db) return;
   await db.update(clients).set({ ...data, updatedAt: new Date() })
     .where(and(eq(clients.id, id), eq(clients.trainerId, trainerId)));
+  // Refresh charge if financial-relevant fields changed
+  const financialFields = ['planType', 'monthlyFee', 'paymentDay', 'packageValue', 'status'] as const;
+  const hasFinancialChange = financialFields.some(f => f in data);
+  if (hasFinancialChange) {
+    // Merge with existing client data to have full picture
+    const existing = await getClientById(id, trainerId);
+    if (existing) {
+      const merged = { ...existing, ...data };
+      await upsertCurrentMonthCharge(trainerId, id, merged);
+    }
+  }
 }
 
 export async function deleteClient(id: number, trainerId: number) {
@@ -291,6 +385,14 @@ export async function deleteProgressPhoto(id: number, trainerId: number) {
 }
 
 // ==================== TRANSACTIONS ====================
+
+export async function getTransactionsByClient(trainerId: number, clientId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(transactions)
+    .where(and(eq(transactions.trainerId, trainerId), eq(transactions.clientId, clientId)))
+    .orderBy(desc(transactions.dueDate));
+}
 
 export async function getTransactionsByTrainer(trainerId: number, startDate?: string, endDate?: string) {
   const db = await getDb();

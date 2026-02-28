@@ -22,6 +22,7 @@ import {
 import { getSessionCookieOptions } from "../_core/cookies";
 import { COOKIE_NAME, ONE_YEAR_MS } from "@shared/const";
 import { ENV } from "../_core/env";
+import { sendWelcomeEmail, sendPasswordResetEmail } from "../email";
 
 function getSessionSecret() {
   return new TextEncoder().encode(ENV.cookieSecret);
@@ -104,8 +105,11 @@ export const authRouter = router({
         getTokenExpiration("email_confirmation")
       );
 
-      // For now, auto-confirm email (remove this when email sending is configured)
+      // Auto-confirm email (no email verification flow)
       await updateUserEmailVerified(user.id);
+
+      // Send welcome email (fire-and-forget, don't block registration)
+      sendWelcomeEmail(input.email, input.name).catch(() => {});
 
       return {
         success: true,
@@ -218,13 +222,17 @@ export const authRouter = router({
       }
 
       // Create password reset token
-      await createAuthToken(
+      const resetToken = await createAuthToken(
         user.id,
         "password_reset",
         getTokenExpiration("password_reset")
       );
 
-      // TODO: Send password reset email with token
+      // Send password reset email
+      // The frontend origin is not available here, so we use a relative path
+      // The client will pass origin if needed; for now use a known pattern
+      const resetUrl = `${ENV.isProduction ? "https" : "http"}://fitpro.manus.space/reset-password?token=${resetToken}`;
+      sendPasswordResetEmail(user.email!, user.name ?? "Personal Trainer", resetUrl).catch(() => {});
 
       return {
         success: true,

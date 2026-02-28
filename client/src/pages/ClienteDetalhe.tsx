@@ -1,18 +1,86 @@
 import { trpc } from "@/lib/trpc";
 import { useParams, useLocation } from "wouter";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { ArrowLeft, Phone, Mail, Target, Calendar, TrendingUp, Loader2 } from "lucide-react";
-import { format } from "date-fns";
+import {
+  ArrowLeft, Phone, Calendar, TrendingUp, Loader2,
+  CheckCircle2, Clock, AlertCircle, MessageCircle,
+  Camera, Activity, DollarSign, User, Dumbbell
+} from "lucide-react";
+import { format, isPast, isToday } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { toast } from "sonner";
+
+const PLAN_LABELS: Record<string, string> = {
+  monthly: "Mensalidade",
+  package: "Pacote",
+  consulting: "Consultoria",
+};
+
+const STATUS_LABELS: Record<string, string> = {
+  active: "Ativo",
+  inactive: "Inativo",
+  trial: "Experimental",
+};
+
+const STATUS_COLORS: Record<string, string> = {
+  active: "bg-emerald-50 text-emerald-700",
+  inactive: "bg-red-50 text-red-700",
+  trial: "bg-amber-50 text-amber-700",
+};
+
+const APPT_STATUS_LABELS: Record<string, string> = {
+  scheduled: "Agendado",
+  completed: "Concluído",
+  cancelled: "Cancelado",
+  no_show: "Faltou",
+};
+
+const APPT_STATUS_COLORS: Record<string, string> = {
+  scheduled: "bg-blue-50 text-blue-700",
+  completed: "bg-emerald-50 text-emerald-700",
+  cancelled: "bg-slate-100 text-slate-500",
+  no_show: "bg-red-50 text-red-700",
+};
+
+const TX_STATUS_LABELS: Record<string, string> = {
+  paid: "Pago",
+  pending: "Pendente",
+  overdue: "Atrasado",
+  cancelled: "Cancelado",
+};
+
+const TX_STATUS_COLORS: Record<string, string> = {
+  paid: "bg-emerald-50 text-emerald-700",
+  pending: "bg-amber-50 text-amber-700",
+  overdue: "bg-red-50 text-red-700",
+  cancelled: "bg-slate-100 text-slate-500",
+};
+
+type Tab = "overview" | "sessions" | "finances" | "evolution";
 
 export default function ClienteDetalhe() {
   const params = useParams<{ id: string }>();
   const [, setLocation] = useLocation();
+  const [activeTab, setActiveTab] = useState<Tab>("overview");
   const clientId = parseInt(params.id || "0");
 
+  const utils = trpc.useUtils();
   const { data: client, isLoading } = trpc.clients.getById.useQuery({ id: clientId });
-  const { data: measurements = [] } = trpc.evolution.measurements.list.useQuery({ clientId });
+  const { data: appointments = [] } = trpc.appointments.listByClient.useQuery({ clientId });
+  const { data: transactions = [] } = trpc.finances.listByClient.useQuery({ clientId });
+  const { data: photos = [] } = trpc.photos.listAll.useQuery({ clientId });
+  const { data: bioExams = [] } = trpc.bioimpedance.list.useQuery({ clientId });
+
+  const markPaidMutation = trpc.finances.markPaid.useMutation({
+    onSuccess: () => {
+      toast.success("Pagamento confirmado!");
+      utils.finances.listByClient.invalidate({ clientId });
+      utils.finances.overdueClients.invalidate();
+    },
+    onError: (e) => toast.error(e.message),
+  });
 
   if (isLoading) {
     return (
@@ -31,78 +99,437 @@ export default function ClienteDetalhe() {
     );
   }
 
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case "active": return <span className="text-xs px-2 py-0.5 rounded-full bg-green-500/20 text-green-400">Ativo</span>;
-      case "inactive": return <span className="text-xs px-2 py-0.5 rounded-full bg-red-500/20 text-red-400">Inativo</span>;
-      case "trial": return <span className="text-xs px-2 py-0.5 rounded-full bg-yellow-500/20 text-yellow-400">Experimental</span>;
-      default: return null;
-    }
+  const completedSessions = (appointments as any[]).filter(a => a.status === "completed").length;
+  const totalSessions = (appointments as any[]).length;
+  const paidTransactions = (transactions as any[]).filter(t => t.status === "paid");
+  const totalPaid = paidTransactions.reduce((s, t) => s + parseFloat(t.amount), 0);
+  const pendingTransactions = (transactions as any[]).filter(t => t.status !== "paid" && t.status !== "cancelled");
+
+  const sendWhatsApp = () => {
+    const phone = client.phone?.replace(/\D/g, "");
+    if (!phone) { toast.error("Aluno sem telefone cadastrado"); return; }
+    const msg = encodeURIComponent(`Olá ${client.name}! 😊`);
+    window.open(`https://wa.me/55${phone}?text=${msg}`, "_blank");
   };
 
+  const isOverdue = (t: any) => {
+    if (t.status === "paid" || t.status === "cancelled") return false;
+    if (!t.dueDate) return false;
+    const due = new Date(t.dueDate + "T12:00:00");
+    return isPast(due) && !isToday(due);
+  };
+
+  const tabs: { id: Tab; label: string; icon: React.ReactNode }[] = [
+    { id: "overview", label: "Visão Geral", icon: <User className="h-3.5 w-3.5" /> },
+    { id: "sessions", label: "Sessões", icon: <Dumbbell className="h-3.5 w-3.5" /> },
+    { id: "finances", label: "Financeiro", icon: <DollarSign className="h-3.5 w-3.5" /> },
+    { id: "evolution", label: "Evolução", icon: <TrendingUp className="h-3.5 w-3.5" /> },
+  ];
+
   return (
-    <div className="space-y-4 p-4 md:p-0">
-      <Button variant="ghost" size="sm" onClick={() => setLocation("/clientes")} className="text-muted-foreground">
-        <ArrowLeft className="h-4 w-4 mr-1" /> Voltar
+    <div className="space-y-4">
+      {/* Back button */}
+      <Button variant="ghost" size="sm" onClick={() => setLocation("/clientes")} className="text-muted-foreground -ml-2">
+        <ArrowLeft className="h-4 w-4 mr-1" /> Voltar para Alunos
       </Button>
 
       {/* Profile card */}
-      <div className="rounded-xl border border-border bg-card p-5">
-        <div className="flex items-center gap-4">
-          <Avatar className="h-16 w-16 border-2 border-primary/30">
-            <AvatarFallback className="bg-primary/20 text-primary text-xl font-bold">
-              {client.name.charAt(0).toUpperCase()}
-            </AvatarFallback>
+      <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
+        <div className="flex items-start gap-4">
+          <Avatar className="h-16 w-16 border-2 border-primary/20 shrink-0">
+            {client.photoUrl ? (
+              <img src={client.photoUrl} alt={client.name} className="h-full w-full object-cover rounded-full" />
+            ) : (
+              <AvatarFallback className="bg-primary/10 text-primary text-xl font-bold">
+                {client.name.charAt(0).toUpperCase()}
+              </AvatarFallback>
+            )}
           </Avatar>
-          <div className="flex-1">
-            <div className="flex items-center gap-2">
-              <h2 className="text-xl font-bold">{client.name}</h2>
-              {getStatusBadge(client.status)}
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 flex-wrap">
+              <h2 className="text-xl font-bold text-foreground">{client.name}</h2>
+              <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${STATUS_COLORS[client.status] || ""}`}>
+                {STATUS_LABELS[client.status] || client.status}
+              </span>
             </div>
-            <div className="flex flex-wrap gap-3 mt-2 text-sm text-muted-foreground">
-              {client.phone && <span className="flex items-center gap-1"><Phone className="h-3.5 w-3.5" />{client.phone}</span>}
-
+            <div className="flex flex-wrap gap-3 mt-1.5 text-sm text-muted-foreground">
+              {client.phone && (
+                <button onClick={sendWhatsApp} className="flex items-center gap-1 hover:text-foreground transition-colors">
+                  <Phone className="h-3.5 w-3.5" />
+                  {client.phone}
+                </button>
+              )}
+              <span className="flex items-center gap-1">
+                <Calendar className="h-3.5 w-3.5" />
+                Desde {format(new Date(client.createdAt), "MMM yyyy", { locale: ptBR })}
+              </span>
+            </div>
+            <div className="mt-2 flex items-center gap-2">
+              <span className="text-xs px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 font-medium">
+                {PLAN_LABELS[client.planType] || client.planType}
+              </span>
+              {client.planType === "monthly" && client.monthlyFee && (
+                <span className="text-sm font-semibold text-primary">R$ {parseFloat(client.monthlyFee).toFixed(2)}/mês</span>
+              )}
+              {client.planType === "package" && client.sessionsRemaining !== null && (
+                <span className="text-sm font-semibold text-primary">{client.sessionsRemaining} sessões restantes</span>
+              )}
             </div>
           </div>
         </div>
 
-        {client.monthlyFee && (
-          <div className="mt-2 text-sm">
-            <span className="text-muted-foreground">Mensalidade:</span>
-            <span className="font-bold text-primary ml-2">R$ {parseFloat(client.monthlyFee).toFixed(2)}</span>
+        {/* Quick stats */}
+        <div className="grid grid-cols-3 gap-3 mt-4 pt-4 border-t border-border">
+          <div className="text-center">
+            <div className="text-lg font-bold text-foreground">{completedSessions}</div>
+            <div className="text-xs text-muted-foreground">Sessões</div>
           </div>
-        )}
-
-      </div>
-
-      {/* Quick stats */}
-      <div className="grid grid-cols-2 gap-3">
-        <div className="rounded-xl border border-border bg-card p-4 text-center">
-          <Calendar className="h-5 w-5 text-primary mx-auto mb-1" />
-          <div className="text-xs text-muted-foreground">Desde</div>
-          <div className="text-sm font-semibold">{format(new Date(client.createdAt), "MMM yyyy", { locale: ptBR })}</div>
-        </div>
-        <div className="rounded-xl border border-border bg-card p-4 text-center">
-          <TrendingUp className="h-5 w-5 text-primary mx-auto mb-1" />
-          <div className="text-xs text-muted-foreground">Avaliações</div>
-          <div className="text-sm font-semibold">{measurements.length}</div>
+          <div className="text-center">
+            <div className="text-lg font-bold text-foreground">{(bioExams as any[]).length}</div>
+            <div className="text-xs text-muted-foreground">Avaliações</div>
+          </div>
+          <div className="text-center">
+            <div className="text-lg font-bold text-emerald-600">R$ {totalPaid.toFixed(2)}</div>
+            <div className="text-xs text-muted-foreground">Pago</div>
+          </div>
         </div>
       </div>
 
-      {/* Recent measurements */}
-      {measurements.length > 0 && (
-        <div className="rounded-xl border border-border bg-card p-4">
-          <h3 className="font-semibold mb-3">Últimas Medidas</h3>
-          <div className="space-y-2">
-            {measurements.slice(0, 3).map((m: any) => (
-              <div key={m.id} className="flex items-center justify-between text-sm p-2 rounded-lg bg-muted/30">
-                <span className="text-muted-foreground">{format(new Date(m.date), "dd/MM/yyyy")}</span>
-                <div className="flex gap-3">
-                  {m.weight && <span>Peso: <strong>{m.weight}kg</strong></span>}
-                  {m.bodyFat && <span>BF: <strong>{m.bodyFat}%</strong></span>}
+      {/* Tabs */}
+      <div className="flex gap-1 bg-muted/40 rounded-xl p-1">
+        {tabs.map(tab => (
+          <button
+            key={tab.id}
+            onClick={() => setActiveTab(tab.id)}
+            className={`flex-1 flex items-center justify-center gap-1.5 py-2 px-2 rounded-lg text-xs font-medium transition-colors ${
+              activeTab === tab.id
+                ? "bg-white text-foreground shadow-sm"
+                : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            {tab.icon}
+            <span className="hidden sm:inline">{tab.label}</span>
+          </button>
+        ))}
+      </div>
+
+      {/* Tab: Visão Geral */}
+      {activeTab === "overview" && (
+        <div className="space-y-4">
+          {/* Plan details */}
+          <div className="rounded-xl border border-border bg-card p-4 shadow-sm">
+            <h3 className="text-sm font-semibold text-foreground mb-3">Detalhes do Plano</h3>
+            <div className="space-y-2 text-sm">
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Tipo de plano</span>
+                <span className="font-medium">{PLAN_LABELS[client.planType]}</span>
+              </div>
+              {client.planType === "monthly" && (
+                <>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Mensalidade</span>
+                    <span className="font-medium text-primary">R$ {parseFloat(client.monthlyFee || "0").toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Vencimento</span>
+                    <span className="font-medium">Dia {client.paymentDay}</span>
+                  </div>
+                </>
+              )}
+              {client.planType === "package" && (
+                <>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Valor do pacote</span>
+                    <span className="font-medium text-primary">R$ {parseFloat(client.packageValue || "0").toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Sessões contratadas</span>
+                    <span className="font-medium">{client.packageSessions}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Sessões restantes</span>
+                    <span className={`font-medium ${(client.sessionsRemaining ?? 0) <= 3 ? "text-amber-600" : "text-foreground"}`}>
+                      {client.sessionsRemaining ?? 0}
+                    </span>
+                  </div>
+                </>
+              )}
+              {client.sessionsPerWeek && (
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Frequência</span>
+                  <span className="font-medium">{client.sessionsPerWeek}x por semana</span>
+                </div>
+              )}
+              {client.sessionTime && (
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Horário padrão</span>
+                  <span className="font-medium">{client.sessionTime}</span>
+                </div>
+              )}
+              {client.birthDate && (
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Data de nascimento</span>
+                  <span className="font-medium">{format(new Date(client.birthDate + "T12:00:00"), "dd/MM/yyyy")}</span>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Pending charges */}
+          {pendingTransactions.length > 0 && (
+            <div className="rounded-xl border border-amber-200 bg-amber-50 p-4">
+              <h3 className="text-sm font-semibold text-amber-800 mb-2 flex items-center gap-2">
+                <AlertCircle className="h-4 w-4" />
+                Cobranças Pendentes
+              </h3>
+              <div className="space-y-2">
+                {(pendingTransactions as any[]).map((t: any) => {
+                  const overdue = isOverdue(t);
+                  return (
+                    <div key={t.id} className="flex items-center justify-between">
+                      <div>
+                        <span className="text-sm font-medium text-amber-900">{t.category}</span>
+                        {t.dueDate && (
+                          <span className={`text-xs ml-2 ${overdue ? "text-red-600 font-medium" : "text-amber-700"}`}>
+                            · {overdue ? "Venceu" : "Vence"} {format(new Date(t.dueDate + "T12:00:00"), "dd/MM/yyyy")}
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-bold text-amber-900">R$ {parseFloat(t.amount).toFixed(2)}</span>
+                        <Button
+                          size="sm" variant="ghost"
+                          className="h-7 text-emerald-700 hover:bg-emerald-100 text-xs px-2"
+                          onClick={() => markPaidMutation.mutate({ id: t.id })}
+                          disabled={markPaidMutation.isPending}
+                        >
+                          <CheckCircle2 className="h-3.5 w-3.5 mr-1" />
+                          Baixa
+                        </Button>
+                        {overdue && client.phone && (
+                          <Button
+                            size="sm" variant="ghost"
+                            className="h-7 text-green-700 hover:bg-green-100 text-xs px-2"
+                            onClick={() => {
+                              const phone = client.phone?.replace(/\D/g, "");
+                              const msg = encodeURIComponent(`Olá ${client.name}! 😊\n\nPassando para lembrar que há um pagamento pendente de R$ ${parseFloat(t.amount).toFixed(2)} em aberto.\n\nQualquer dúvida, estou à disposição! 🏋️`);
+                              window.open(`https://wa.me/55${phone}?text=${msg}`, "_blank");
+                            }}
+                          >
+                            <MessageCircle className="h-3.5 w-3.5 mr-1" />
+                            WhatsApp
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Recent sessions */}
+          {(appointments as any[]).length > 0 && (
+            <div className="rounded-xl border border-border bg-card p-4 shadow-sm">
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="text-sm font-semibold text-foreground">Últimas Sessões</h3>
+                <button onClick={() => setActiveTab("sessions")} className="text-xs text-primary hover:underline">Ver todas</button>
+              </div>
+              <div className="space-y-2">
+                {(appointments as any[]).slice(0, 4).map((a: any) => (
+                  <div key={a.id} className="flex items-center justify-between text-sm py-1.5 border-b border-border/50 last:border-0">
+                    <span className="text-muted-foreground">{format(new Date(a.date + "T12:00:00"), "dd/MM/yyyy")} · {a.startTime}</span>
+                    <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${APPT_STATUS_COLORS[a.status] || ""}`}>
+                      {APPT_STATUS_LABELS[a.status] || a.status}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Tab: Sessões */}
+      {activeTab === "sessions" && (
+        <div className="space-y-2">
+          <div className="flex items-center justify-between mb-1">
+            <span className="text-sm text-muted-foreground">{totalSessions} sessão{totalSessions !== 1 ? "ões" : ""} · {completedSessions} concluída{completedSessions !== 1 ? "s" : ""}</span>
+          </div>
+          {(appointments as any[]).length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-12 text-center rounded-xl border border-dashed border-border bg-card/50">
+              <Dumbbell className="h-10 w-10 text-muted-foreground/30 mb-3" />
+              <p className="text-sm text-muted-foreground">Nenhuma sessão registrada</p>
+            </div>
+          ) : (
+            (appointments as any[]).map((a: any) => (
+              <div key={a.id} className="flex items-center gap-3 p-3.5 rounded-xl border border-border bg-card shadow-sm">
+                <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${APPT_STATUS_COLORS[a.status]?.replace("text-", "bg-").replace("-700", "-100") || "bg-slate-100"}`}>
+                  {a.status === "completed" ? <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+                    : a.status === "cancelled" ? <AlertCircle className="h-4 w-4 text-slate-400" />
+                    : a.status === "no_show" ? <AlertCircle className="h-4 w-4 text-red-500" />
+                    : <Clock className="h-4 w-4 text-blue-600" />}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-medium text-foreground">
+                      {format(new Date(a.date + "T12:00:00"), "dd/MM/yyyy", { locale: ptBR })}
+                    </span>
+                    <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${APPT_STATUS_COLORS[a.status] || ""}`}>
+                      {APPT_STATUS_LABELS[a.status] || a.status}
+                    </span>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-0.5">{a.startTime} · {a.duration} min</p>
+                  {a.muscleGroups && (
+                    <p className="text-xs text-muted-foreground/70 mt-0.5 truncate">{a.muscleGroups.replace(/,/g, ", ")}</p>
+                  )}
                 </div>
               </div>
-            ))}
+            ))
+          )}
+        </div>
+      )}
+
+      {/* Tab: Financeiro */}
+      {activeTab === "finances" && (
+        <div className="space-y-2">
+          <div className="grid grid-cols-2 gap-3 mb-4">
+            <div className="rounded-xl border border-border bg-card p-4 shadow-sm text-center">
+              <div className="text-lg font-bold text-emerald-600">R$ {totalPaid.toFixed(2)}</div>
+              <div className="text-xs text-muted-foreground mt-0.5">Total Pago</div>
+            </div>
+            <div className="rounded-xl border border-border bg-card p-4 shadow-sm text-center">
+              <div className="text-lg font-bold text-amber-600">
+                R$ {pendingTransactions.reduce((s, t) => s + parseFloat(t.amount), 0).toFixed(2)}
+              </div>
+              <div className="text-xs text-muted-foreground mt-0.5">Pendente</div>
+            </div>
+          </div>
+
+          {(transactions as any[]).length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-12 text-center rounded-xl border border-dashed border-border bg-card/50">
+              <DollarSign className="h-10 w-10 text-muted-foreground/30 mb-3" />
+              <p className="text-sm text-muted-foreground">Nenhuma cobrança registrada</p>
+            </div>
+          ) : (
+            (transactions as any[]).map((t: any) => {
+              const overdue = isOverdue(t);
+              const effectiveStatus = overdue && t.status === "pending" ? "overdue" : t.status;
+              return (
+                <div key={t.id} className={`flex items-center gap-3 p-3.5 rounded-xl border shadow-sm ${overdue ? "border-red-200 bg-red-50/60" : "border-border bg-card"}`}>
+                  <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${
+                    effectiveStatus === "paid" ? "bg-emerald-50" : effectiveStatus === "overdue" ? "bg-red-100" : "bg-amber-50"
+                  }`}>
+                    {effectiveStatus === "paid" ? <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+                      : effectiveStatus === "overdue" ? <AlertCircle className="h-4 w-4 text-red-600" />
+                      : <Clock className="h-4 w-4 text-amber-600" />}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-medium text-foreground">{t.category}</span>
+                      <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${TX_STATUS_COLORS[effectiveStatus] || ""}`}>
+                        {TX_STATUS_LABELS[effectiveStatus] || effectiveStatus}
+                      </span>
+                    </div>
+                    {t.dueDate && (
+                      <p className={`text-xs mt-0.5 ${overdue ? "text-red-600 font-medium" : "text-muted-foreground"}`}>
+                        {overdue ? "Venceu" : "Vence"} {format(new Date(t.dueDate + "T12:00:00"), "dd/MM/yyyy")}
+                      </p>
+                    )}
+                  </div>
+                  <div className={`text-sm font-bold shrink-0 ${overdue ? "text-red-600" : effectiveStatus === "paid" ? "text-emerald-600" : "text-amber-600"}`}>
+                    R$ {parseFloat(t.amount).toFixed(2)}
+                  </div>
+                  {t.status !== "paid" && (
+                    <div className="flex gap-1 shrink-0">
+                      <Button
+                        variant="ghost" size="icon"
+                        className="h-8 w-8 text-emerald-600 hover:bg-emerald-50"
+                        title="Dar baixa"
+                        onClick={() => markPaidMutation.mutate({ id: t.id })}
+                        disabled={markPaidMutation.isPending}
+                      >
+                        <CheckCircle2 className="h-4 w-4" />
+                      </Button>
+                      {overdue && client.phone && (
+                        <Button
+                          variant="ghost" size="icon"
+                          className="h-8 w-8 text-green-600 hover:bg-green-50"
+                          title="Cobrar via WhatsApp"
+                          onClick={() => {
+                            const phone = client.phone?.replace(/\D/g, "");
+                            const msg = encodeURIComponent(`Olá ${client.name}! 😊\n\nPassando para lembrar que há um pagamento pendente de R$ ${parseFloat(t.amount).toFixed(2)} em aberto.\n\nQualquer dúvida, estou à disposição! 🏋️`);
+                            window.open(`https://wa.me/55${phone}?text=${msg}`, "_blank");
+                          }}
+                        >
+                          <MessageCircle className="h-4 w-4" />
+                        </Button>
+                      )}
+                    </div>
+                  )}
+                </div>
+              );
+            })
+          )}
+        </div>
+      )}
+
+      {/* Tab: Evolução */}
+      {activeTab === "evolution" && (
+        <div className="space-y-4">
+          {/* Bioimpedance */}
+          <div className="rounded-xl border border-border bg-card p-4 shadow-sm">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
+                <Activity className="h-4 w-4 text-primary" />
+                Bioimpedância
+              </h3>
+              <Button size="sm" variant="outline" className="text-xs h-7"
+                onClick={() => setLocation(`/bioimpedancia?clientId=${clientId}`)}>
+                Ver tudo
+              </Button>
+            </div>
+            {(bioExams as any[]).length === 0 ? (
+              <p className="text-sm text-muted-foreground text-center py-4">Nenhum exame registrado</p>
+            ) : (
+              <div className="space-y-2">
+                {(bioExams as any[]).slice(0, 3).map((exam: any) => (
+                  <div key={exam.id} className="flex items-center justify-between text-sm p-2 rounded-lg bg-muted/30">
+                    <span className="text-muted-foreground">{format(new Date(exam.date + "T12:00:00"), "dd/MM/yyyy")}</span>
+                    <div className="flex gap-4 text-xs">
+                      {exam.weight && <span>Peso: <strong>{exam.weight}kg</strong></span>}
+                      {exam.bodyFatPct && <span>Gordura: <strong>{exam.bodyFatPct}%</strong></span>}
+                      {exam.musclePct && <span>Músculo: <strong>{exam.musclePct}%</strong></span>}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Photos */}
+          <div className="rounded-xl border border-border bg-card p-4 shadow-sm">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
+                <Camera className="h-4 w-4 text-primary" />
+                Fotos de Progresso
+              </h3>
+              <Button size="sm" variant="outline" className="text-xs h-7"
+                onClick={() => setLocation(`/fotos?clientId=${clientId}`)}>
+                Ver tudo
+              </Button>
+            </div>
+            {(photos as any[]).length === 0 ? (
+              <p className="text-sm text-muted-foreground text-center py-4">Nenhuma foto registrada</p>
+            ) : (
+              <div className="grid grid-cols-4 gap-2">
+                {(photos as any[]).slice(0, 8).map((photo: any) => (
+                  <div key={photo.id} className="aspect-square rounded-lg overflow-hidden bg-muted">
+                    <img src={photo.photoUrl} alt="" className="w-full h-full object-cover" />
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       )}

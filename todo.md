@@ -364,3 +364,60 @@
 - [x] Inputs e selects: borda cinza-200, focus azul
 - [x] Bottom nav mobile: branco com ícone ativo em azul
 - [x] ThemeProvider configurado como light (App.tsx)
+
+## Financeiro Automático Simplificado (v24)
+- [ ] Backend: ao criar aluno (mensal/pacote), criar cobrança pendente automaticamente no mês corrente
+- [ ] Backend: ao editar aluno (valor/dia vencimento), atualizar/recriar cobrança pendente do mês corrente
+- [ ] Backend: remover função generateMonthlyCharges do router (não mais necessária)
+- [ ] UI Financas.tsx: remover botão "Gerar Cobranças do Mês"
+- [ ] UI Financas.tsx: mostrar cobranças pendentes com data de vencimento e valor claramente
+- [ ] UI Financas.tsx: manter botão de dar baixa (marcar como pago)
+- [ ] UI Financas.tsx: manter botão WhatsApp para cobranças
+
+## Página Detalhe do Aluno (v24)
+- [ ] Reescrever ClienteDetalhe.tsx com histórico completo: pagamentos, sessões, fotos, bioimpedância
+- [ ] Abas: Visão Geral, Financeiro, Sessões, Evolução (fotos + bioimpedância)
+- [ ] Card de perfil completo com dados do plano
+
+## Notificação de Vencimento Próximo (v24)
+- [ ] Job diário: verificar alunos com vencimento nos próximos 3 dias
+- [ ] Disparar notifyOwner com lista de alunos com vencimento próximo
+- [ ] Agendar job via setInterval no startup do servidor
+
+## E-mail via Resend (v24)
+- [ ] Criar server/email.ts com helper sendEmail usando Resend API
+- [ ] Integrar envio no registro: e-mail de boas-vindas
+- [ ] Integrar envio no forgotPassword: e-mail com link de reset
+- [ ] Adicionar RESEND_API_KEY ao ENV
+
+## Financeiro Automático + WhatsApp (v11)
+- [x] Cobrança criada automaticamente ao cadastrar aluno (plano mensal ou pacote)
+- [x] Cobrança atualizada ao editar dados financeiros do aluno
+- [x] Sem botão "Gerar Cobranças" — tudo automático
+- [x] Botão dar baixa (CheckCircle) visível em todas as cobranças pendentes
+- [x] Botão WhatsApp apenas para cobranças em atraso (com telefone cadastrado)
+- [x] Modal de inadimplentes com botão WhatsApp por aluno
+- [x] Função upsertCurrentMonthCharge no db.ts
+- [x] Endpoint finances.listByClient no router
+
+## Página de Detalhe do Aluno (v11)
+- [x] Rota /clientes/:id já existia no App.tsx
+- [x] Aba Visão Geral: dados do plano, cobranças pendentes, últimas sessões
+- [x] Aba Sessões: histórico completo de agendamentos com status
+- [x] Aba Financeiro: histórico de cobranças com dar baixa e WhatsApp
+- [x] Aba Evolução: bioimpedância e fotos de progresso
+- [x] Endpoint appointments.listByClient no router
+- [x] Endpoint finances.listByClient no router
+
+## Job Diário de Vencimento (v11)
+- [x] Arquivo server/jobs.ts com runDueDateReminderJob
+- [x] Notifica o dono via notifyOwner sobre cobranças vencendo em até 3 dias
+- [x] Agendado para rodar às 08:00 diariamente
+- [x] Integrado no startServer() em server/_core/index.ts
+
+## E-mail via Resend (v11)
+- [x] Arquivo server/email.ts com sendEmail, sendWelcomeEmail, sendPasswordResetEmail
+- [x] Chave RESEND_API_KEY configurada como secret
+- [x] E-mail de boas-vindas enviado ao registrar personal trainer
+- [x] E-mail de reset de senha enviado ao solicitar recuperação
+- [x] Testes vitest para o helper de e-mail (4 testes)

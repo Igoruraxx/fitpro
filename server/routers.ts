@@ -10,7 +10,7 @@ import {
   deleteAppointmentsByGroup, decrementClientSessions,
   getMeasurementsByClient, createMeasurement, deleteMeasurement,
   getPhotosByClient, createProgressPhoto, deleteProgressPhoto,
-  getTransactionsByTrainer, createTransaction, updateTransaction, deleteTransaction, getFinancialSummary, getFinancialDashboard,
+  getTransactionsByTrainer, getTransactionsByClient, createTransaction, updateTransaction, deleteTransaction, getFinancialSummary, getFinancialDashboard,
   markTransactionPaid, getOverdueClients, generateMonthlyCharges,
   updateUserProfile, getAllTrainers, getAdminDashboardStats,
   getDashboardStats, getWeeklySessionsChart, getSessionStatusChart, getTodaySessions,
@@ -233,6 +233,15 @@ export const appRouter = router({
     })).query(async ({ ctx, input }) => {
       return getAppointmentsByTrainer(ctx.user.id, input.startDate, input.endDate);
     }),
+    listByClient: protectedProcedure.input(z.object({ clientId: z.number() })).query(async ({ ctx, input }) => {
+      // Return all appointments for a specific client (last 90 days + future)
+      const past = new Date(); past.setDate(past.getDate() - 90);
+      const future = new Date(); future.setDate(future.getDate() + 60);
+      const startDate = past.toISOString().split('T')[0];
+      const endDate = future.toISOString().split('T')[0];
+      const all = await getAppointmentsByTrainer(ctx.user.id, startDate, endDate);
+      return all.filter((a: any) => a.clientId === input.clientId);
+    }),
     getById: protectedProcedure.input(z.object({ id: z.number() })).query(async ({ ctx, input }) => {
       return getAppointmentById(input.id, ctx.user.id);
     }),
@@ -387,6 +396,9 @@ export const appRouter = router({
       endDate: z.string().optional(),
     })).query(async ({ ctx, input }) => {
       return getTransactionsByTrainer(ctx.user.id, input.startDate, input.endDate);
+    }),
+    listByClient: protectedProcedure.input(z.object({ clientId: z.number() })).query(async ({ ctx, input }) => {
+      return getTransactionsByClient(ctx.user.id, input.clientId);
     }),
     create: protectedProcedure.input(z.object({
       clientId: z.number().optional(),
