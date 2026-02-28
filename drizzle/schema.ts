@@ -34,6 +34,9 @@ export const users = pgTable("users", {
   subscriptionPlan: subscriptionPlanEnum("subscriptionPlan").default("free").notNull(),
   subscriptionStatus: subscriptionStatusEnum("subscriptionStatus").default("trial").notNull(),
   subscriptionExpiresAt: timestamp("subscriptionExpiresAt"),
+  proSource: varchar("proSource", { length: 20 }), // 'trial' | 'paid' | 'courtesy'
+  proExpiresAt: timestamp("proExpiresAt"),
+  trialRequestedAt: timestamp("trialRequestedAt"),
   maxClients: integer("maxClients").default(5).notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().notNull(),

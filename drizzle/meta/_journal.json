@@ -1,26 +1,12 @@
 {
   "version": "7",
-  "dialect": "mysql",
+  "dialect": "postgresql",
   "entries": [
     {
       "idx": 0,
-      "version": "5",
-      "when": 1772208724567,
-      "tag": "0000_aspiring_invaders",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "5",
-      "when": 1772208927536,
-      "tag": "0001_next_namorita",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "5",
-      "when": 1772213698315,
-      "tag": "0002_chief_giant_girl",
+      "version": "7",
+      "when": 1772309229922,
+      "tag": "0000_supreme_mephistopheles",
       "breakpoints": true
     }
   ]

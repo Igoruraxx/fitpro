@@ -762,3 +762,9 @@
 - [x] Modal de trial ao clicar em função Pro pela primeira vez
 - [x] Notificação de expiração de trial (quando trial acabar)
 - [x] Exibir data de expiração Pro/trial no painel admin
+
+## Correção de Planos e Admins (v52)
+- [x] Adicionar colunas proSource, proExpiresAt, trialRequestedAt ao schema
+- [x] Corrigir todos os personals para subscriptionPlan = 'free'
+- [x] Limpar proSource, proExpiresAt, trialRequestedAt de todos os Free
+- [x] Remover role admin de todos exceto semap.igor@gmail.com

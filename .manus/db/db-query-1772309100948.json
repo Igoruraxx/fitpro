@@ -1,0 +1,19 @@
+{
+  "query": "SELECT id, email, name, role, \"subscriptionPlan\", \"proSource\", \"proExpiresAt\" FROM users ORDER BY id LIMIT 20;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 4PiQ8e52qW4Xjb6.root --database 5UbJ997E6SHYZid72bThxF --execute SELECT id, email, name, role, \"subscriptionPlan\", \"proSource\", \"proExpiresAt\" FROM users ORDER BY id LIMIT 20;",
+  "rows": [
+    {
+      "id": "1",
+      "email": "igorunifran@gmail.com",
+      "name": "Igor Ferreira Cunha",
+      "role": "admin",
+      "subscriptionPlan": "subscriptionPlan",
+      "proSource": "proSource",
+      "proExpiresAt": "proExpiresAt"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\temail\tname\trole\tsubscriptionPlan\tproSource\tproExpiresAt\n1\tigorunifran@gmail.com\tIgor Ferreira Cunha\tadmin\tsubscriptionPlan\tproSource\tproExpiresAt\n",
+  "stderr": "",
+  "execution_time_ms": 1490
+}
