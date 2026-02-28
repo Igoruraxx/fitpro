@@ -746,3 +746,11 @@
 - [ ] Procedure users.requestTrial: validar se já solicitou, criar trial de 7 dias
 - [ ] Procedure admin.grantPro: conceder dias Pro com origem (paid/trial/courtesy)
 - [ ] Modal de solicita
+
+
+## Página de Upgrade (v56)
+- [x] Criar página /upgrade com comparativo Free vs Pro
+- [x] Adicionar rota /upgrade no App.tsx
+- [x] Integrar botão "Ver Planos" no modal de trial
+- [x] Exibir FAQ e seção de CTA
+- [x] Corrigir erro de hooks no Admin.tsx

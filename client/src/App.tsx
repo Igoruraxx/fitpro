@@ -17,6 +17,7 @@ import Perfil from "./pages/Perfil";
 import Admin from "./pages/Admin";
 import Fotos from "./pages/Fotos";
 import RelatorioPlanos from "./pages/RelatorioPlanos";
+import Upgrade from "./pages/Upgrade";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import ForgotPassword from "./pages/ForgotPassword";
@@ -48,6 +49,7 @@ function Router() {
               <Route path="/financas" component={Financas} />
               <Route path="/perfil" component={Perfil} />
               <Route path="/admin" component={Admin} />
+              <Route path="/upgrade" component={Upgrade} />
               <Route component={NotFound} />
             </Switch>
           </AppLayout>

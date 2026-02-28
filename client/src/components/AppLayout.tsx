@@ -423,18 +423,11 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                   <span className="text-sm text-muted-foreground">Dashboard com métricas completas</span>
                 </div>
               </div>
-              <div className="flex gap-3">
-                <Button
-                  variant="outline"
-                  onClick={() => setShowTrialModal(false)}
-                  className="flex-1"
-                >
-                  Cancelar
-                </Button>
+              <div className="flex flex-col gap-3">
                 <Button
                   onClick={() => requestTrialMutation.mutate()}
                   disabled={requestTrialMutation.isPending}
-                  className="flex-1 bg-orange-500 hover:bg-orange-600 text-white"
+                  className="w-full bg-orange-500 hover:bg-orange-600 text-white"
                 >
                   {requestTrialMutation.isPending ? (
                     <>
@@ -444,6 +437,16 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                   ) : (
                     "Ativar Trial"
                   )}
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setShowTrialModal(false);
+                    setLocation("/upgrade");
+                  }}
+                  className="w-full"
+                >
+                  Ver Planos
                 </Button>
               </div>
             </div>
