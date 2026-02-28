@@ -108,8 +108,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       {/* Logo */}
       <div className="h-16 flex items-center px-5 border-b border-border shrink-0">
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center shrink-0">
-            <span className="text-primary-foreground font-bold text-sm">F</span>
+          <div className="w-8 h-8 flex items-center justify-center shrink-0">
+            <img src="https://d2xsxph8kpxj0f.cloudfront.net/310519663385249362/5UbJ997E6SHYZid72bThxF/fitpro-logo_005e8846.png" alt="FitPro" className="w-8 h-8 object-contain" />
           </div>
           <div>
             <p className="text-sm font-bold text-foreground leading-none">FITPRO</p>

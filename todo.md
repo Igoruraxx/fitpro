@@ -621,3 +621,18 @@
 - [x] Deletar pagamento do banco de dados
 - [x] Atualizar UI após exclusão
 - [x] Mostrar mensagem de sucesso
+
+## Sistema de Desfazer Exclusão de Pagamentos (v40)
+- [ ] Criar tabela deletedTransactions no banco de dados
+- [ ] Modificar mutation delete para arquivar ao invés de deletar
+- [ ] Implementar mutation restore para restaurar pagamentos
+- [ ] Adicionar UI de histórico de exclusões
+- [ ] Mostrar opção de restaurar com data de exclusão
+- [ ] Limpar histórico após 30 dias
+
+## Logo Personalizada (v41)
+- [x] Upload da logo para CDN
+- [x] Aplicar logo na tela de login
+- [x] Aplicar logo no header/navbar
+- [x] Aplicar logo no favicon
+- [x] Aplicar logo em todas as telas que exibem a marca
