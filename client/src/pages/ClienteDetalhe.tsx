@@ -67,6 +67,7 @@ export default function ClienteDetalhe() {
   const [activeTab, setActiveTab] = useState<Tab>("overview");
   const [sessionToComplete, setSessionToComplete] = useState<any>(null);
   const [showDeleteFutureDialog, setShowDeleteFutureDialog] = useState(false);
+  const [showDeleteAllDialog, setShowDeleteAllDialog] = useState(false);
   const clientId = parseInt(params.id || "0");
 
   const utils = trpc.useUtils();
@@ -107,6 +108,15 @@ export default function ClienteDetalhe() {
       toast.success(`${data.deleted} agendamento(s) futuro(s) excluído(s)!`);
       utils.appointments.listByClient.invalidate({ clientId });
       setShowDeleteFutureDialog(false);
+    },
+    onError: (e) => toast.error(e.message),
+  });
+
+  const deleteAllAppointmentsMutation = trpc.appointments.deleteAllByClient.useMutation({
+    onSuccess: (data) => {
+      toast.success(`${data.deleted} agendamento(s) excluído(s)!`);
+      utils.appointments.listByClient.invalidate({ clientId });
+      setShowDeleteAllDialog(false);
     },
     onError: (e) => toast.error(e.message),
   });
@@ -407,15 +417,26 @@ export default function ClienteDetalhe() {
         <div className="space-y-2">
           <div className="flex items-center justify-between mb-3">
             <span className="text-sm text-muted-foreground">{totalSessions} sessão{totalSessions !== 1 ? "ões" : ""} · {completedSessions} concluída{completedSessions !== 1 ? "s" : ""}</span>
-            <Button
-              size="sm"
-              variant="outline"
-              className="text-xs h-7 text-red-600 hover:text-red-700 hover:bg-red-50"
-              onClick={() => setShowDeleteFutureDialog(true)}
-            >
-              <Trash2 className="h-3 w-3 mr-1" />
-              Excluir Futuros
-            </Button>
+            <div className="flex gap-2">
+              <Button
+                size="sm"
+                variant="outline"
+                className="text-xs h-7 text-red-600 hover:text-red-700 hover:bg-red-50"
+                onClick={() => setShowDeleteFutureDialog(true)}
+              >
+                <Trash2 className="h-3 w-3 mr-1" />
+                Excluir Futuros
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                className="text-xs h-7 text-red-700 hover:text-red-800 hover:bg-red-100 border-red-300"
+                onClick={() => setShowDeleteAllDialog(true)}
+              >
+                <Trash2 className="h-3 w-3 mr-1" />
+                Excluir Todos
+              </Button>
+            </div>
           </div>
           {(appointments as any[]).length === 0 ? (
             <div className="flex flex-col items-center justify-center py-12 text-center rounded-xl border border-dashed border-border bg-card/50">
@@ -670,6 +691,30 @@ export default function ClienteDetalhe() {
               className="bg-red-600 hover:bg-red-700"
             >
               {deleteFutureAppointmentsMutation.isPending ? "Excluindo..." : "Excluir Tudo"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Dialog: Confirmar exclusão de todos os agendamentos */}
+      <AlertDialog open={showDeleteAllDialog} onOpenChange={setShowDeleteAllDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir TODOS os agendamentos?</AlertDialogTitle>
+            <AlertDialogDescription>
+              ⚠️ Esta ação não pode ser desfeita. Todos os agendamentos deste cliente (passados, presentes e futuros) serão permanentemente deletados.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                deleteAllAppointmentsMutation.mutate({ clientId });
+              }}
+              disabled={deleteAllAppointmentsMutation.isPending}
+              className="bg-red-700 hover:bg-red-800"
+            >
+              {deleteAllAppointmentsMutation.isPending ? "Excluindo..." : "Excluir Todos"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

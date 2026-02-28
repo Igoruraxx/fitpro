@@ -607,3 +607,10 @@
 - [x] Excluir apenas agendamentos com data futura (não concluídos)
 - [x] Exibir mensagem de sucesso após exclusão
 - [x] Atualizar UI após exclusão em massa
+
+## Botão Excluir Todos os Agendamentos (v38)
+- [x] Adicionar botão "Excluir Todos" ao lado de "Excluir Futuros"
+- [x] Deletar todos os agendamentos (passados, presentes e futuros)
+- [x] Exibir confirmação com aviso de ação irreversível
+- [x] Mostrar quantidade de agendamentos que serão deletados
+- [x] Atualizar UI após exclusão em massa
