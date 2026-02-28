@@ -720,3 +720,22 @@
 - [ ] Testar responsividade completa em mobile, tablet e desktop
 - [ ] Verificar espaçamento e overflow em todas as páginas
 - [ ] Validar contraste de cores e legibilidade
+
+## Escalabilidade: Planos Free/Pro + Admin (v55)
+- [x] Campo plan (free/pro) na tabela users (já existia subscriptionPlan)
+- [x] Campo impersonatingUserId na sessão JWT para modo admin
+- [x] Guard de limite: Free = máx 5 alunos ativos (backend + frontend)
+- [x] Guard de acesso: Free sem gráficos e relatórios (bloqueio no AppLayout)
+- [x] Procedure admin.trainers: listar todos os personais com plano e métricas
+- [x] Procedure admin.impersonate: gerar token temporário como outro usuário
+- [x] Procedure admin.stopImpersonating: restaurar sessão do admin
+- [x] Procedure admin.impersonationStatus: verificar estado de impersonação
+- [x] Procedure admin.updatePlan: alterar plano de um personal (toggle Free/Pro)
+- [x] Painel Admin (/admin): lista de personais com plano, alunos ativos, data de cadastro
+- [x] Botão "Ver como Personal" no painel admin
+- [x] Banner de impersonação visível ao navegar como outro personal
+- [x] Botão "Voltar para Admin" no banner de impersonação
+- [x] Bloqueio frontend: itens bloqueados com ícone de cadeado para usuários Free
+- [x] Bloqueio frontend: toast de aviso ao clicar em recurso bloqueado
+- [x] Promover usuário admin (ID 16 - semap.igor@gmail.com) no banco de dados
+- [x] Comparativo Free vs Pro no painel admin

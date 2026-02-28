@@ -3,7 +3,7 @@ import { useIsMobile } from "@/hooks/useMobile";
 import {
   LayoutDashboard, Calendar, Users, TrendingUp, DollarSign, User,
   LogOut, Shield, Loader2, Image, Activity, BarChart3,
-  ChevronRight, Settings, Menu, X,
+  ChevronRight, Settings, Menu, X, Eye, Crown, Lock,
 } from "lucide-react";
 import { useLocation } from "wouter";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
@@ -14,7 +14,11 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "./ui/dropdown-menu";
+import { Badge } from "./ui/badge";
+import { Button } from "./ui/button";
 import { useEffect, useState } from "react";
+import { trpc } from "@/lib/trpc";
+import { toast } from "sonner";
 
 // Nav groups for better organization
 const navGroups = [
@@ -78,6 +82,23 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const [location, setLocation] = useLocation();
   const isMobile = useIsMobile();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const utils = trpc.useUtils();
+
+  const { data: impStatus } = trpc.admin.impersonationStatus.useQuery(undefined, {
+    enabled: !!user,
+    retry: false,
+  });
+
+  const stopImpersonatingMutation = trpc.admin.stopImpersonating.useMutation({
+    onSuccess: () => {
+      toast.success("Voltando ao painel admin...");
+      utils.invalidate();
+      setTimeout(() => setLocation("/admin"), 600);
+    },
+  });
+
+  const isPro = user ? ["pro", "premium", "basic"].includes((user as any).subscriptionPlan ?? "free") || user.role === "admin" : false;
+  const isFree = !isPro;
 
   useEffect(() => {
     if (!loading && !user) {
@@ -128,18 +149,29 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             <div className="space-y-0.5">
               {group.items.map((item) => {
                 const active = isActive(item.path, location);
+                // Free plan restrictions
+                const isLocked = isFree && (item.path === "/evolucao" || item.path === "/relatorio-planos" || item.path === "/dashboard");
                 return (
                   <button
                     key={item.path}
-                    onClick={() => setLocation(item.path)}
+                    onClick={() => {
+                      if (isLocked) {
+                        toast.error("Recurso disponível apenas no plano Pro", { description: "Faça upgrade para acessar gráficos, relatórios e evolução." });
+                        return;
+                      }
+                      setLocation(item.path);
+                    }}
                     className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-all duration-150 ${
                       active
                         ? "bg-primary text-primary-foreground font-medium shadow-sm"
+                        : isLocked
+                        ? "text-muted-foreground/40 cursor-not-allowed"
                         : "text-muted-foreground hover:bg-accent hover:text-accent-foreground font-normal"
                     }`}
                   >
                     <item.icon className="shrink-0" style={{ width: 16, height: 16 }} />
-                    <span>{item.label}</span>
+                    <span className="flex-1 text-left">{item.label}</span>
+                    {isLocked && <Lock style={{ width: 12, height: 12 }} className="text-muted-foreground/40" />}
                   </button>
                 );
               })}
@@ -150,6 +182,16 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
       {/* User footer */}
       <div className="border-t border-border p-3 shrink-0">
+        {/* Plan badge */}
+        {isFree && (
+          <div className="mx-3 mb-2 p-2 rounded-lg bg-orange-500/10 border border-orange-500/20 flex items-center gap-2">
+            <Crown className="h-3.5 w-3.5 text-orange-400 shrink-0" />
+            <div className="flex-1 min-w-0">
+              <p className="text-[10px] font-semibold text-orange-400">Plano Free</p>
+              <p className="text-[9px] text-muted-foreground">Upgrade para Pro</p>
+            </div>
+          </div>
+        )}
         {user.role === "admin" && (
           <button
             onClick={() => setLocation("/admin")}
@@ -276,6 +318,25 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           </div>
         </header>
 
+        {/* Impersonation banner */}
+        {impStatus?.isImpersonating && (
+          <div className="flex items-center justify-between gap-3 px-5 py-2 bg-orange-500/10 border-b border-orange-500/20 text-orange-400 shrink-0">
+            <div className="flex items-center gap-2 text-xs font-medium">
+              <Eye className="h-3.5 w-3.5" />
+              Visualizando como: <strong>{impStatus.targetUser?.name}</strong>
+            </div>
+            <Button
+              size="sm"
+              variant="outline"
+              className="border-orange-500/40 text-orange-400 hover:bg-orange-500/20 h-6 text-[10px] px-2"
+              onClick={() => stopImpersonatingMutation.mutate()}
+              disabled={stopImpersonatingMutation.isPending}
+            >
+              {stopImpersonatingMutation.isPending ? <Loader2 className="h-3 w-3 animate-spin" /> : "Voltar ao Admin"}
+            </Button>
+          </div>
+        )}
+
         {/* Page content */}
         <main className={`flex-1 overflow-auto ${isMobile ? "pb-20" : ""}`}>
           <div className="p-5 md:p-6 max-w-[1400px] mx-auto">
@@ -289,13 +350,19 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             <div className="flex items-center justify-around h-16 px-1">
               {mobileNavItems.map((item) => {
                 const active = isActive(item.path, location);
-                const isHome = item.path === "/";
+                const isLocked = isFree && (item.path === "/evolucao" || item.path === "/relatorio-planos" || item.path === "/dashboard");
                 return (
                   <button
                     key={item.path}
-                    onClick={() => setLocation(item.path)}
+                    onClick={() => {
+                      if (isLocked) {
+                        toast.error("Plano Pro necessário", { description: "Faça upgrade para acessar este recurso." });
+                        return;
+                      }
+                      setLocation(item.path);
+                    }}
                     className={`flex flex-col items-center justify-center gap-1 flex-1 h-full transition-all ${
-                      active ? "text-primary" : "text-muted-foreground"
+                      active ? "text-primary" : isLocked ? "text-muted-foreground/30" : "text-muted-foreground"
                     }`}
                   >
                     {item.path === "/dashboard" ? (

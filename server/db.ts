@@ -145,7 +145,29 @@ export async function updateUserProfile(userId: number, data: Partial<InsertUser
 export async function getAllTrainers() {
   const db = await getDb();
   if (!db) return [];
-  return db.select().from(users).where(eq(users.role, "user")).orderBy(desc(users.createdAt));
+  // Get all trainers (role = user)
+  const trainers = await db.select().from(users).orderBy(desc(users.createdAt));
+  // Get client counts per trainer
+  const clientCounts = await db
+    .select({ trainerId: clients.trainerId, count: count() })
+    .from(clients)
+    .where(eq(clients.status, 'active'))
+    .groupBy(clients.trainerId);
+  const countMap = new Map(clientCounts.map(c => [c.trainerId, Number(c.count)]));
+  return trainers.map(t => ({ ...t, activeClients: countMap.get(t.id) ?? 0 }));
+}
+
+export async function updateUserPlan(userId: number, plan: 'free' | 'pro') {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(users)
+    .set({
+      subscriptionPlan: plan,
+      subscriptionStatus: plan === 'pro' ? 'active' : 'trial',
+      maxClients: plan === 'pro' ? 9999 : 5,
+      updatedAt: new Date(),
+    })
+    .where(eq(users.id, userId));
 }
 
 export async function getTrainerStats() {

@@ -10,20 +10,21 @@ export type TrpcContext = {
   req: CreateExpressContextOptions["req"];
   res: CreateExpressContextOptions["res"];
   user: User | null;
+  adminUser: User | null; // set when admin is impersonating someone
 };
 
 function getSessionSecret() {
   return new TextEncoder().encode(ENV.cookieSecret);
 }
 
-async function authenticateRequest(req: CreateExpressContextOptions["req"]): Promise<User | null> {
+async function authenticateRequest(req: CreateExpressContextOptions["req"]): Promise<{ user: User | null; adminUser: User | null }> {
   try {
     const cookieHeader = req.headers.cookie;
-    if (!cookieHeader) return null;
+    if (!cookieHeader) return { user: null, adminUser: null };
 
     const cookies = parseCookieHeader(cookieHeader);
     const sessionCookie = cookies[COOKIE_NAME];
-    if (!sessionCookie) return null;
+    if (!sessionCookie) return { user: null, adminUser: null };
 
     const secretKey = getSessionSecret();
     const { payload } = await jwtVerify(sessionCookie, secretKey, {
@@ -31,23 +32,35 @@ async function authenticateRequest(req: CreateExpressContextOptions["req"]): Pro
     });
 
     const userId = payload.userId as number | undefined;
-    if (!userId) return null;
+    if (!userId) return { user: null, adminUser: null };
 
-    const user = await getUserById(userId);
-    return user ?? null;
+    const realUser = await getUserById(userId);
+    if (!realUser) return { user: null, adminUser: null };
+
+    // Check if admin is impersonating another user
+    const impersonatingId = payload.impersonatingUserId as number | undefined;
+    if (impersonatingId && realUser.role === 'admin') {
+      const impersonatedUser = await getUserById(impersonatingId);
+      if (impersonatedUser) {
+        return { user: impersonatedUser, adminUser: realUser };
+      }
+    }
+
+    return { user: realUser, adminUser: null };
   } catch {
-    return null;
+    return { user: null, adminUser: null };
   }
 }
 
 export async function createContext(
   opts: CreateExpressContextOptions
 ): Promise<TrpcContext> {
-  const user = await authenticateRequest(opts.req);
+  const { user, adminUser } = await authenticateRequest(opts.req);
 
   return {
     req: opts.req,
     res: opts.res,
     user,
+    adminUser,
   };
 }
