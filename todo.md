@@ -840,3 +840,8 @@
 - [x] Mostrar botão "Criar" apenas se houver sessões não criadas (totalSessions < totalPackageSessions)
 - [x] Adicionar indicador de status "Todas as X sessões já foram criadas" em verde
 - [x] Botão desabilitado automaticamente quando todas as sessões já foram criadas
+
+
+## Correção de Invalidação de Cache (v63)
+- [x] Adicionar refetch explícito após invalidar appointments.list
+- [x] Garantir que UI atualiza imediatamente após criar sessões

@@ -136,12 +136,14 @@ export default function ClienteDetalhe() {
     onError: (e) => toast.error(e.message),
   });
 
+  const appointmentsQuery = trpc.appointments.listByClient.useQuery({ clientId });
   const generateRemainingMutation = trpc.clients.generateRemainingAppointments.useMutation({
-    onSuccess: (data) => {
+    onSuccess: async (data) => {
       toast.success(`${data.created ?? 0} sessões agendadas com sucesso!`);
-      utils.appointments.listByClient.invalidate({ clientId });
-      utils.appointments.pendingByClient.invalidate({ clientId });
-      utils.clients.getById.invalidate({ id: clientId });
+      await utils.appointments.listByClient.invalidate({ clientId });
+      await utils.appointments.pendingByClient.invalidate({ clientId });
+      await utils.clients.getById.invalidate({ id: clientId });
+      appointmentsQuery.refetch();
     },
     onError: (e) => toast.error(e.message),
   });
