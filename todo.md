@@ -570,3 +570,6 @@
 - [x] Verificar se as colunas estão sendo reconhecidas nas queries
 - [x] Limpar cache e reinstalar dependências
 - [x] Reiniciar servidor
+- [x] Remover colunas que causavam conflito
+- [x] Remover referências no Financas.tsx
+- [x] Testar e confirmar que erros foram resolvidos

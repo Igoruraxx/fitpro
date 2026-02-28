@@ -227,20 +227,7 @@ export default function Financas() {
                       <span className="text-xs text-muted-foreground">{t.category}</span>
                     </div>
                   )}
-                  {t.packageSessionsTotal && t.packageSessionsTotal > 0 && (
-                    <div className="mt-2 space-y-1">
-                      <div className="flex justify-between items-center text-xs text-muted-foreground">
-                        <span>Sessoes: {t.packageSessionsCompleted}/{t.packageSessionsTotal}</span>
-                        <span>{Math.round((t.packageSessionsCompleted / t.packageSessionsTotal) * 100)}%</span>
-                      </div>
-                      <div className="w-full h-1.5 bg-muted rounded-full overflow-hidden">
-                        <div
-                          className="h-full bg-blue-500 transition-all"
-                          style={{ width: `${(t.packageSessionsCompleted / t.packageSessionsTotal) * 100}%` }}
-                        />
-                      </div>
-                    </div>
-                  )}
+                  {/* Barra de progresso de sessões será implementada em breve */}
                   {t.dueDate && t.category !== "Pacote de Sessoes" && (
                     <div className="flex items-center gap-1 mt-0.5">
                       <Calendar className="h-3 w-3 text-muted-foreground/60 shrink-0" />
