@@ -384,13 +384,13 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             <div className="flex items-center justify-around h-16 px-1">
               {mobileNavItems.map((item) => {
                 const active = isActive(item.path, location);
-                const isLocked = isFree && (item.path === "/evolucao" || item.path === "/relatorio-planos" || item.path === "/dashboard");
+                const isLocked = isFree && (item.path === "/evolucao" || item.path === "/fotos");
                 return (
                   <button
                     key={item.path}
                     onClick={() => {
                       if (isLocked) {
-                        toast.error("Plano Pro necessário", { description: "Faça upgrade para acessar este recurso." });
+                        setShowTrialModal(true);
                         return;
                       }
                       setLocation(item.path);

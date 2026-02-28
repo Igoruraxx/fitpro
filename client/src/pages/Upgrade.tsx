@@ -16,7 +16,6 @@ const FEATURES = [
   { name: "Gráficos de Evolução", free: "Não", pro: "Sim", icon: TrendingUp },
   { name: "Relatórios Detalhados", free: "Não", pro: "Sim", icon: FileText },
   { name: "Fotos de Progresso", free: "Não", pro: "Sim", icon: BarChart3 },
-  { name: "Painel Admin", free: "Não", pro: "Sim", icon: Zap },
 ];
 
 export default function Upgrade() {
@@ -201,7 +200,7 @@ export default function Upgrade() {
                 Posso mudar de plano a qualquer momento?
               </h4>
               <p className="text-sm text-muted-foreground">
-                Sim! Você pode fazer upgrade ou downgrade do seu plano a qualquer momento. Alterações entram em vigor imediatamente.
+                Sim! Você pode fazer upgrade do seu plano a qualquer momento. Alterações entram em vigor imediatamente.
               </p>
             </div>
 
@@ -223,14 +222,7 @@ export default function Upgrade() {
               </p>
             </div>
 
-            <div className="border border-border/50 rounded-lg p-6 hover:border-border transition-colors">
-              <h4 className="font-semibold text-foreground mb-2">
-                Meus dados são perdidos se eu fizer downgrade?
-              </h4>
-              <p className="text-sm text-muted-foreground">
-                Não! Todos os seus dados permanecem intactos. Se você tiver mais de 5 alunos no Free, eles ficarão inativos até você fazer upgrade.
-              </p>
-            </div>
+
           </div>
         </div>
 

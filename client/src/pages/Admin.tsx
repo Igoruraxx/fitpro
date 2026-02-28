@@ -46,6 +46,7 @@ export default function Admin() {
   const [searchQuery, setSearchQuery] = useState("");
   const [courtesyTrainer, setCourtesyTrainer] = useState<any>(null);
   const [courtesyDays, setCourtesyDays] = useState("30");
+  const [planFilter, setPlanFilter] = useState<"all" | "free" | "pro">("all");
 
   const utils = trpc.useUtils();
 
@@ -119,11 +120,15 @@ export default function Admin() {
     });
   };
 
-  const filteredTrainers = trainers.filter((t: any) =>
-    !searchQuery ||
-    t.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    t.email?.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredTrainers = trainers.filter((t: any) => {
+    const matchesSearch = !searchQuery ||
+      t.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      t.email?.toLowerCase().includes(searchQuery.toLowerCase());
+    
+    const matchesPlan = planFilter === "all" || t.subscriptionPlan === planFilter;
+    
+    return matchesSearch && matchesPlan;
+  });
 
   const freeCount = trainers.filter((t: any) => t.subscriptionPlan === "free").length;
   const proCount = trainers.filter((t: any) => ["pro", "premium"].includes(t.subscriptionPlan)).length;
@@ -233,14 +238,42 @@ export default function Admin() {
         </CardContent>
       </Card>
 
-      {/* Search */}
-      <div className="relative">
-        <Input
-          placeholder="Buscar personal por nome ou e-mail..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          className="pl-4"
-        />
+      {/* Search and Filter */}
+      <div className="flex gap-3 flex-col sm:flex-row">
+        <div className="relative flex-1">
+          <Input
+            placeholder="Buscar personal por nome ou e-mail..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-4"
+          />
+        </div>
+        <div className="flex gap-2">
+          <Button
+            variant={planFilter === "all" ? "default" : "outline"}
+            size="sm"
+            onClick={() => setPlanFilter("all")}
+            className="whitespace-nowrap"
+          >
+            Todos
+          </Button>
+          <Button
+            variant={planFilter === "free" ? "default" : "outline"}
+            size="sm"
+            onClick={() => setPlanFilter("free")}
+            className="whitespace-nowrap"
+          >
+            Free
+          </Button>
+          <Button
+            variant={planFilter === "pro" ? "default" : "outline"}
+            size="sm"
+            onClick={() => setPlanFilter("pro")}
+            className="whitespace-nowrap"
+          >
+            Pro
+          </Button>
+        </div>
       </div>
 
       {/* Trainers list */}

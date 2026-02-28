@@ -775,7 +775,14 @@
 - [x] Exibir feedback de sucesso/erro ao conceder cortesia
 
 
-## Corre\u00e7\u00e3o de Tags no Admin (v54)
+## Correcao de Tags no Admin (v54)
 - [x] Mostrar tag "Trial" apenas quando proSource = 'trial'
 - [x] Exibir "Expira: DD/MM/YY" para todos os Pro
 - [x] Remover status badge redundante
+
+## Melhorias de UX e Admin (v55)
+- [x] Desabilitar Fotos e Evolução na barra inferior para Free
+- [x] Abrir modal de trial ao clicar em Fotos/Evolução desabilitados
+- [x] Adicionar filtro de plano (Free/Pro) no Admin
+- [x] Remover texto sobre downgrade de planos
+- [x] Remover menção de acesso ao painel admin
