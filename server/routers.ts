@@ -275,7 +275,24 @@ export const appRouter = router({
       await updateAppointment(id, ctx.user.id, rest as any);
       // Decrement sessionsRemaining for package-plan clients when session is completed
       if (input.status === 'completed' && prevAppt?.status !== 'completed' && prevAppt?.clientId) {
-        await decrementClientSessions(prevAppt.clientId, ctx.user.id);
+        const newCount = await decrementClientSessions(prevAppt.clientId, ctx.user.id);
+        
+        // Get client info to check if package is at 80% completion
+        if (newCount !== null && newCount !== undefined) {
+          const client = await getClientById(prevAppt.clientId, ctx.user.id);
+          if (client && client.planType === 'package' && client.packageSessions) {
+            const completedSessions = client.packageSessions - newCount;
+            const completionPercentage = (completedSessions / client.packageSessions) * 100;
+            
+            // Notify when reaching 80% completion
+            if (completionPercentage >= 80 && completionPercentage < 85) {
+              await notifyOwner({
+                title: '⚠️ Pacote próximo de finalizar',
+                content: `O cliente ${client.name} atingiu 80% de conclusão do pacote. ${newCount} sessão(ões) restante(s) de ${client.packageSessions}.`
+              });
+            }
+          }
+        }
       }
       return { success: true };
     }),

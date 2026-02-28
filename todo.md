@@ -573,3 +573,16 @@
 - [x] Remover colunas que causavam conflito
 - [x] Remover referências no Financas.tsx
 - [x] Testar e confirmar que erros foram resolvidos
+
+
+## Correção da Aba de Visualização Semanal (v34)
+- [ ] Mostrar todos os horários disponíveis da semana
+- [ ] Remover botão WhatsApp da aba semanal
+- [ ] Remover botão alterar status da aba semanal
+- [ ] Deixar aba semanal apenas para leitura/visualização
+
+## Alertas de Pacote Próximo de Finalizar (v34)
+- [x] Implementar notificação quando pacote atingir 80% de conclusão
+- [x] Adicionar indicador visual em Últimas Sessões com fundo amarelo
+- [x] Exibir ícone de alerta mostrando quantas sessões faltam
+- [x] Integrar com sistema de notificações push do Manus

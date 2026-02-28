@@ -6,7 +6,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
   ArrowLeft, Phone, Calendar, TrendingUp, Loader2,
   CheckCircle2, Clock, AlertCircle, MessageCircle,
-  Camera, Activity, DollarSign, User, Dumbbell, Edit2, Trash2
+  Camera, Activity, DollarSign, User, Dumbbell, Edit2, Trash2, AlertTriangle
 } from "lucide-react";
 import { format, isPast, isToday } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -345,14 +345,37 @@ export default function ClienteDetalhe() {
                 <button onClick={() => setActiveTab("sessions")} className="text-xs text-primary hover:underline">Ver todas</button>
               </div>
               <div className="space-y-2">
-                {(appointments as any[]).slice(0, 4).map((a: any) => (
-                  <div key={a.id} className="flex items-center justify-between text-sm py-1.5 border-b border-border/50 last:border-0">
-                    <span className="text-muted-foreground">{format(new Date(a.date + "T12:00:00"), "dd/MM/yyyy")} · {a.startTime}</span>
-                    <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${APPT_STATUS_COLORS[a.status] || ""}`}>
-                      {APPT_STATUS_LABELS[a.status] || a.status}
-                    </span>
-                  </div>
-                ))}
+                {(appointments as any[]).slice(0, 4).map((a: any) => {
+                  // Check if package is near completion (80%+)
+                  const isPackageNearEnd = client?.planType === 'package' && 
+                    client?.packageSessions && 
+                    client?.sessionsRemaining !== null && 
+                    ((client.packageSessions - client.sessionsRemaining) / client.packageSessions) >= 0.8;
+                  
+                  return (
+                    <div 
+                      key={a.id} 
+                      className={`flex items-center justify-between text-sm py-1.5 px-2 border-b border-border/50 last:border-0 rounded-lg transition-colors ${
+                        isPackageNearEnd ? 'bg-amber-50 border-amber-200' : ''
+                      }`}
+                    >
+                      <div className="flex items-center gap-2 flex-1 min-w-0">
+                        {isPackageNearEnd && (
+                          <AlertTriangle className="h-4 w-4 text-amber-600 flex-shrink-0" />
+                        )}
+                        <span className="text-muted-foreground truncate">{format(new Date(a.date + "T12:00:00"), "dd/MM/yyyy")} · {a.startTime}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {isPackageNearEnd && (
+                          <span className="text-xs text-amber-700 font-medium flex-shrink-0">{client?.sessionsRemaining} restante{client?.sessionsRemaining !== 1 ? 's' : ''}</span>
+                        )}
+                        <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${APPT_STATUS_COLORS[a.status] || ""}`}>
+                          {APPT_STATUS_LABELS[a.status] || a.status}
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             </div>
           )}

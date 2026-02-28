@@ -664,7 +664,20 @@ export default function Agenda() {
 
     return (
       <div className="overflow-x-auto">
-        <div className="grid grid-cols-7 gap-1 min-w-[560px]">
+        <div className="grid grid-cols-8 gap-1 min-w-[800px]">
+          {/* Header com horários */}
+          <div className="col-span-1 space-y-1">
+            <div className="text-center p-2 text-xs font-medium text-muted-foreground">Hora</div>
+            <div className="space-y-1">
+              {timeSlots.map((slot) => (
+                <div key={slot} className="text-xs text-muted-foreground text-center h-12 flex items-center justify-center">
+                  {slot}
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Dias da semana */}
           {days.map((day) => {
             const dayAppts = (appointments as any[])
               .filter((a: any) => isSameDay(safeParseDate(a.date), day))
@@ -672,37 +685,30 @@ export default function Agenda() {
             const today = isToday(day);
 
             return (
-              <DroppableSlot key={day.toISOString()} id={`day-${format(day, "yyyy-MM-dd")}`} className="space-y-1">
-                <div className={`text-center p-2 rounded-lg ${today ? "bg-primary text-primary-foreground" : ""}`}>
-                  <div className="text-xs font-medium">{format(day, "EEE", { locale: ptBR })}</div>
-                  <div className="text-lg font-bold">{format(day, "d")}</div>
+              <div key={day.toISOString()} className="space-y-1">
+                <div className={`text-center p-2 rounded-lg text-xs font-medium ${today ? "bg-primary text-primary-foreground" : "bg-muted"}`}>
+                  <div>{format(day, "EEE", { locale: ptBR })}</div>
+                  <div className="font-bold">{format(day, "d")}</div>
                 </div>
 
-                <div className="space-y-1 min-h-[120px]">
-                  {dayAppts.map((appt: any) => {
-                    const { name, phone } = getClientInfo(appt);
+                <div className="space-y-1">
+                  {timeSlots.map((slot) => {
+                    const apptAtSlot = dayAppts.find((a: any) => a.startTime === slot);
                     return (
-                      <DraggableApptCard
-                        key={appt.id}
-                        appt={appt}
-                        clientName={name}
-                        clientPhone={phone}
-                        apptDate={day}
-                        onEdit={() => openEditAppt(appt)}
-                        onStatusChange={quickUpdateStatus}
-                        compact={true}
-                      />
+                      <div key={`${day.toISOString()}-${slot}`} className="h-12 border border-border/30 rounded-md p-1 text-xs overflow-hidden bg-background hover:bg-muted/50 transition-colors">
+                        {apptAtSlot ? (
+                          <div className="bg-primary/10 border border-primary/30 rounded p-1 h-full flex flex-col justify-center">
+                            <div className="font-medium truncate">{getClientInfo(apptAtSlot).name}</div>
+                            <div className="text-xs text-muted-foreground truncate">{apptAtSlot.startTime}</div>
+                          </div>
+                        ) : (
+                          <div className="text-muted-foreground text-center h-full flex items-center justify-center">-</div>
+                        )}
+                      </div>
                     );
                   })}
-
-                  <button
-                    onClick={() => openNewAppt(day)}
-                    className="w-full rounded-md border border-dashed border-border/30 py-1 text-xs text-muted-foreground hover:border-primary/50 hover:text-primary transition-colors"
-                  >
-                    +
-                  </button>
                 </div>
-              </DroppableSlot>
+              </div>
             );
           })}
         </div>
