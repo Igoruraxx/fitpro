@@ -713,3 +713,10 @@
 - [x] Renovação de plano lança entrada no financeiro
 - [x] Verificar e corrigir fluxo completo de renovação (removida restrição de sessões=0)
 - [x] Perimetria fictícia adicionada nos 2 exames de cada aluno (16 exames atualizados)
+
+
+## Varredura UX/Responsividade (v54)
+- [x] Reduzir intensidade da linha laranja da agenda (bg-orange-500/60 → bg-orange-500/30)
+- [ ] Testar responsividade completa em mobile, tablet e desktop
+- [ ] Verificar espaçamento e overflow em todas as páginas
+- [ ] Validar contraste de cores e legibilidade

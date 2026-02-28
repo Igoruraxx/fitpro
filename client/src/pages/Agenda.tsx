@@ -582,7 +582,7 @@ export default function Agenda() {
                 </div>
               </div>
             </DroppableSlot>
-            {index < timeSlots.length - 1 && <div className="h-0.5 bg-orange-500/60"></div>}
+            {index < timeSlots.length - 1 && <div className="h-0.5 bg-orange-500/30"></div>}
             </div>
           );
         })}
