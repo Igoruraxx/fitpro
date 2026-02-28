@@ -39,6 +39,20 @@ const statusLabels: Record<string, string> = {
 export default function Admin() {
   const { user } = useAuth();
   const [, setLocation] = useLocation();
+
+  // Redirecionar se não for admin
+  if (!user || user.role !== 'admin') {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <AlertCircle className="h-12 w-12 text-red-400 mx-auto mb-4" />
+          <h1 className="text-2xl font-bold text-foreground mb-2">Acesso Negado</h1>
+          <p className="text-muted-foreground mb-6">Apenas administradores podem acessar esta página.</p>
+          <Button onClick={() => setLocation('/')} variant="default">Voltar para Home</Button>
+        </div>
+      </div>
+    );
+  }
   const [editingTrainer, setEditingTrainer] = useState<any>(null);
   const [editPlan, setEditPlan] = useState("");
   const [editStatus, setEditStatus] = useState("");
