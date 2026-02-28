@@ -201,12 +201,13 @@ export async function upsertCurrentMonthCharge(trainerId: number, clientId: numb
     category = 'Mensalidade';
   } else if (planType === 'package' && clientData.packageValue) {
     amount = String(clientData.packageValue);
-    // Due date = today for package (one-time)
+    // Pacote não tem vencimento — data = hoje apenas para referência, sem dueDate
     dueDate = now.toISOString().split('T')[0];
     category = 'Pacote de Sessões';
   }
 
-  if (!amount || !dueDate) return;
+  if (!amount) return;
+  if (!dueDate && planType !== 'package') return;
 
   // Check if a pending charge already exists for this client in this month
   const startDate = `${year}-${String(month).padStart(2, '0')}-01`;
@@ -233,6 +234,7 @@ export async function upsertCurrentMonthCharge(trainerId: number, clientId: numb
     // Create new charge
     const clientRow = await getClientById(clientId, trainerId);
     const clientName = clientRow?.name ?? 'Aluno';
+    const insertDate = dueDate ?? now.toISOString().split('T')[0];
     await db.insert(transactions).values({
       trainerId,
       clientId,
@@ -240,10 +242,11 @@ export async function upsertCurrentMonthCharge(trainerId: number, clientId: numb
       category,
       description: `${category} - ${clientName}`,
       amount,
-      date: dueDate,
-      dueDate,
+      date: insertDate,
+      // Pacotes não têm dueDate — null para não aparecer como inadimplente
+      ...(planType !== 'package' && dueDate ? { dueDate } : {}),
       status: 'pending',
-    });
+    } as any);
   }
 }
 

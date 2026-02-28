@@ -354,6 +354,30 @@ export const appRouter = router({
       
       return { success: true, deleted: clientAppts.length };
     }),
+    // Get pending (scheduled) sessions for a specific client
+    pendingByClient: protectedProcedure.input(z.object({ clientId: z.number() })).query(async ({ ctx, input }) => {
+      const today = new Date().toISOString().split('T')[0];
+      const future = new Date(); future.setDate(future.getDate() + 365);
+      const endDate = future.toISOString().split('T')[0];
+      const all = await getAppointmentsByTrainer(ctx.user.id, today, endDate);
+      return all.filter((a: any) => a.clientId === input.clientId && a.status === 'scheduled');
+    }),
+    // Get all pending (scheduled) sessions grouped by client
+    pendingGrouped: protectedProcedure.query(async ({ ctx }) => {
+      const today = new Date().toISOString().split('T')[0];
+      const future = new Date(); future.setDate(future.getDate() + 365);
+      const endDate = future.toISOString().split('T')[0];
+      const all = await getAppointmentsByTrainer(ctx.user.id, today, endDate);
+      const scheduled = all.filter((a: any) => a.status === 'scheduled');
+      // Group by clientId
+      const grouped: Record<number, number> = {};
+      for (const a of scheduled) {
+        if (a.clientId) {
+          grouped[a.clientId] = (grouped[a.clientId] || 0) + 1;
+        }
+      }
+      return grouped;
+    }),
     // Create multiple recurring appointments at once
     createRecurring: protectedProcedure.input(z.object({
       clientId: z.number().optional(),

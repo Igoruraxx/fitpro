@@ -7,7 +7,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import {
   ArrowLeft, Phone, Calendar, TrendingUp, Loader2,
   CheckCircle2, Clock, AlertCircle, MessageCircle,
-  Camera, Activity, DollarSign, User, Dumbbell, Edit2, Trash2, AlertTriangle
+  Camera, Activity, DollarSign, User, Dumbbell, Edit2, Trash2, AlertTriangle, CalendarClock
 } from "lucide-react";
 import { format, isPast, isToday } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -76,6 +76,7 @@ export default function ClienteDetalhe() {
   const { data: transactions = [] } = trpc.finances.listByClient.useQuery({ clientId });
   const { data: photos = [] } = trpc.photos.listAll.useQuery({ clientId });
   const { data: bioExams = [] } = trpc.bioimpedance.list.useQuery({ clientId });
+  const { data: pendingSessions = [] } = trpc.appointments.pendingByClient.useQuery({ clientId });
 
   const markPaidMutation = trpc.finances.markPaid.useMutation({
     onSuccess: () => {
@@ -291,6 +292,15 @@ export default function ClienteDetalhe() {
                       {client.sessionsRemaining ?? 0}
                     </span>
                   </div>
+                  {/* Sessões pendentes agendadas */}
+                  {(pendingSessions as any[]).length > 0 && (
+                    <div className="flex items-center gap-2 mt-1 p-2 rounded-lg bg-blue-50 border border-blue-100">
+                      <CalendarClock className="h-4 w-4 text-blue-500 shrink-0" />
+                      <span className="text-xs text-blue-700 font-medium">
+                        {(pendingSessions as any[]).length} sessão(ões) agendada(s) pendente(s)
+                      </span>
+                    </div>
+                  )}
                 </>
               )}
               {client.sessionsPerWeek && (

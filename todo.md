@@ -648,3 +648,9 @@
 - [ ] Adicionar botão "Replicar horário" para igualar todos os dias
 - [ ] Atualizar lógica de geração de agendamentos recorrentes por dia
 - [ ] Compatibilidade com dados existentes
+
+## Sessões Pendentes e Correção de Pacotes (v44)
+- [x] Remover data de vencimento de pacotes no Financeiro (pacotes não têm vencimento)
+- [x] Criar barra/seção de sessões pendentes no Financeiro (sessões agendadas não concluídas)
+- [x] Criar barra/seção de sessões pendentes no painel do aluno (ClienteDetalhe)
+- [x] Mostrar quantidade de sessões pendentes por aluno

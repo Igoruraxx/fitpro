@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import {
   TrendingUp, Clock, AlertCircle, CheckCircle2, Users,
-  MessageCircle, ChevronLeft, ChevronRight, DollarSign, Calendar, Trash2
+  MessageCircle, ChevronLeft, ChevronRight, DollarSign, Calendar, Trash2, CalendarClock
 } from "lucide-react";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Progress } from "@/components/ui/progress";
@@ -40,6 +40,7 @@ export default function Financas() {
   const { data: summary } = trpc.finances.summary.useQuery({ month, year });
   const { data: clients = [] } = trpc.clients.list.useQuery();
   const { data: overdueClients = [] } = trpc.finances.overdueClients.useQuery();
+  const { data: pendingGrouped = {} } = trpc.appointments.pendingGrouped.useQuery();
 
   // Only income transactions
   const transactions = useMemo(
@@ -237,12 +238,12 @@ export default function Financas() {
                     </div>
                   )}
                   {/* Barra de progresso de sessões para pacotes */}
-                  {t.category === "Pacote de Sessoes" && client && (
+                  {(t.category === "Pacote de Sessoes" || t.category === "Pacote de Sess\u00f5es") && client && (
                     <div className="mt-2 space-y-1">
                       <div className="flex items-center justify-between text-xs">
                         <span className="text-muted-foreground">
                           {client.packageSessions && client.sessionsRemaining !== null
-                            ? `${client.packageSessions - client.sessionsRemaining} de ${client.packageSessions} sessões`
+                            ? `${client.packageSessions - client.sessionsRemaining} de ${client.packageSessions} sessões concluídas`
                             : "Sem dados"}
                         </span>
                         <span className="font-medium text-muted-foreground">
@@ -259,6 +260,15 @@ export default function Financas() {
                         }
                         className="h-1.5"
                       />
+                      {/* Sessões pendentes agendadas */}
+                      {(pendingGrouped as any)[client.id] > 0 && (
+                        <div className="flex items-center gap-1 mt-1">
+                          <CalendarClock className="h-3 w-3 text-blue-500 shrink-0" />
+                          <span className="text-xs text-blue-600 font-medium">
+                            {(pendingGrouped as any)[client.id]} sessão(ões) agendada(s) pendente(s)
+                          </span>
+                        </div>
+                      )}
                     </div>
                   )}
                   {t.dueDate && t.category !== "Pacote de Sessoes" && (
