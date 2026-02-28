@@ -47,7 +47,7 @@ const mobileNavItems = [
   { icon: Users, label: "Alunos", path: "/clientes" },
   { icon: DollarSign, label: "Financeiro", path: "/financas" },
   { icon: Image, label: "Fotos", path: "/fotos" },
-  { icon: LayoutDashboard, label: "Dashboard", path: "/dashboard" },
+  { icon: TrendingUp, label: "Evolução", path: "/evolucao" },
 ];
 
 const PAGE_TITLES: Record<string, string> = {

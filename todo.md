@@ -654,3 +654,13 @@
 - [x] Criar barra/seção de sessões pendentes no Financeiro (sessões agendadas não concluídas)
 - [x] Criar barra/seção de sessões pendentes no painel do aluno (ClienteDetalhe)
 - [x] Mostrar quantidade de sessões pendentes por aluno
+
+## Trocar Dashboard por Evolução na Barra Mobile (v45)
+- [x] Remover Dashboard da barra de navegação mobile
+- [x] Adicionar Evolução na barra de navegação mobile
+- [x] Manter Dashboard apenas na sidebar desktop
+
+## Melhorias na Visualização da Agenda (v46)
+- [x] Remover visualização semanal da agenda
+- [x] Adicionar linha laranja divisória na visualização por horários
+- [x] Manter visualizações de dia e mês

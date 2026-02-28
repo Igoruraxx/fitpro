@@ -548,14 +548,15 @@ export default function Agenda() {
     );
 
     return (
-      <div className="space-y-0.5">
-        {timeSlots.map((slot) => {
+      <div className="space-y-0">
+        {timeSlots.map((slot, index) => {
           const slotAppts = dayAppts.filter((a: any) => a.startTime === slot);
           return (
-            <DroppableSlot key={slot} id={`slot-${format(currentDate, "yyyy-MM-dd")}-${slot}`}>
-              <div className="flex gap-3 min-h-[3.5rem] group">
-                <span className="text-xs text-muted-foreground w-12 pt-2 shrink-0 select-none">{slot}</span>
-                <div className="flex-1 border-t border-border/30 pt-1 space-y-1">
+            <div key={slot}>
+              <DroppableSlot id={`slot-${format(currentDate, "yyyy-MM-dd")}-${slot}`}>
+                <div className="flex gap-3 min-h-[3.5rem] group">
+                  <span className="text-xs text-muted-foreground w-12 pt-2 shrink-0 select-none">{slot}</span>
+                  <div className="flex-1 border-t border-border/30 pt-1 space-y-1">
                   {slotAppts.map((appt: any) => {
                     const { name, phone } = getClientInfo(appt);
                     return (
@@ -581,6 +582,8 @@ export default function Agenda() {
                 </div>
               </div>
             </DroppableSlot>
+            {index < timeSlots.length - 1 && <div className="h-0.5 bg-orange-500/60"></div>}
+            </div>
           );
         })}
       </div>
@@ -796,7 +799,6 @@ export default function Agenda() {
   const viewTabs: { key: ViewMode; label: string; icon: any }[] = [
     { key: "day",   label: "Dia",   icon: Clock },
     { key: "list",  label: "Lista", icon: List },
-    { key: "week",  label: "Sem",   icon: Grid3X3 },
     { key: "month", label: "Mês",   icon: CalendarDays },
   ];
 
@@ -859,7 +861,6 @@ export default function Agenda() {
         {/* View content */}
         {viewMode === "day"   && renderDayView()}
         {viewMode === "list"  && renderListView()}
-        {viewMode === "week"  && renderWeekView()}
         {viewMode === "month" && renderMonthView()}
 
         {/* FAB */}
