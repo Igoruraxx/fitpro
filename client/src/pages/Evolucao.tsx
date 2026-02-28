@@ -8,7 +8,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Checkbox } from "@/components/ui/checkbox";
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, BarChart, Bar
 } from "recharts";
@@ -64,8 +63,6 @@ export default function Evolucao() {
   const [editId, setEditId] = useState<number | null>(null);
   const [form, setForm] = useState(emptyForm());
   const [expandedId, setExpandedId] = useState<number | null>(null);
-  const [selectedExamIds, setSelectedExamIds] = useState<Set<number>>(new Set());
-  const [showConfirmDelete, setShowConfirmDelete] = useState(false);
   const [showDeleteByDate, setShowDeleteByDate] = useState(false);
   const [deleteBeforeDate, setDeleteBeforeDate] = useState<string>("");
   const [showConfirmDeleteByDate, setShowConfirmDeleteByDate] = useState(false);
@@ -154,15 +151,7 @@ export default function Evolucao() {
             <Button onClick={openNew} size="sm" className="gap-1.5">
               <Plus className="w-4 h-4" /> Novo Exame
             </Button>
-            {selectedExamIds.size > 0 && (
-              <Button
-                variant="destructive"
-                size="sm"
-                onClick={() => setShowConfirmDelete(true)}
-              >
-                <Trash2 className="w-4 h-4 mr-1.5" /> Apagar {selectedExamIds.size}
-              </Button>
-            )}
+
           </div>
         )}
       </div>
@@ -230,18 +219,6 @@ export default function Evolucao() {
                 <div key={exam.id} className="bg-card border border-border rounded-xl overflow-hidden">
                   <div className="flex items-center justify-between p-4">
                     <div className="flex items-center gap-3">
-                      <Checkbox
-                        checked={selectedExamIds.has(exam.id)}
-                        onCheckedChange={(checked) => {
-                          const newSet = new Set(selectedExamIds);
-                          if (checked) {
-                            newSet.add(exam.id);
-                          } else {
-                            newSet.delete(exam.id);
-                          }
-                          setSelectedExamIds(newSet);
-                        }}
-                      />
                       <div className="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center">
                         <Activity className="w-5 h-5 text-blue-600" />
                       </div>
