@@ -1,0 +1,13 @@
+{
+  "query": "SELECT COUNT(*) as total_clients FROM clients;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 4PiQ8e52qW4Xjb6.root --database 5UbJ997E6SHYZid72bThxF --execute SELECT COUNT(*) as total_clients FROM clients;",
+  "rows": [
+    {
+      "total_clients": "1"
+    }
+  ],
+  "messages": [],
+  "stdout": "total_clients\n1\n",
+  "stderr": "",
+  "execution_time_ms": 359
+}

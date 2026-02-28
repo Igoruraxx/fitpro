@@ -1,0 +1,13 @@
+{
+  "query": "SELECT COUNT(*) as total_exams FROM bioimpedanceExams;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 4PiQ8e52qW4Xjb6.root --database 5UbJ997E6SHYZid72bThxF --execute SELECT COUNT(*) as total_exams FROM bioimpedanceExams;",
+  "rows": [
+    {
+      "total_exams": "2"
+    }
+  ],
+  "messages": [],
+  "stdout": "total_exams\n2\n",
+  "stderr": "",
+  "execution_time_ms": 358
+}
