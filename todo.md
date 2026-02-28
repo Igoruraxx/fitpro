@@ -852,3 +852,7 @@
 - [x] Refatorar generateRemainingAppointments para respeitar limite do plano
 - [x] Adicionar validação no frontend com mensagem de progresso (X/Y sessões)
 - [x] Todos os 75 testes passando
+
+
+## R## Remover Botão Quando Todas as Sessões Criadas (v65))
+- [x] Esconder botão "Criar X Sessões Restantes" quando sessionsCreated >= totalPackageSessions

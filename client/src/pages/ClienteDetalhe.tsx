@@ -336,7 +336,7 @@ export default function ClienteDetalhe() {
                   {/* Botões de ação do pacote */}
                   <div className="flex flex-col gap-2 mt-2">
                     {/* Botão criar sessões restantes - aparece apenas se há sessões não criadas */}
-                    {(client.sessionsRemaining ?? 0) > 0 && totalSessions < totalPackageSessions && (
+                    {sessionsCreated < totalPackageSessions && (
                       <Button
                         size="sm"
                         variant="outline"
