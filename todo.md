@@ -680,3 +680,29 @@
 - [x] Adicionar botão "Renovar Pacote" no perfil do aluno (ClienteDetalhe)
 - [x] Implementar lógica de renovação: criar novo pacote com mesma quantidade de sessões
 - [x] Criar nova transação para novo pacote ao renovar
+
+
+## Agendamento Automático Inteligente (v49)
+- [x] Criar função para gerar agendamentos respeitando dias da semana e frequência
+- [x] Gerar agendamentos ao criar cliente com plano de pacote
+- [x] Gerar agendamentos ao renovar pacote
+- [x] Respeitar quantidade de sessões do pacote (não necessariamente 4 semanas)
+- [x] Usar dias marcados (sessionDays) e horários (sessionTime ou sessionTimesPerDay)
+
+## Histórico de Renovações (v50)
+- [x] Adicionar campo renovationHistory na tabela clients (JSON array)
+- [x] Registrar data e detalhes de cada renovação
+- [x] Exibir timeline/badges no perfil do aluno mostrando renovações
+- [x] Mostrar quantas sessões foram usadas entre renovações
+
+## Relatório de Pacotes Esgotados (v51)
+- [x] Criar seção no Financeiro destacando clientes com pacotes esgotados
+- [x] Mostrar cliente, valor do pacote e data de esgotamento
+- [x] Botão rápido para renovar direto do relatório
+- [x] Indicador visual (badge vermelha ou laranja)
+
+## Exames Fictícios para Testes (v52)
+- [x] Criar 2 exames completos para cada cliente
+- [x] Variar entre hipertrofia (ganho de massa) e emagrecimento
+- [x] Incluir dados de perimetria e dobras cutâneas
+- [x] Permitir testar aba de Evolução com dados reais

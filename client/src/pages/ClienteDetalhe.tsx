@@ -357,6 +357,37 @@ export default function ClienteDetalhe() {
                   );
                 } catch { return null; }
               })()}
+              {/* Histórico de renovações */}
+              {client.planType === 'package' && client.renovationHistory && (() => {
+                try {
+                  const history = typeof client.renovationHistory === 'string'
+                    ? JSON.parse(client.renovationHistory)
+                    : client.renovationHistory;
+                  if (Array.isArray(history) && history.length > 0) {
+                    return (
+                      <div className="mt-4 pt-4 border-t">
+                        <h4 className="text-xs font-semibold text-muted-foreground mb-3 uppercase tracking-wide">Histórico de Renovações</h4>
+                        <div className="space-y-2">
+                          {history.map((renewal: any, idx: number) => (
+                            <div key={idx} className="flex items-start gap-3 text-xs">
+                              <div className="w-2 h-2 rounded-full bg-primary mt-1.5 shrink-0" />
+                              <div className="flex-1">
+                                <p className="font-medium text-foreground">
+                                  {renewal.newSessions} sessões renovadas
+                                </p>
+                                <p className="text-muted-foreground">
+                                  {renewal.sessionsUsed} sessões usadas • {format(new Date(renewal.date), 'dd/MM/yyyy')}
+                                </p>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  }
+                  return null;
+                } catch { return null; }
+              })()}
               {client.sessionTime && !client.sessionTimesPerDay && (
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Horário padrão</span>

@@ -1022,3 +1022,122 @@ export async function deleteBioimpedanceExam(id: number, trainerId: number) {
     .where(and(eq(bioimpedanceExams.id, id), eq(bioimpedanceExams.trainerId, trainerId)));
   return { success: true };
 }
+
+
+// ==================== AUTO-SCHEDULING ====================
+
+/**
+ * Generate appointments for a package-plan client based on:
+ * - sessionDays: comma-separated weekday numbers (0-6, 0=Sunday)
+ * - sessionsPerWeek: how many sessions per week
+ * - packageSessions: total sessions to schedule
+ * - sessionTime or sessionTimesPerDay: time(s) for each session
+ * - sessionDuration: duration in minutes
+ */
+export async function generatePackageAppointments(
+  clientId: number,
+  trainerId: number,
+  packageSessions: number,
+  sessionsPerWeek: number,
+  sessionDays: string,
+  sessionTime: string | null,
+  sessionTimesPerDay: string | null,
+  sessionDuration: number = 60
+): Promise<number> {
+  const db = await getDb();
+  if (!db) return 0;
+
+  const daysArray = sessionDays.split(',').map(d => parseInt(d.trim())).filter(d => !isNaN(d));
+  if (daysArray.length === 0) return 0;
+
+  let timesPerDay: Record<number, string> = {};
+  if (sessionTimesPerDay) {
+    try {
+      timesPerDay = JSON.parse(sessionTimesPerDay);
+    } catch {
+      daysArray.forEach(d => {
+        timesPerDay[d] = sessionTime || '07:00';
+      });
+    }
+  } else if (sessionTime) {
+    daysArray.forEach(d => {
+      timesPerDay[d] = sessionTime;
+    });
+  }
+
+  let sessionsGenerated = 0;
+  const startDate = new Date();
+  startDate.setHours(0, 0, 0, 0);
+
+  let currentDate = new Date(startDate);
+  while (sessionsGenerated < packageSessions) {
+    const dayOfWeek = currentDate.getDay();
+
+    if (daysArray.includes(dayOfWeek)) {
+      const timeStr = timesPerDay[dayOfWeek] || sessionTime || '07:00';
+      const dateStr = currentDate.toISOString().split('T')[0];
+
+      await db.insert(appointments).values({
+        trainerId,
+        clientId,
+        date: dateStr,
+        startTime: timeStr,
+        duration: sessionDuration,
+        status: 'scheduled',
+        notes: null,
+        guestName: null,
+        recurrenceGroupId: null,
+        muscleGroups: null,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      } as any);
+
+      sessionsGenerated++;
+    }
+
+    currentDate.setDate(currentDate.getDate() + 1);
+  }
+
+  return sessionsGenerated;
+}
+
+/**
+ * Record a package renewal in the client's renovationHistory
+ */
+export async function recordPackageRenewal(
+  clientId: number,
+  trainerId: number,
+  sessionsUsed: number,
+  newSessions: number
+): Promise<void> {
+  const db = await getDb();
+  if (!db) return;
+
+  const client = await db.select().from(clients)
+    .where(and(eq(clients.id, clientId), eq(clients.trainerId, trainerId)))
+    .limit(1);
+
+  if (!client[0]) return;
+
+  let history: any[] = [];
+  if (client[0].renovationHistory) {
+    try {
+      history = JSON.parse(client[0].renovationHistory);
+    } catch {
+      history = [];
+    }
+  }
+
+  history.push({
+    date: new Date().toISOString().split('T')[0],
+    sessionsUsed,
+    newSessions,
+  });
+
+  await db.update(clients)
+    .set({
+      renovationHistory: JSON.stringify(history),
+      updatedAt: new Date(),
+    })
+    .where(and(eq(clients.id, clientId), eq(clients.trainerId, trainerId)));
+}

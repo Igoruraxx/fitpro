@@ -90,6 +90,9 @@ export const clients = pgTable("clients", {
   prepaidValue: decimal("prepaidValue", { precision: 10, scale: 2 }),
   prepaidDueDate: date("prepaidDueDate"),
 
+  // Renewal history for packages
+  renovationHistory: text("renovationHistory"), // JSON array: [{date, sessionsUsed, newSessions}, ...]
+
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().notNull(),
 });

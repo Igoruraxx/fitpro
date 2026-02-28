@@ -184,6 +184,21 @@ export const appRouter = router({
         throw new Error("Limite de clientes atingido. Faça upgrade do seu plano.");
       }
       const id = await createClient({ ...input, trainerId: ctx.user.id } as any);
+      
+      if (id && input.planType === 'package' && input.packageSessions && input.sessionDays && input.sessionsPerWeek) {
+        const { generatePackageAppointments } = await import('./db');
+        await generatePackageAppointments(
+          id as number,
+          ctx.user.id,
+          input.packageSessions as number,
+          input.sessionsPerWeek as number,
+          input.sessionDays as string,
+          input.sessionTime || null,
+          input.sessionTimesPerDay || null,
+          (input.sessionDuration || 60) as number
+        );
+      }
+      
       return { id };
     }),
     update: protectedProcedure.input(z.object({
@@ -233,9 +248,14 @@ export const appRouter = router({
       if (client.planType !== "package") throw new Error("Cliente nao possui plano de pacote");
       if ((client.sessionsRemaining ?? 0) !== 0) throw new Error("Pacote ainda possui sessoes restantes");
       
+      const sessionsUsed = (client.packageSessions ?? 0) - (client.sessionsRemaining ?? 0);
+      
       await updateClient(input.clientId, ctx.user.id, {
         sessionsRemaining: client.packageSessions,
       } as any);
+      
+      const { recordPackageRenewal, generatePackageAppointments } = await import('./db');
+      await recordPackageRenewal(input.clientId, ctx.user.id, sessionsUsed, client.packageSessions ?? 0);
       
       const now = new Date();
       const dateStr = now.toISOString().split('T')[0];
@@ -250,6 +270,19 @@ export const appRouter = router({
         createdAt: now,
         updatedAt: now,
       } as any);
+      
+      if (client.packageSessions && client.sessionDays && client.sessionsPerWeek) {
+        await generatePackageAppointments(
+          input.clientId,
+          ctx.user.id,
+          client.packageSessions as number,
+          client.sessionsPerWeek as number,
+          client.sessionDays as string,
+          client.sessionTime || null,
+          client.sessionTimesPerDay || null,
+          (client.sessionDuration || 60) as number
+        );
+      }
       
       return { success: true };
     }),

@@ -177,6 +177,50 @@ export default function Financas() {
         </div>
       </div>
 
+      {/* Expired packages section */}
+      {(() => {
+        const expiredPackages = (clients as any[]).filter(
+          c => c.planType === 'package' && (c.sessionsRemaining ?? 0) === 0
+        );
+        if (expiredPackages.length === 0) return null;
+        return (
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
+                <AlertCircle className="h-4 w-4 text-orange-600" />
+                Pacotes Esgotados
+              </h3>
+              <span className="text-xs text-muted-foreground">{expiredPackages.length} cliente{expiredPackages.length !== 1 ? "s" : ""}</span>
+            </div>
+            <div className="space-y-2">
+              {expiredPackages.map((client: any) => (
+                <div key={client.id} className="flex items-center gap-3 p-3.5 rounded-xl border border-orange-300 bg-orange-50 shadow-sm">
+                  <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 bg-orange-100">
+                    <AlertCircle className="h-4 w-4 text-orange-600" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-semibold text-sm text-foreground">{client.name}</p>
+                    <p className="text-xs text-orange-600 mt-0.5">
+                      Pacote de {client.packageSessions} sessões • R$ {parseFloat(client.packageValue || 0).toFixed(2)}
+                    </p>
+                  </div>
+                  <Button
+                    size="sm"
+                    className="bg-orange-600 hover:bg-orange-700 text-white shrink-0"
+                    onClick={() => {
+                      const renewBtn = document.querySelector(`[data-renew-client="${client.id}"]`) as HTMLButtonElement;
+                      if (renewBtn) renewBtn.click();
+                    }}
+                  >
+                    Renovar
+                  </Button>
+                </div>
+              ))}
+            </div>
+          </div>
+        );
+      })()}
+
       {/* Transactions list */}
       <div className="space-y-2">
         <div className="flex items-center justify-between">
