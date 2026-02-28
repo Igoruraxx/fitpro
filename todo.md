@@ -641,3 +641,10 @@
 - [x] Splash screen com logo animada ao carregar o app
 - [x] Tema de cores verde-petóleo e laranja baseado na logo
 - [x] Logo na barra de navegação mobile inferior
+
+## Horários Diferentes por Dia da Semana (v43)
+- [ ] Atualizar schema para suportar horários individuais por dia
+- [ ] Atualizar UI para mostrar seletor de horário por dia selecionado
+- [ ] Adicionar botão "Replicar horário" para igualar todos os dias
+- [ ] Atualizar lógica de geração de agendamentos recorrentes por dia
+- [ ] Compatibilidade com dados existentes
