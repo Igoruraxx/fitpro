@@ -4,8 +4,9 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import {
   TrendingUp, Clock, AlertCircle, CheckCircle2, Users,
-  MessageCircle, ChevronLeft, ChevronRight, DollarSign, Calendar
+  MessageCircle, ChevronLeft, ChevronRight, DollarSign, Calendar, Trash2
 } from "lucide-react";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Progress } from "@/components/ui/progress";
 import { toast } from "sonner";
 import { format, endOfMonth, isPast, isToday } from "date-fns";
@@ -59,6 +60,13 @@ export default function Financas() {
 
   const markPendingMutation = trpc.finances.markPending.useMutation({
     onSuccess: () => { toast.success("Baixa desfeita!"); refetchAll(); },
+    onError: (e) => toast.error(e.message),
+  });
+
+  const [transactionToDelete, setTransactionToDelete] = useState<any>(null);
+
+  const deleteTransactionMutation = trpc.finances.delete.useMutation({
+    onSuccess: () => { toast.success("Pagamento deletado!"); refetchAll(); setTransactionToDelete(null); },
     onError: (e) => toast.error(e.message),
   });
 
@@ -306,6 +314,15 @@ export default function Financas() {
                       <MessageCircle className="h-4 w-4" />
                     </Button>
                   )}
+                  {/* Delete */}
+                  <Button
+                    variant="ghost" size="icon"
+                    className="h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-50"
+                    title="Deletar pagamento"
+                    onClick={() => setTransactionToDelete(t)}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
                 </div>
               </div>
             );
@@ -356,6 +373,32 @@ export default function Financas() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Dialog: Confirmar exclusão de pagamento */}
+      <AlertDialog open={!!transactionToDelete} onOpenChange={(open) => !open && setTransactionToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Deletar pagamento?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta ação não pode ser desfeita. O pagamento de R$ {transactionToDelete ? parseFloat(transactionToDelete.amount).toFixed(2) : "0.00"} será permanentemente deletado.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (transactionToDelete) {
+                  deleteTransactionMutation.mutate({ id: transactionToDelete.id });
+                }
+              }}
+              disabled={deleteTransactionMutation.isPending}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              {deleteTransactionMutation.isPending ? "Deletando..." : "Deletar"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

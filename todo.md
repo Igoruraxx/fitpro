@@ -614,3 +614,10 @@
 - [x] Exibir confirmação com aviso de ação irreversível
 - [x] Mostrar quantidade de agendamentos que serão deletados
 - [x] Atualizar UI após exclusão em massa
+
+## Botão Excluir Pagamentos no Financeiro (v39)
+- [x] Adicionar botão de excluir ao lado de cada pagamento
+- [x] Exibir confirmação antes de deletar
+- [x] Deletar pagamento do banco de dados
+- [x] Atualizar UI após exclusão
+- [x] Mostrar mensagem de sucesso
