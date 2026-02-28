@@ -593,3 +593,10 @@
 - [x] Ao clicar, marcar sessão como concluída e decrementar sessionsRemaining
 - [x] Exibir confirmação antes de concluir
 - [x] Atualizar UI após conclusão
+
+## Barra de Progresso de Sessões na Aba Financeira (v36)
+- [x] Exibir barra de progresso para clientes com plano de pacote
+- [x] Mostrar sessões concluídas vs total de sessões do pacote
+- [x] Atualizar barra em tempo real quando sessão é concluída
+- [x] Exibir percentual de conclusão
+- [x] Cor verde quando pacote está completo

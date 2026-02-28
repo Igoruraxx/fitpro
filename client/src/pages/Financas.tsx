@@ -6,6 +6,7 @@ import {
   TrendingUp, Clock, AlertCircle, CheckCircle2, Users,
   MessageCircle, ChevronLeft, ChevronRight, DollarSign, Calendar
 } from "lucide-react";
+import { Progress } from "@/components/ui/progress";
 import { toast } from "sonner";
 import { format, endOfMonth, isPast, isToday } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -227,7 +228,31 @@ export default function Financas() {
                       <span className="text-xs text-muted-foreground">{t.category}</span>
                     </div>
                   )}
-                  {/* Barra de progresso de sessões será implementada em breve */}
+                  {/* Barra de progresso de sessões para pacotes */}
+                  {t.category === "Pacote de Sessoes" && client && (
+                    <div className="mt-2 space-y-1">
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="text-muted-foreground">
+                          {client.packageSessions && client.sessionsRemaining !== null
+                            ? `${client.packageSessions - client.sessionsRemaining} de ${client.packageSessions} sessões`
+                            : "Sem dados"}
+                        </span>
+                        <span className="font-medium text-muted-foreground">
+                          {client.packageSessions && client.sessionsRemaining !== null
+                            ? `${Math.round(((client.packageSessions - client.sessionsRemaining) / client.packageSessions) * 100)}%`
+                            : "0%"}
+                        </span>
+                      </div>
+                      <Progress
+                        value={
+                          client.packageSessions && client.sessionsRemaining !== null
+                            ? ((client.packageSessions - client.sessionsRemaining) / client.packageSessions) * 100
+                            : 0
+                        }
+                        className="h-1.5"
+                      />
+                    </div>
+                  )}
                   {t.dueDate && t.category !== "Pacote de Sessoes" && (
                     <div className="flex items-center gap-1 mt-0.5">
                       <Calendar className="h-3 w-3 text-muted-foreground/60 shrink-0" />
