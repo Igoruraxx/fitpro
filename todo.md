@@ -854,5 +854,11 @@
 - [x] Todos os 75 testes passando
 
 
-## R## Remover Botão Quando Todas as Sessões Criadas (v65))
 - [x] Esconder botão "Criar X Sessões Restantes" quando sessionsCreated >= totalPackageSessions
+
+
+## Auditoria Admin Mobile (v66)
+- [x] Remover hidden sm:flex dos botões de ação (Cortesia, Ver, Toggle)
+- [x] Corrigir layout dos filtros para ser responsivo em mobile
+- [x] Remover whitespace-nowrap para permitir quebra de linha
+- [x] Todos os 75 testes passando

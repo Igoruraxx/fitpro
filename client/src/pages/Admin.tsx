@@ -239,21 +239,20 @@ export default function Admin() {
       </Card>
 
       {/* Search and Filter */}
-      <div className="flex gap-3 flex-col sm:flex-row">
-        <div className="relative flex-1">
+      <div className="flex gap-2 flex-col">
+        <div className="relative">
           <Input
-            placeholder="Buscar personal por nome ou e-mail..."
+            placeholder="Buscar personal..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-4"
+            className="pl-4 w-full"
           />
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
           <Button
             variant={planFilter === "all" ? "default" : "outline"}
             size="sm"
             onClick={() => setPlanFilter("all")}
-            className="whitespace-nowrap"
           >
             Todos
           </Button>
@@ -261,7 +260,6 @@ export default function Admin() {
             variant={planFilter === "free" ? "default" : "outline"}
             size="sm"
             onClick={() => setPlanFilter("free")}
-            className="whitespace-nowrap"
           >
             Free
           </Button>
@@ -269,7 +267,6 @@ export default function Admin() {
             variant={planFilter === "pro" ? "default" : "outline"}
             size="sm"
             onClick={() => setPlanFilter("pro")}
-            className="whitespace-nowrap"
           >
             Pro
           </Button>
@@ -323,35 +320,35 @@ export default function Admin() {
                       </div>
                     </div>
                     <div className="flex gap-1 flex-shrink-0 flex-wrap justify-end">
-                      {/* Quick plan toggle - hidden on mobile */}
+                      {/* Quick plan toggle */}
                       {!isMe && (
                         <Button
                           variant="outline"
                           size="sm"
-                          className={`h-7 text-[10px] px-2 hidden sm:flex ${trainer.subscriptionPlan === "pro" ? "border-orange-500/40 text-orange-400 hover:bg-orange-500/10" : "border-gray-500/40 text-gray-400 hover:bg-gray-500/10"}`}
+                          className={`h-7 text-[10px] px-2 ${trainer.subscriptionPlan === "pro" ? "border-orange-500/40 text-orange-400 hover:bg-orange-500/10" : "border-gray-500/40 text-gray-400 hover:bg-gray-500/10"}`}
                           onClick={() => updatePlanMutation.mutate({ userId: trainer.id, plan: trainer.subscriptionPlan === "pro" ? "free" : "pro" })}
                           disabled={updatePlanMutation.isPending}
                         >
                           {updatePlanMutation.isPending ? <Loader2 className="h-3 w-3 animate-spin" /> : trainer.subscriptionPlan === "pro" ? "→ Free" : "→ Pro"}
                         </Button>
                       )}
-                      {/* Grant courtesy - hidden on mobile */}
+                      {/* Grant courtesy */}
                       {!isMe && (
                         <Button
                           variant="outline"
                           size="sm"
-                          className="h-7 text-[10px] px-2 border-green-500/40 text-green-400 hover:bg-green-500/10 hidden sm:flex"
+                          className="h-7 text-[10px] px-2 border-green-500/40 text-green-400 hover:bg-green-500/10"
                           onClick={() => setCourtesyTrainer(trainer)}
                         >
                           <Crown className="h-3 w-3 mr-1" />Cortesia
                         </Button>
                       )}
-                      {/* View as trainer - hidden on mobile */}
+                      {/* View as trainer */}
                       {!isMe && (
                         <Button
                           variant="outline"
                           size="sm"
-                          className="h-7 text-[10px] px-2 border-blue-500/40 text-blue-400 hover:bg-blue-500/10 hidden sm:flex"
+                          className="h-7 text-[10px] px-2 border-blue-500/40 text-blue-400 hover:bg-blue-500/10"
                           onClick={() => impersonateMutation.mutate({ targetUserId: trainer.id })}
                           disabled={impersonateMutation.isPending}
                         >
