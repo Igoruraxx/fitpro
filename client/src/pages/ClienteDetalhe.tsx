@@ -425,7 +425,13 @@ export default function ClienteDetalhe() {
               const overdue = isOverdue(t);
               const effectiveStatus = overdue && t.status === "pending" ? "overdue" : t.status;
               return (
-                <div key={t.id} className={`flex items-center gap-3 p-3.5 rounded-xl border shadow-sm ${overdue ? "border-red-200 bg-red-50/60" : "border-border bg-card"}`}>
+                <div key={t.id} className={`flex items-center gap-3 p-3.5 rounded-xl border shadow-sm ${
+                  t.status === "paid"
+                    ? "border-emerald-200 bg-emerald-100/40"
+                    : overdue
+                    ? "border-red-200 bg-red-100/40"
+                    : "border-amber-200 bg-amber-100/40"
+                }`}>
                   <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${
                     effectiveStatus === "paid" ? "bg-emerald-50" : effectiveStatus === "overdue" ? "bg-red-100" : "bg-amber-50"
                   }`}>

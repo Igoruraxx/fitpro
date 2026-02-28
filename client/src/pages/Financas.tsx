@@ -192,9 +192,11 @@ export default function Financas() {
               <div
                 key={t.id}
                 className={`flex items-center gap-3 p-3.5 rounded-xl border transition-colors shadow-sm ${
-                  overdue
-                    ? "border-red-200 bg-red-50/60 hover:bg-red-50"
-                    : "border-border bg-card hover:bg-muted/30"
+                  t.status === "paid"
+                    ? "border-emerald-200 bg-emerald-100/40 hover:bg-emerald-100/50"
+                    : overdue
+                    ? "border-red-200 bg-red-100/40 hover:bg-red-100/50"
+                    : "border-amber-200 bg-amber-100/40 hover:bg-amber-100/50"
                 }`}
               >
                 {/* Status icon */}

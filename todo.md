@@ -435,3 +435,17 @@
 - [x] Upload simplificado: apenas 1 slot em vez de 3
 - [x] Modo comparativo: botões de filtro por tipo (Frente, Lado, Costas, Outro) em vez de dropdown
 - [x] Seletores de data lado a lado no comparativo
+
+## Interface Visual de Pagamentos (v14)
+- [x] Fundo verde com transparência (emerald-100/40) para cobranças pagas
+- [x] Fundo vermelho com transparência (red-100/40) para cobranças atrasadas
+- [x] Fundo amarelo com transparência (amber-100/40) para cobranças pendentes
+- [x] Bordas coloridas correspondentes ao status
+- [x] Atualizado em Financas.tsx e ClienteDetalhe.tsx
+
+## Interface Visual de Pagamentos (v14)
+- [x] Fundo verde com transparência para cobranças pagas
+- [x] Fundo vermelho com transparência para cobranças atrasadas
+- [x] Fundo amarelo com transparência para cobranças pendentes
+- [x] Bordas coloridas correspondentes ao status
+- [x] Atualizado em Financas.tsx e ClienteDetalhe.tsx
