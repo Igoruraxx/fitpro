@@ -122,6 +122,16 @@ export default function ClienteDetalhe() {
     onError: (e) => toast.error(e.message),
   });
 
+  const renewPackageMutation = trpc.clients.renewPackage.useMutation({
+    onSuccess: () => {
+      toast.success("Pacote renovado com sucesso!");
+      utils.clients.getById.invalidate({ id: clientId });
+      utils.finances.listByClient.invalidate({ clientId });
+    },
+    onError: (e) => toast.error(e.message),
+  });
+
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-20">
@@ -292,6 +302,25 @@ export default function ClienteDetalhe() {
                       {client.sessionsRemaining ?? 0}
                     </span>
                   </div>
+                  {/* Botão renovar pacote */}
+                  {(client.sessionsRemaining ?? 0) === 0 && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="w-full mt-2 text-primary border-primary hover:bg-primary/5"
+                      onClick={() => {
+                        const confirmRenew = window.confirm(
+                          `Renovar pacote de ${client.packageSessions} sessões por R$ ${parseFloat(client.packageValue || "0").toFixed(2)}?`
+                        );
+                        if (confirmRenew) {
+                          renewPackageMutation.mutate({ clientId });
+                        }
+                      }}
+                      disabled={renewPackageMutation.isPending}
+                    >
+                      {renewPackageMutation.isPending ? "Renovando..." : "Renovar Pacote"}
+                    </Button>
+                  )}
                   {/* Sessões pendentes agendadas */}
                   {(pendingSessions as any[]).length > 0 && (
                     <div className="flex items-center gap-2 mt-1 p-2 rounded-lg bg-blue-50 border border-blue-100">

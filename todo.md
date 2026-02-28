@@ -673,3 +673,10 @@
 - [ ] Bug 5: Implementar desfazer exclusão de pagamentos (lixeira) — pendente por decisão do usuário
 - [x] Bug 6: Colorir sessões pendentes quando pacote atingir 80% (sem notificação)
 - [x] Bug 7: Carregar sessionTimesPerDay no formulário de edição de aluno
+
+## Melhorias no Financeiro e Renovação de Pacotes (v48)
+- [x] Mostrar nome do cliente nos recebimentos de pacote no Financeiro
+- [x] Exibir quantas sessões faltam para concluir o pacote no Financeiro
+- [x] Adicionar botão "Renovar Pacote" no perfil do aluno (ClienteDetalhe)
+- [x] Implementar lógica de renovação: criar novo pacote com mesma quantidade de sessões
+- [x] Criar nova transação para novo pacote ao renovar

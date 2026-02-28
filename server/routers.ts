@@ -225,6 +225,34 @@ export const appRouter = router({
     count: protectedProcedure.query(async ({ ctx }) => {
       return countClientsByTrainer(ctx.user.id);
     }),
+    renewPackage: protectedProcedure.input(z.object({
+      clientId: z.number(),
+    })).mutation(async ({ ctx, input }) => {
+      const client = await getClientById(input.clientId, ctx.user.id);
+      if (!client) throw new Error("Cliente nao encontrado");
+      if (client.planType !== "package") throw new Error("Cliente nao possui plano de pacote");
+      if ((client.sessionsRemaining ?? 0) !== 0) throw new Error("Pacote ainda possui sessoes restantes");
+      
+      await updateClient(input.clientId, ctx.user.id, {
+        sessionsRemaining: client.packageSessions,
+      } as any);
+      
+      const now = new Date();
+      const dateStr = now.toISOString().split('T')[0];
+      await createTransaction({
+        trainerId: ctx.user.id,
+        clientId: input.clientId,
+        type: 'income',
+        date: dateStr,
+        category: 'Pacote de Sessoes',
+        amount: client.packageValue || '0',
+        status: 'pending',
+        createdAt: now,
+        updatedAt: now,
+      } as any);
+      
+      return { success: true };
+    }),
   }),
 
   // ==================== APPOINTMENTS ====================

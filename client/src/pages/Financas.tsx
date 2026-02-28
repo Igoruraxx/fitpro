@@ -256,7 +256,7 @@ export default function Financas() {
                         </span>
                         <span className="font-medium text-muted-foreground">
                           {client.packageSessions && client.sessionsRemaining !== null
-                            ? `${Math.round(((client.packageSessions - client.sessionsRemaining) / client.packageSessions) * 100)}%`
+                            ? `${Math.round(((client.packageSessions - client.sessionsRemaining) / client.packageSessions) * 100)}% · ${client.sessionsRemaining} restante${client.sessionsRemaining !== 1 ? 's' : ''}`
                             : "0%"}
                         </span>
                       </div>
