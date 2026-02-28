@@ -600,3 +600,10 @@
 - [x] Atualizar barra em tempo real quando sessão é concluída
 - [x] Exibir percentual de conclusão
 - [x] Cor verde quando pacote está completo
+
+## Opção de Excluir Agendamentos Futuros (v37)
+- [x] Adicionar botão para excluir todos os agendamentos futuros no perfil do cliente
+- [x] Mostrar confirmação com lista de agendamentos que serão deletados
+- [x] Excluir apenas agendamentos com data futura (não concluídos)
+- [x] Exibir mensagem de sucesso após exclusão
+- [x] Atualizar UI após exclusão em massa

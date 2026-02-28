@@ -311,6 +311,28 @@ export const appRouter = router({
       await deleteAppointment(input.id, ctx.user.id);
       return { success: true, deleted: 'single' };
     }),
+    deleteFutureByClient: protectedProcedure.input(z.object({
+      clientId: z.number(),
+    })).mutation(async ({ ctx, input }) => {
+      // Get all future appointments for this client
+      const today = new Date().toISOString().split('T')[0];
+      const future = new Date(); future.setDate(future.getDate() + 365);
+      const endDate = future.toISOString().split('T')[0];
+      
+      const allAppts = await getAppointmentsByTrainer(ctx.user.id, today, endDate);
+      const futureAppts = allAppts.filter((a: any) => 
+        a.clientId === input.clientId && 
+        a.status === 'scheduled' && 
+        a.date >= today
+      );
+      
+      // Delete each appointment
+      for (const appt of futureAppts) {
+        await deleteAppointment(appt.id, ctx.user.id);
+      }
+      
+      return { success: true, deleted: futureAppts.length };
+    }),
     // Create multiple recurring appointments at once
     createRecurring: protectedProcedure.input(z.object({
       clientId: z.number().optional(),

@@ -66,6 +66,7 @@ export default function ClienteDetalhe() {
   const [, setLocation] = useLocation();
   const [activeTab, setActiveTab] = useState<Tab>("overview");
   const [sessionToComplete, setSessionToComplete] = useState<any>(null);
+  const [showDeleteFutureDialog, setShowDeleteFutureDialog] = useState(false);
   const clientId = parseInt(params.id || "0");
 
   const utils = trpc.useUtils();
@@ -97,6 +98,15 @@ export default function ClienteDetalhe() {
     onSuccess: () => {
       toast.success("Sessão concluída!");
       utils.appointments.listByClient.invalidate({ clientId });
+    },
+    onError: (e) => toast.error(e.message),
+  });
+
+  const deleteFutureAppointmentsMutation = trpc.appointments.deleteFutureByClient.useMutation({
+    onSuccess: (data) => {
+      toast.success(`${data.deleted} agendamento(s) futuro(s) excluído(s)!`);
+      utils.appointments.listByClient.invalidate({ clientId });
+      setShowDeleteFutureDialog(false);
     },
     onError: (e) => toast.error(e.message),
   });
@@ -395,8 +405,17 @@ export default function ClienteDetalhe() {
       {/* Tab: Sessões */}
       {activeTab === "sessions" && (
         <div className="space-y-2">
-          <div className="flex items-center justify-between mb-1">
+          <div className="flex items-center justify-between mb-3">
             <span className="text-sm text-muted-foreground">{totalSessions} sessão{totalSessions !== 1 ? "ões" : ""} · {completedSessions} concluída{completedSessions !== 1 ? "s" : ""}</span>
+            <Button
+              size="sm"
+              variant="outline"
+              className="text-xs h-7 text-red-600 hover:text-red-700 hover:bg-red-50"
+              onClick={() => setShowDeleteFutureDialog(true)}
+            >
+              <Trash2 className="h-3 w-3 mr-1" />
+              Excluir Futuros
+            </Button>
           </div>
           {(appointments as any[]).length === 0 ? (
             <div className="flex flex-col items-center justify-center py-12 text-center rounded-xl border border-dashed border-border bg-card/50">
@@ -627,6 +646,30 @@ export default function ClienteDetalhe() {
               disabled={completeSessionMutation.isPending}
             >
               {completeSessionMutation.isPending ? "Concluindo..." : "Concluir"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Dialog: Confirmar exclusão de agendamentos futuros */}
+      <AlertDialog open={showDeleteFutureDialog} onOpenChange={setShowDeleteFutureDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir todos os agendamentos futuros?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta ação não pode ser desfeita. Todos os agendamentos futuros deste cliente serão permanentemente deletados.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                deleteFutureAppointmentsMutation.mutate({ clientId });
+              }}
+              disabled={deleteFutureAppointmentsMutation.isPending}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              {deleteFutureAppointmentsMutation.isPending ? "Excluindo..." : "Excluir Tudo"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
