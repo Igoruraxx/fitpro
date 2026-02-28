@@ -1,0 +1,46 @@
+{
+  "query": "SELECT id, name FROM clients ORDER BY id;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 4PiQ8e52qW4Xjb6.root --database 5UbJ997E6SHYZid72bThxF --execute SELECT id, name FROM clients ORDER BY id;",
+  "rows": [
+    {
+      "id": "1",
+      "name": "teste"
+    },
+    {
+      "id": "30001",
+      "name": "Ana Paula Ferreira"
+    },
+    {
+      "id": "30002",
+      "name": "Carlos Eduardo Lima"
+    },
+    {
+      "id": "30003",
+      "name": "Fernanda Costa Silva"
+    },
+    {
+      "id": "30004",
+      "name": "Ricardo Mendes Santos"
+    },
+    {
+      "id": "30005",
+      "name": "Juliana Rodrigues"
+    },
+    {
+      "id": "30006",
+      "name": "Marcos Oliveira"
+    },
+    {
+      "id": "30007",
+      "name": "Beatriz Alves Pereira"
+    },
+    {
+      "id": "30008",
+      "name": "Diego Carvalho Nunes"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tname\n1\tteste\n30001\tAna Paula Ferreira\n30002\tCarlos Eduardo Lima\n30003\tFernanda Costa Silva\n30004\tRicardo Mendes Santos\n30005\tJuliana Rodrigues\n30006\tMarcos Oliveira\n30007\tBeatriz Alves Pereira\n30008\tDiego Carvalho Nunes\n",
+  "stderr": "",
+  "execution_time_ms": 358
+}

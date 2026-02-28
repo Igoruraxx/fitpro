@@ -1,0 +1,18 @@
+{
+  "query": "SHOW COLUMNS FROM clients LIKE 'planType';",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 4PiQ8e52qW4Xjb6.root --database 5UbJ997E6SHYZid72bThxF --execute SHOW COLUMNS FROM clients LIKE 'planType';",
+  "rows": [
+    {
+      "Field": "planType",
+      "Type": "enum('monthly','package')",
+      "Null": "NO",
+      "Key": "",
+      "Default": "monthly",
+      "Extra": ""
+    }
+  ],
+  "messages": [],
+  "stdout": "Field\tType\tNull\tKey\tDefault\tExtra\nplanType\tenum('monthly','package')\tNO\t\tmonthly\t\n",
+  "stderr": "",
+  "execution_time_ms": 353
+}

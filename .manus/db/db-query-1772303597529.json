@@ -1,0 +1,19 @@
+{
+  "query": "SELECT COUNT(*) as total_clients FROM clients WHERE name != 'teste'; SELECT COUNT(*) as total_exams FROM bioimpedanceExams;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 4PiQ8e52qW4Xjb6.root --database 5UbJ997E6SHYZid72bThxF --execute SELECT COUNT(*) as total_clients FROM clients WHERE name != 'teste'; SELECT COUNT(*) as total_exams FROM bioimpedanceExams;",
+  "rows": [
+    {
+      "total_clients": "8"
+    },
+    {
+      "total_clients": "total_exams"
+    },
+    {
+      "total_clients": "18"
+    }
+  ],
+  "messages": [],
+  "stdout": "total_clients\n8\ntotal_exams\n18\n",
+  "stderr": "",
+  "execution_time_ms": 396
+}

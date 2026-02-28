@@ -1,0 +1,55 @@
+{
+  "query": "SELECT id, name, gender FROM clients ORDER BY id;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 4PiQ8e52qW4Xjb6.root --database 5UbJ997E6SHYZid72bThxF --execute SELECT id, name, gender FROM clients ORDER BY id;",
+  "rows": [
+    {
+      "id": "1",
+      "name": "teste",
+      "gender": "female"
+    },
+    {
+      "id": "30001",
+      "name": "Ana Paula Ferreira",
+      "gender": "female"
+    },
+    {
+      "id": "30002",
+      "name": "Carlos Eduardo Lima",
+      "gender": "male"
+    },
+    {
+      "id": "30003",
+      "name": "Fernanda Costa Silva",
+      "gender": "female"
+    },
+    {
+      "id": "30004",
+      "name": "Ricardo Mendes Santos",
+      "gender": "male"
+    },
+    {
+      "id": "30005",
+      "name": "Juliana Rodrigues",
+      "gender": "female"
+    },
+    {
+      "id": "30006",
+      "name": "Marcos Oliveira",
+      "gender": "male"
+    },
+    {
+      "id": "30007",
+      "name": "Beatriz Alves Pereira",
+      "gender": "female"
+    },
+    {
+      "id": "30008",
+      "name": "Diego Carvalho Nunes",
+      "gender": "male"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tname\tgender\n1\tteste\tfemale\n30001\tAna Paula Ferreira\tfemale\n30002\tCarlos Eduardo Lima\tmale\n30003\tFernanda Costa Silva\tfemale\n30004\tRicardo Mendes Santos\tmale\n30005\tJuliana Rodrigues\tfemale\n30006\tMarcos Oliveira\tmale\n30007\tBeatriz Alves Pereira\tfemale\n30008\tDiego Carvalho Nunes\tmale\n",
+  "stderr": "",
+  "execution_time_ms": 357
+}
