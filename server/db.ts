@@ -36,6 +36,13 @@ async function runMigrations(db: ReturnType<typeof drizzle>) {
         "createdAt" TIMESTAMPTZ NOT NULL DEFAULT NOW()
       )
     `);
+    // Ensure new columns exist (idempotent ALTER TABLE)
+    await db.execute(sql`
+      ALTER TABLE "bioimpedanceExams"
+        ADD COLUMN IF NOT EXISTS "musclePct" DECIMAL(5,2),
+        ADD COLUMN IF NOT EXISTS "perimetria" TEXT,
+        ADD COLUMN IF NOT EXISTS "dobras" TEXT
+    `);
     console.log("[Database] Migrations applied");
   } catch (err) {
     console.warn("[Database] Migration warning:", err);

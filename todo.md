@@ -504,3 +504,9 @@
 - [x] Mostrar contagem de fotos/exames por data
 - [x] Apagar apenas fotos/exames da data selecionada (não anteriores)
 - [x] Atualizar mensagens de confirmação
+
+## Correção Bioimpedância (v23)
+- [x] Identificar colunas faltantes na tabela bioimpedanceExams no banco
+- [x] Adicionar colunas musclePct, perimetria, dobras via ALTER TABLE
+- [x] Atualizar schema Drizzle para incluir colunas legadas do banco
+- [x] Atualizar runMigrations para garantir colunas novas com ADD COLUMN IF NOT EXISTS

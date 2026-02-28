@@ -187,17 +187,36 @@ export const bioimpedanceExams = pgTable("bioimpedanceExams", {
   date: date("date").notNull(),
 
   // Core measurements (campos essenciais)
-  weight: decimal("weight", { precision: 6, scale: 2 }),           // peso total kg
-  muscleMass: decimal("muscleMass", { precision: 6, scale: 2 }),   // massa muscular kg
-  musclePct: decimal("musclePct", { precision: 5, scale: 2 }),     // % massa muscular
-  bodyFatPct: decimal("bodyFatPct", { precision: 5, scale: 2 }),   // % gordura corporal
-  visceralFat: decimal("visceralFat", { precision: 5, scale: 1 }), // gordura visceral (número)
+  weight: decimal("weight", { precision: 6, scale: 2 }),
+  muscleMass: decimal("muscleMass", { precision: 6, scale: 2 }),
+  musclePct: decimal("musclePct", { precision: 5, scale: 2 }),
+  bodyFatPct: decimal("bodyFatPct", { precision: 5, scale: 2 }),
+  visceralFat: decimal("visceralFat", { precision: 5, scale: 1 }),
+
+  // Colunas legadas do banco (mantidas para compatibilidade)
+  bmi: decimal("bmi", { precision: 5, scale: 2 }),
+  fatMass: decimal("fatMass", { precision: 6, scale: 2 }),
+  leanMass: decimal("leanMass", { precision: 6, scale: 2 }),
+  muscleRate: decimal("muscleRate", { precision: 5, scale: 2 }),
+  skeletalMuscleMass: decimal("skeletalMuscleMass", { precision: 6, scale: 2 }),
+  boneMass: decimal("boneMass", { precision: 6, scale: 2 }),
+  proteinMass: decimal("proteinMass", { precision: 6, scale: 2 }),
+  proteinPct: decimal("proteinPct", { precision: 5, scale: 2 }),
+  moistureContent: decimal("moistureContent", { precision: 6, scale: 2 }),
+  bodyWaterPct: decimal("bodyWaterPct", { precision: 5, scale: 2 }),
+  subcutaneousFatPct: decimal("subcutaneousFatPct", { precision: 5, scale: 2 }),
+  bmr: decimal("bmr", { precision: 7, scale: 2 }),
+  metabolicAge: integer("metabolicAge"),
+  whr: decimal("whr", { precision: 5, scale: 3 }),
+  idealWeight: decimal("idealWeight", { precision: 6, scale: 2 }),
+  obesityLevel: varchar("obesityLevel", { length: 50 }),
+  bodyType: varchar("bodyType", { length: 50 }),
 
   // Perimetria (cm) - armazenado como JSON flexível
-  perimetria: text("perimetria"),  // JSON: { cintura, quadril, braco, coxa, panturrilha, pescoco, torax, abdomen }
+  perimetria: text("perimetria"),
 
   // Dobras cutâneas (mm) - armazenado como JSON flexível
-  dobras: text("dobras"),          // JSON: { tricipital, subescapular, abdominal, suprailiaca, coxa, axilarMedia, peitoral }
+  dobras: text("dobras"),
 
   // Report image
   imageUrl: text("imageUrl"),
