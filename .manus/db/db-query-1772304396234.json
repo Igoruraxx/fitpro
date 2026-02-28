@@ -1,0 +1,106 @@
+{
+  "query": "SELECT column_name, data_type FROM information_schema.columns WHERE table_name = 'clients' ORDER BY ordinal_position;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 4PiQ8e52qW4Xjb6.root --database 5UbJ997E6SHYZid72bThxF --execute SELECT column_name, data_type FROM information_schema.columns WHERE table_name = 'clients' ORDER BY ordinal_position;",
+  "rows": [
+    {
+      "column_name": "id",
+      "data_type": "int"
+    },
+    {
+      "column_name": "trainerId",
+      "data_type": "int"
+    },
+    {
+      "column_name": "name",
+      "data_type": "varchar"
+    },
+    {
+      "column_name": "phone",
+      "data_type": "varchar"
+    },
+    {
+      "column_name": "birthDate",
+      "data_type": "date"
+    },
+    {
+      "column_name": "gender",
+      "data_type": "enum"
+    },
+    {
+      "column_name": "photoUrl",
+      "data_type": "text"
+    },
+    {
+      "column_name": "status",
+      "data_type": "enum"
+    },
+    {
+      "column_name": "monthlyFee",
+      "data_type": "decimal"
+    },
+    {
+      "column_name": "paymentDay",
+      "data_type": "int"
+    },
+    {
+      "column_name": "createdAt",
+      "data_type": "timestamp"
+    },
+    {
+      "column_name": "updatedAt",
+      "data_type": "timestamp"
+    },
+    {
+      "column_name": "planType",
+      "data_type": "enum"
+    },
+    {
+      "column_name": "packageSessions",
+      "data_type": "int"
+    },
+    {
+      "column_name": "sessionsRemaining",
+      "data_type": "int"
+    },
+    {
+      "column_name": "packageValue",
+      "data_type": "decimal"
+    },
+    {
+      "column_name": "sessionsPerWeek",
+      "data_type": "int"
+    },
+    {
+      "column_name": "sessionDays",
+      "data_type": "varchar"
+    },
+    {
+      "column_name": "sessionTime",
+      "data_type": "varchar"
+    },
+    {
+      "column_name": "sessionDuration",
+      "data_type": "int"
+    },
+    {
+      "column_name": "prepaidValue",
+      "data_type": "decimal"
+    },
+    {
+      "column_name": "prepaidDueDate",
+      "data_type": "date"
+    },
+    {
+      "column_name": "sessionTimesPerDay",
+      "data_type": "text"
+    },
+    {
+      "column_name": "renovationHistory",
+      "data_type": "text"
+    }
+  ],
+  "messages": [],
+  "stdout": "column_name\tdata_type\nid\tint\ntrainerId\tint\nname\tvarchar\nphone\tvarchar\nbirthDate\tdate\ngender\tenum\nphotoUrl\ttext\nstatus\tenum\nmonthlyFee\tdecimal\npaymentDay\tint\ncreatedAt\ttimestamp\nupdatedAt\ttimestamp\nplanType\tenum\npackageSessions\tint\nsessionsRemaining\tint\npackageValue\tdecimal\nsessionsPerWeek\tint\nsessionDays\tvarchar\nsessionTime\tvarchar\nsessionDuration\tint\nprepaidValue\tdecimal\nprepaidDueDate\tdate\nsessionTimesPerDay\ttext\nrenovationHistory\ttext\n",
+  "stderr": "",
+  "execution_time_ms": 508
+}

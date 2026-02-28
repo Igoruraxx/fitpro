@@ -1,0 +1,88 @@
+{
+  "query": "SELECT COUNT(*) as total FROM clients WHERE trainerId = 16; DESCRIBE clients;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 4PiQ8e52qW4Xjb6.root --database 5UbJ997E6SHYZid72bThxF --execute SELECT COUNT(*) as total FROM clients WHERE trainerId = 16; DESCRIBE clients;",
+  "rows": [
+    {
+      "total": "8"
+    },
+    {
+      "total": "Field\tType\tNull\tKey\tDefault\tExtra"
+    },
+    {
+      "total": "id\tint\tNO\tPRI\tNULL\tauto_increment"
+    },
+    {
+      "total": "trainerId\tint\tNO\t\tNULL\t"
+    },
+    {
+      "total": "name\tvarchar(255)\tNO\t\tNULL\t"
+    },
+    {
+      "total": "phone\tvarchar(20)\tYES\t\tNULL\t"
+    },
+    {
+      "total": "birthDate\tdate\tYES\t\tNULL\t"
+    },
+    {
+      "total": "gender\tenum('male','female','other')\tYES\t\tNULL\t"
+    },
+    {
+      "total": "photoUrl\ttext\tYES\t\tNULL\t"
+    },
+    {
+      "total": "status\tenum('active','inactive','trial')\tNO\t\tactive\t"
+    },
+    {
+      "total": "monthlyFee\tdecimal(10,2)\tYES\t\tNULL\t"
+    },
+    {
+      "total": "paymentDay\tint\tYES\t\tNULL\t"
+    },
+    {
+      "total": "createdAt\ttimestamp\tNO\t\tCURRENT_TIMESTAMP\t"
+    },
+    {
+      "total": "updatedAt\ttimestamp\tNO\t\tCURRENT_TIMESTAMP\tDEFAULT_GENERATED on update CURRENT_TIMESTAMP"
+    },
+    {
+      "total": "planType\tenum('monthly','package')\tNO\t\tmonthly\t"
+    },
+    {
+      "total": "packageSessions\tint\tYES\t\tNULL\t"
+    },
+    {
+      "total": "sessionsRemaining\tint\tYES\t\tNULL\t"
+    },
+    {
+      "total": "packageValue\tdecimal(10,2)\tYES\t\tNULL\t"
+    },
+    {
+      "total": "sessionsPerWeek\tint\tNO\t\t3\t"
+    },
+    {
+      "total": "sessionDays\tvarchar(20)\tYES\t\tNULL\t"
+    },
+    {
+      "total": "sessionTime\tvarchar(5)\tYES\t\tNULL\t"
+    },
+    {
+      "total": "sessionDuration\tint\tNO\t\t60\t"
+    },
+    {
+      "total": "prepaidValue\tdecimal(10,2)\tYES\t\tNULL\t"
+    },
+    {
+      "total": "prepaidDueDate\tdate\tYES\t\tNULL\t"
+    },
+    {
+      "total": "sessionTimesPerDay\ttext\tYES\t\tNULL\t"
+    },
+    {
+      "total": "renovationHistory\ttext\tYES\t\tNULL\t"
+    }
+  ],
+  "messages": [],
+  "stdout": "total\n8\nField\tType\tNull\tKey\tDefault\tExtra\nid\tint\tNO\tPRI\tNULL\tauto_increment\ntrainerId\tint\tNO\t\tNULL\t\nname\tvarchar(255)\tNO\t\tNULL\t\nphone\tvarchar(20)\tYES\t\tNULL\t\nbirthDate\tdate\tYES\t\tNULL\t\ngender\tenum('male','female','other')\tYES\t\tNULL\t\nphotoUrl\ttext\tYES\t\tNULL\t\nstatus\tenum('active','inactive','trial')\tNO\t\tactive\t\nmonthlyFee\tdecimal(10,2)\tYES\t\tNULL\t\npaymentDay\tint\tYES\t\tNULL\t\ncreatedAt\ttimestamp\tNO\t\tCURRENT_TIMESTAMP\t\nupdatedAt\ttimestamp\tNO\t\tCURRENT_TIMESTAMP\tDEFAULT_GENERATED on update CURRENT_TIMESTAMP\nplanType\tenum('monthly','package')\tNO\t\tmonthly\t\npackageSessions\tint\tYES\t\tNULL\t\nsessionsRemaining\tint\tYES\t\tNULL\t\npackageValue\tdecimal(10,2)\tYES\t\tNULL\t\nsessionsPerWeek\tint\tNO\t\t3\t\nsessionDays\tvarchar(20)\tYES\t\tNULL\t\nsessionTime\tvarchar(5)\tYES\t\tNULL\t\nsessionDuration\tint\tNO\t\t60\t\nprepaidValue\tdecimal(10,2)\tYES\t\tNULL\t\nprepaidDueDate\tdate\tYES\t\tNULL\t\nsessionTimesPerDay\ttext\tYES\t\tNULL\t\nrenovationHistory\ttext\tYES\t\tNULL\t\n",
+  "stderr": "",
+  "execution_time_ms": 397
+}

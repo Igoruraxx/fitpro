@@ -1,0 +1,58 @@
+{
+  "query": "SELECT id, name, trainerId, planType FROM clients WHERE trainerId = 16 ORDER BY name;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 4PiQ8e52qW4Xjb6.root --database 5UbJ997E6SHYZid72bThxF --execute SELECT id, name, trainerId, planType FROM clients WHERE trainerId = 16 ORDER BY name;",
+  "rows": [
+    {
+      "id": "30001",
+      "name": "Ana Paula Ferreira",
+      "trainerId": "16",
+      "planType": "package"
+    },
+    {
+      "id": "30007",
+      "name": "Beatriz Alves Pereira",
+      "trainerId": "16",
+      "planType": "package"
+    },
+    {
+      "id": "30002",
+      "name": "Carlos Eduardo Lima",
+      "trainerId": "16",
+      "planType": "package"
+    },
+    {
+      "id": "30008",
+      "name": "Diego Carvalho Nunes",
+      "trainerId": "16",
+      "planType": "monthly"
+    },
+    {
+      "id": "30003",
+      "name": "Fernanda Costa Silva",
+      "trainerId": "16",
+      "planType": "monthly"
+    },
+    {
+      "id": "30005",
+      "name": "Juliana Rodrigues",
+      "trainerId": "16",
+      "planType": "monthly"
+    },
+    {
+      "id": "30006",
+      "name": "Marcos Oliveira",
+      "trainerId": "16",
+      "planType": "package"
+    },
+    {
+      "id": "30004",
+      "name": "Ricardo Mendes Santos",
+      "trainerId": "16",
+      "planType": "package"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tname\ttrainerId\tplanType\n30001\tAna Paula Ferreira\t16\tpackage\n30007\tBeatriz Alves Pereira\t16\tpackage\n30002\tCarlos Eduardo Lima\t16\tpackage\n30008\tDiego Carvalho Nunes\t16\tmonthly\n30003\tFernanda Costa Silva\t16\tmonthly\n30005\tJuliana Rodrigues\t16\tmonthly\n30006\tMarcos Oliveira\t16\tpackage\n30004\tRicardo Mendes Santos\t16\tpackage\n",
+  "stderr": "",
+  "execution_time_ms": 357
+}

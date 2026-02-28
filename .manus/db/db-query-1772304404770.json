@@ -1,0 +1,35 @@
+{
+  "query": "SELECT id, trainerId, name FROM clients WHERE trainerId = 16 LIMIT 5;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 4PiQ8e52qW4Xjb6.root --database 5UbJ997E6SHYZid72bThxF --execute SELECT id, trainerId, name FROM clients WHERE trainerId = 16 LIMIT 5;",
+  "rows": [
+    {
+      "id": "30001",
+      "trainerId": "16",
+      "name": "Ana Paula Ferreira"
+    },
+    {
+      "id": "30002",
+      "trainerId": "16",
+      "name": "Carlos Eduardo Lima"
+    },
+    {
+      "id": "30003",
+      "trainerId": "16",
+      "name": "Fernanda Costa Silva"
+    },
+    {
+      "id": "30004",
+      "trainerId": "16",
+      "name": "Ricardo Mendes Santos"
+    },
+    {
+      "id": "30005",
+      "trainerId": "16",
+      "name": "Juliana Rodrigues"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\ttrainerId\tname\n30001\t16\tAna Paula Ferreira\n30002\t16\tCarlos Eduardo Lima\n30003\t16\tFernanda Costa Silva\n30004\t16\tRicardo Mendes Santos\n30005\t16\tJuliana Rodrigues\n",
+  "stderr": "",
+  "execution_time_ms": 369
+}
