@@ -11,7 +11,7 @@ import {
   getMeasurementsByClient, createMeasurement, deleteMeasurement,
   getPhotosByClient, createProgressPhoto, deleteProgressPhoto,
   getTransactionsByTrainer, getTransactionsByClient, createTransaction, updateTransaction, deleteTransaction, getFinancialSummary, getFinancialDashboard,
-  markTransactionPaid, getOverdueClients, generateMonthlyCharges,
+  markTransactionPaid, markTransactionPending, getOverdueClients, generateMonthlyCharges,
   updateUserProfile, getAllTrainers, getAdminDashboardStats,
   getDashboardStats, getWeeklySessionsChart, getSessionStatusChart, getTodaySessions,
   getBioimpedanceByClient, createBioimpedanceExam, updateBioimpedanceExam, deleteBioimpedanceExam,
@@ -415,11 +415,20 @@ export const appRouter = router({
     }),
     markPaid: protectedProcedure.input(z.object({ id: z.number() })).mutation(async ({ ctx, input }) => {
       const tx = await markTransactionPaid(input.id, ctx.user.id);
-      // Notify owner about payment confirmation
       if (tx) {
         notifyOwner({
           title: `✅ Pagamento confirmado`,
           content: `${tx.description || tx.category} — R$ ${parseFloat(tx.amount as string).toFixed(2)} marcado como pago.`,
+        }).catch(() => {});
+      }
+      return { success: true };
+    }),
+    markPending: protectedProcedure.input(z.object({ id: z.number() })).mutation(async ({ ctx, input }) => {
+      const tx = await markTransactionPending(input.id, ctx.user.id);
+      if (tx) {
+        notifyOwner({
+          title: `↩️ Baixa desfeita`,
+          content: `${tx.description || tx.category} — R$ ${parseFloat(tx.amount as string).toFixed(2)} revertido para pendente.`,
         }).catch(() => {});
       }
       return { success: true };

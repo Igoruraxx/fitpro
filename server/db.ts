@@ -429,13 +429,25 @@ export async function deleteTransaction(id: number, trainerId: number) {
 export async function markTransactionPaid(id: number, trainerId: number) {
   const db = await getDb();
   if (!db) return null;
-  // Fetch transaction first for notification payload
   const [tx] = await db.select().from(transactions)
     .where(and(eq(transactions.id, id), eq(transactions.trainerId, trainerId)));
   if (!tx) return null;
   const today = new Date().toISOString().split('T')[0];
   await db.update(transactions)
     .set({ status: 'paid', paidAt: today, updatedAt: new Date() })
+    .where(and(eq(transactions.id, id), eq(transactions.trainerId, trainerId)));
+  return tx;
+}
+
+// Revert transaction from paid to pending (desfazer baixa)
+export async function markTransactionPending(id: number, trainerId: number) {
+  const db = await getDb();
+  if (!db) return null;
+  const [tx] = await db.select().from(transactions)
+    .where(and(eq(transactions.id, id), eq(transactions.trainerId, trainerId)));
+  if (!tx) return null;
+  await db.update(transactions)
+    .set({ status: 'pending', paidAt: null, updatedAt: new Date() })
     .where(and(eq(transactions.id, id), eq(transactions.trainerId, trainerId)));
   return tx;
 }

@@ -82,6 +82,15 @@ export default function ClienteDetalhe() {
     onError: (e) => toast.error(e.message),
   });
 
+  const markPendingMutation = trpc.finances.markPending.useMutation({
+    onSuccess: () => {
+      toast.success("Baixa desfeita!");
+      utils.finances.listByClient.invalidate({ clientId });
+      utils.finances.overdueClients.invalidate();
+    },
+    onError: (e) => toast.error(e.message),
+  });
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-20">
@@ -458,7 +467,7 @@ export default function ClienteDetalhe() {
                           title="Cobrar via WhatsApp"
                           onClick={() => {
                             const phone = client.phone?.replace(/\D/g, "");
-                            const msg = encodeURIComponent(`Olá ${client.name}! 😊\n\nPassando para lembrar que há um pagamento pendente de R$ ${parseFloat(t.amount).toFixed(2)} em aberto.\n\nQualquer dúvida, estou à disposição! 🏋️`);
+                            const msg = encodeURIComponent(`Olá ${client.name}! 😊\n\nPassando para lembrar que há um pagamento pendente de R$ ${parseFloat(t.amount).toFixed(2)} em aberto.\n\nQualquer dúvida, estou à disposição! 🂪`);
                             window.open(`https://wa.me/55${phone}?text=${msg}`, "_blank");
                           }}
                         >
@@ -466,6 +475,17 @@ export default function ClienteDetalhe() {
                         </Button>
                       )}
                     </div>
+                  )}
+                  {t.status === "paid" && (
+                    <Button
+                      variant="ghost" size="icon"
+                      className="h-8 w-8 text-amber-600 hover:bg-amber-50"
+                      title="Desfazer baixa"
+                      onClick={() => markPendingMutation.mutate({ id: t.id })}
+                      disabled={markPendingMutation.isPending}
+                    >
+                      <Clock className="h-4 w-4" />
+                    </Button>
                   )}
                 </div>
               );

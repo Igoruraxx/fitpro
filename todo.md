@@ -421,3 +421,10 @@
 - [x] E-mail de boas-vindas enviado ao registrar personal trainer
 - [x] E-mail de reset de senha enviado ao solicitar recuperação
 - [x] Testes vitest para o helper de e-mail (4 testes)
+
+## Desfazer Baixa (v12)
+- [x] Função markTransactionPending no db.ts para reverter cobrança de pago para pendente
+- [x] Endpoint finances.markPending no router
+- [x] Botão desfazer baixa (ícone Clock, cor âmbar) em Financas.tsx para cobranças pagas
+- [x] Botão desfazer baixa em ClienteDetalhe.tsx na aba Financeiro
+- [x] Notificação ao dono quando baixa é desfeita

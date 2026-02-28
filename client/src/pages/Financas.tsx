@@ -56,6 +56,11 @@ export default function Financas() {
     onError: (e) => toast.error(e.message),
   });
 
+  const markPendingMutation = trpc.finances.markPending.useMutation({
+    onSuccess: () => { toast.success("Baixa desfeita!"); refetchAll(); },
+    onError: (e) => toast.error(e.message),
+  });
+
   const navigateMonth = (dir: number) => {
     let m = month + dir;
     let y = year;
@@ -249,6 +254,18 @@ export default function Financas() {
                       disabled={markPaidMutation.isPending}
                     >
                       <CheckCircle2 className="h-4 w-4" />
+                    </Button>
+                  )}
+                  {/* Desfazer baixa — only for paid */}
+                  {t.status === "paid" && (
+                    <Button
+                      variant="ghost" size="icon"
+                      className="h-8 w-8 text-amber-600 hover:text-amber-700 hover:bg-amber-50"
+                      title="Desfazer baixa (reverter para pendente)"
+                      onClick={() => markPendingMutation.mutate({ id: t.id })}
+                      disabled={markPendingMutation.isPending}
+                    >
+                      <Clock className="h-4 w-4" />
                     </Button>
                   )}
                   {/* WhatsApp — only for overdue */}
