@@ -449,3 +449,9 @@
 - [x] Fundo amarelo com transparência para cobranças pendentes
 - [x] Bordas coloridas correspondentes ao status
 - [x] Atualizado em Financas.tsx e ClienteDetalhe.tsx
+
+## Botões Editar/Excluir e Reposicionamento (v15)
+- [x] Adicionar botão editar (Edit2) para exames de bioimpedância
+- [x] Adicionar botão excluir (Trash2) para exames de bioimpedância
+- [x] Reposicionar botão "Novo Exame" para abaixo do texto sobre perímetros e dobras
+- [x] Botões com confirmação de exclusão

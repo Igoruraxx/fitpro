@@ -137,13 +137,13 @@ export default function Bioimpedancia() {
 
   return (
     <div className="p-4 md:p-6 max-w-5xl mx-auto space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="mb-4">
         <div>
           <h1 className="text-xl font-semibold text-foreground">Exames</h1>
           <p className="text-sm text-muted-foreground mt-0.5">Bioimpedância, perimetria e dobras cutâneas</p>
         </div>
         {selectedClientId && (
-          <Button onClick={openNew} size="sm" className="gap-1.5">
+          <Button onClick={openNew} size="sm" className="gap-1.5 mt-3">
             <Plus className="w-4 h-4" /> Novo Exame
           </Button>
         )}

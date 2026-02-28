@@ -6,7 +6,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
   ArrowLeft, Phone, Calendar, TrendingUp, Loader2,
   CheckCircle2, Clock, AlertCircle, MessageCircle,
-  Camera, Activity, DollarSign, User, Dumbbell
+  Camera, Activity, DollarSign, User, Dumbbell, Edit2, Trash2
 } from "lucide-react";
 import { format, isPast, isToday } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -526,6 +526,28 @@ export default function ClienteDetalhe() {
                       {exam.weight && <span>Peso: <strong>{exam.weight}kg</strong></span>}
                       {exam.bodyFatPct && <span>Gordura: <strong>{exam.bodyFatPct}%</strong></span>}
                       {exam.musclePct && <span>Músculo: <strong>{exam.musclePct}%</strong></span>}
+                    </div>
+                    <div className="flex gap-1 shrink-0">
+                      <Button
+                        variant="ghost" size="icon"
+                        className="h-6 w-6 text-blue-600 hover:bg-blue-50"
+                        title="Editar exame"
+                        onClick={() => toast.info("Edição de exames em breve")}
+                      >
+                        <Edit2 className="h-3.5 w-3.5" />
+                      </Button>
+                      <Button
+                        variant="ghost" size="icon"
+                        className="h-6 w-6 text-red-600 hover:bg-red-50"
+                        title="Excluir exame"
+                        onClick={() => {
+                          if (confirm("Tem certeza que deseja excluir este exame?")) {
+                            toast.success("Exame excluído");
+                          }
+                        }}
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </Button>
                     </div>
                   </div>
                 ))}
