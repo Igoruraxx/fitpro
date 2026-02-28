@@ -636,3 +636,8 @@
 - [x] Aplicar logo no header/navbar
 - [x] Aplicar logo no favicon
 - [x] Aplicar logo em todas as telas que exibem a marca
+
+## Identidade Visual Avançada (v42)
+- [x] Splash screen com logo animada ao carregar o app
+- [x] Tema de cores verde-petóleo e laranja baseado na logo
+- [x] Logo na barra de navegação mobile inferior

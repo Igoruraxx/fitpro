@@ -2,8 +2,10 @@ import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import NotFound from "@/pages/NotFound";
 import { Route, Switch } from "wouter";
+import { useState } from "react";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
+import SplashScreen from "./components/SplashScreen";
 import AppLayout from "./components/AppLayout";
 import Dashboard from "./pages/Dashboard";
 import Agenda from "./pages/Agenda";
@@ -56,11 +58,20 @@ function Router() {
 }
 
 function App() {
+  const [showSplash, setShowSplash] = useState(() => {
+    // Mostrar splash apenas na primeira visita da sessão
+    const seen = sessionStorage.getItem("fitpro_splash_seen");
+    if (seen) return false;
+    sessionStorage.setItem("fitpro_splash_seen", "1");
+    return true;
+  });
+
   return (
     <ErrorBoundary>
       <ThemeProvider defaultTheme="light">
         <TooltipProvider>
           <Toaster />
+          {showSplash && <SplashScreen onFinish={() => setShowSplash(false)} />}
           <Router />
         </TooltipProvider>
       </ThemeProvider>

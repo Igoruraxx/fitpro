@@ -289,6 +289,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             <div className="flex items-center justify-around h-16 px-1">
               {mobileNavItems.map((item) => {
                 const active = isActive(item.path, location);
+                const isHome = item.path === "/";
                 return (
                   <button
                     key={item.path}
@@ -297,9 +298,19 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                       active ? "text-primary" : "text-muted-foreground"
                     }`}
                   >
-                    <div className={`p-1 rounded-lg transition-all ${active ? "bg-primary/10" : ""}`}>
-                      <item.icon style={{ width: 18, height: 18 }} />
-                    </div>
+                    {isHome ? (
+                      <div className={`p-0.5 rounded-lg transition-all ${active ? "bg-primary/10" : ""}`}>
+                        <img
+                          src="https://d2xsxph8kpxj0f.cloudfront.net/310519663385249362/5UbJ997E6SHYZid72bThxF/fitpro-logo_005e8846.png"
+                          alt="FitPro"
+                          style={{ width: 22, height: 22, objectFit: "contain", opacity: active ? 1 : 0.5 }}
+                        />
+                      </div>
+                    ) : (
+                      <div className={`p-1 rounded-lg transition-all ${active ? "bg-primary/10" : ""}`}>
+                        <item.icon style={{ width: 18, height: 18 }} />
+                      </div>
+                    )}
                     <span className={`text-[9px] font-medium ${active ? "text-primary" : ""}`}>{item.label}</span>
                   </button>
                 );
