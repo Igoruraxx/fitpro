@@ -30,6 +30,7 @@ import {
 } from "@dnd-kit/core";
 import { useDraggable, useDroppable } from "@dnd-kit/core";
 import { CSS } from "@dnd-kit/utilities";
+import { useAuth } from "@/_core/hooks/useAuth";
 
 type ViewMode = "day" | "list" | "week" | "month";
 
@@ -282,6 +283,7 @@ function DroppableSlot({
 // ─── Main Component ──────────────────────────────────────────────────────────
 
 export default function Agenda() {
+  const { user } = useAuth();
   const [viewMode, setViewMode] = useState<ViewMode>("day");
   const [currentDate, setCurrentDate] = useState(() => new Date());
   const [showModal, setShowModal] = useState(false);
@@ -314,7 +316,7 @@ export default function Agenda() {
     useSensor(TouchSensor, { activationConstraint: { delay: 150, tolerance: 5 } })
   );
 
-  const { data: clientsList = [] } = trpc.clients.list.useQuery();
+  const { data: clientsList = [] } = trpc.clients.list.useQuery(undefined, { enabled: !!user });
 
   const dateRange = useMemo(() => {
     if (viewMode === "day") {
@@ -330,10 +332,13 @@ export default function Agenda() {
     return { start: format(s, "yyyy-MM-dd"), end: format(e, "yyyy-MM-dd") };
   }, [currentDate, viewMode]);
 
-  const { data: appointments = [], refetch } = trpc.appointments.list.useQuery({
-    startDate: dateRange.start,
-    endDate: dateRange.end,
-  });
+  const { data: appointments = [], refetch } = trpc.appointments.list.useQuery(
+    {
+      startDate: dateRange.start,
+      endDate: dateRange.end,
+    },
+    { enabled: !!user }
+  );
 
   const createMutation = trpc.appointments.create.useMutation({
     onSuccess: () => { toast.success("Agendamento criado!"); refetch(); setShowModal(false); },

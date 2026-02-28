@@ -786,3 +786,7 @@
 - [x] Adicionar filtro de plano (Free/Pro) no Admin
 - [x] Remover texto sobre downgrade de planos
 - [x] Remover menção de acesso ao painel admin
+
+## Corre\u00e7\u00e3o de Erros (v56)
+- [x] Corrigir erro de permiss\u00e3o na p\u00e1gina / com User: null
+- [x] Adicionar enabled: !!user em queries de Agenda.tsx
