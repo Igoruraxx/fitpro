@@ -511,7 +511,7 @@ export default function ClienteDetalhe() {
                 Bioimpedância
               </h3>
               <Button size="sm" variant="outline" className="text-xs h-7"
-                onClick={() => setLocation(`/bioimpedancia?clientId=${clientId}`)}>
+                onClick={() => setLocation(`/evolucao?clientId=${clientId}`)}>
                 Ver tudo
               </Button>
             </div>

@@ -1,256 +1,532 @@
+import { useState, useRef } from "react";
 import { trpc } from "@/lib/trpc";
-import { useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { TrendingUp, Plus, Ruler, Trash2, Loader2, Users } from "lucide-react";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, BarChart, Bar
+} from "recharts";
+import { Plus, Activity, Ruler, TrendingUp, ImageIcon, Trash2, Edit2, ChevronDown, ChevronUp } from "lucide-react";
 import { toast } from "sonner";
-import { format } from "date-fns";
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
+
+interface Perimetria {
+  cintura?: string; quadril?: string; braco?: string; coxa?: string;
+  panturrilha?: string; pescoco?: string; torax?: string; abdomen?: string;
+}
+interface Dobras {
+  tricipital?: string; subescapular?: string; abdominal?: string;
+  suprailiaca?: string; coxa?: string; axilarMedia?: string; peitoral?: string;
+}
+
+const PERIMETRIA_FIELDS: { key: keyof Perimetria; label: string }[] = [
+  { key: "cintura", label: "Cintura" }, { key: "quadril", label: "Quadril" },
+  { key: "braco", label: "Braço" }, { key: "coxa", label: "Coxa" },
+  { key: "panturrilha", label: "Panturrilha" }, { key: "pescoco", label: "Pescoço" },
+  { key: "torax", label: "Tórax" }, { key: "abdomen", label: "Abdômen" },
+];
+const DOBRAS_FIELDS: { key: keyof Dobras; label: string }[] = [
+  { key: "tricipital", label: "Tricipital" }, { key: "subescapular", label: "Subescapular" },
+  { key: "abdominal", label: "Abdominal" }, { key: "suprailiaca", label: "Suprailíaca" },
+  { key: "coxa", label: "Coxa" }, { key: "axilarMedia", label: "Axilar Média" },
+  { key: "peitoral", label: "Peitoral" },
+];
+
+function parseJSON<T>(str: string | null | undefined, fallback: T): T {
+  if (!str) return fallback;
+  try { return JSON.parse(str) as T; } catch { return fallback; }
+}
+function fmtDate(d: string) {
+  const [y, m, day] = d.split("-");
+  return `${day}/${m}/${y}`;
+}
+function fmtNum(v: string | null | undefined) {
+  if (!v) return "—";
+  return parseFloat(v).toLocaleString("pt-BR", { maximumFractionDigits: 1 });
+}
+function emptyForm() {
+  return {
+    date: new Date().toISOString().slice(0, 10),
+    weight: "", muscleMass: "", musclePct: "", bodyFatPct: "", visceralFat: "",
+    perimetria: {} as Perimetria, dobras: {} as Dobras,
+    notes: "", imageBase64: "", imagePreview: "",
+  };
+}
 
 export default function Evolucao() {
-  const [selectedClientId, setSelectedClientId] = useState<string>("");
-  const [showModal, setShowModal] = useState(false);
-
-  // Form
-  const [formDate, setFormDate] = useState(format(new Date(), "yyyy-MM-dd"));
-  const [formWeight, setFormWeight] = useState("");
-  const [formHeight, setFormHeight] = useState("");
-  const [formBodyFat, setFormBodyFat] = useState("");
-  const [formChest, setFormChest] = useState("");
-  const [formWaist, setFormWaist] = useState("");
-  const [formHips, setFormHips] = useState("");
-  const [formLeftArm, setFormLeftArm] = useState("");
-  const [formRightArm, setFormRightArm] = useState("");
-  const [formLeftThigh, setFormLeftThigh] = useState("");
-  const [formRightThigh, setFormRightThigh] = useState("");
-  const [formNotes, setFormNotes] = useState("");
+  const [selectedClientId, setSelectedClientId] = useState<number | null>(null);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [editId, setEditId] = useState<number | null>(null);
+  const [form, setForm] = useState(emptyForm());
+  const [expandedId, setExpandedId] = useState<number | null>(null);
+  const [selectedExamIds, setSelectedExamIds] = useState<Set<number>>(new Set());
+  const [showConfirmDelete, setShowConfirmDelete] = useState(false);
+  const [showDeleteByDate, setShowDeleteByDate] = useState(false);
+  const [deleteBeforeDate, setDeleteBeforeDate] = useState<string>("");
+  const [showConfirmDeleteByDate, setShowConfirmDeleteByDate] = useState(false);
+  const fileRef = useRef<HTMLInputElement>(null);
 
   const { data: clients = [] } = trpc.clients.list.useQuery();
-  const clientId = selectedClientId ? parseInt(selectedClientId) : 0;
-
-  const { data: measurements = [], refetch } = trpc.evolution.measurements.list.useQuery(
-    { clientId },
-    { enabled: clientId > 0 }
+  const { data: exams = [], refetch } = trpc.bioimpedance.list.useQuery(
+    { clientId: selectedClientId! }, { enabled: !!selectedClientId }
   );
 
-  const createMutation = trpc.evolution.measurements.create.useMutation({
-    onSuccess: () => { toast.success("Medidas registradas!"); refetch(); setShowModal(false); },
+  const createMut = trpc.bioimpedance.create.useMutation({
+    onSuccess: () => { toast.success("Exame salvo!"); setModalOpen(false); refetch(); },
+    onError: (e) => toast.error(e.message),
+  });
+  const updateMut = trpc.bioimpedance.update.useMutation({
+    onSuccess: () => { toast.success("Exame atualizado!"); setModalOpen(false); refetch(); },
+    onError: (e) => toast.error(e.message),
+  });
+  const deleteMut = trpc.bioimpedance.delete.useMutation({
+    onSuccess: () => { toast.success("Exame removido."); refetch(); },
     onError: (e) => toast.error(e.message),
   });
 
-  const deleteMutation = trpc.evolution.measurements.delete.useMutation({
-    onSuccess: () => { toast.success("Registro excluído!"); refetch(); },
-    onError: (e) => toast.error(e.message),
-  });
-
-  const chartData = useMemo(() => {
-    return [...measurements].reverse().map((m: any) => ({
-      date: format(new Date(m.date), "dd/MM"),
-      peso: m.weight ? parseFloat(m.weight) : null,
-      gordura: m.bodyFat ? parseFloat(m.bodyFat) : null,
+  const chartData = [...exams]
+    .sort((a, b) => a.date.localeCompare(b.date))
+    .map((e) => ({
+      date: fmtDate(e.date),
+      "Peso (kg)": e.weight ? parseFloat(e.weight) : undefined,
+      "% Gordura": e.bodyFatPct ? parseFloat(e.bodyFatPct) : undefined,
+      "% Muscular": e.musclePct ? parseFloat(e.musclePct) : undefined,
+      "Visceral": e.visceralFat ? parseFloat(e.visceralFat) : undefined,
     }));
-  }, [measurements]);
 
-  const openNew = () => {
-    setFormDate(format(new Date(), "yyyy-MM-dd"));
-    setFormWeight(""); setFormHeight(""); setFormBodyFat("");
-    setFormChest(""); setFormWaist(""); setFormHips("");
-    setFormLeftArm(""); setFormRightArm("");
-    setFormLeftThigh(""); setFormRightThigh(""); setFormNotes("");
-    setShowModal(true);
-  };
-
-  const handleSubmit = () => {
-    if (!clientId) { toast.error("Selecione um cliente"); return; }
-    createMutation.mutate({
-      clientId,
-      date: formDate,
-      weight: formWeight || undefined,
-      height: formHeight || undefined,
-      bodyFat: formBodyFat || undefined,
-      chest: formChest || undefined,
-      waist: formWaist || undefined,
-      hips: formHips || undefined,
-      leftArm: formLeftArm || undefined,
-      rightArm: formRightArm || undefined,
-      leftThigh: formLeftThigh || undefined,
-      rightThigh: formRightThigh || undefined,
-      notes: formNotes || undefined,
+  function openNew() { setEditId(null); setForm(emptyForm()); setModalOpen(true); }
+  function openEdit(exam: typeof exams[0]) {
+    setEditId(exam.id);
+    setForm({
+      date: exam.date, weight: exam.weight ?? "", muscleMass: exam.muscleMass ?? "",
+      musclePct: exam.musclePct ?? "", bodyFatPct: exam.bodyFatPct ?? "",
+      visceralFat: exam.visceralFat ?? "",
+      perimetria: parseJSON<Perimetria>(exam.perimetria, {}),
+      dobras: parseJSON<Dobras>(exam.dobras, {}),
+      notes: exam.notes ?? "", imageBase64: "", imagePreview: exam.imageUrl ?? "",
     });
-  };
+    setModalOpen(true);
+  }
 
-  const latestM = measurements[0];
-  const prevM = measurements[1];
-  const getDiff = (field: string) => {
-    if (!latestM || !prevM) return null;
-    const curr = parseFloat((latestM as any)[field]);
-    const prev = parseFloat((prevM as any)[field]);
-    if (isNaN(curr) || isNaN(prev)) return null;
-    const diff = curr - prev;
-    return diff;
-  };
+  function handleImageChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) { toast.error("Imagem muito grande (máx. 5MB)"); return; }
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const base64 = ev.target?.result as string;
+      setForm((f) => ({ ...f, imageBase64: base64, imagePreview: base64 }));
+    };
+    reader.readAsDataURL(file);
+  }
+
+  function handleSubmit() {
+    if (!selectedClientId) return;
+    const payload = {
+      clientId: selectedClientId, date: form.date,
+      weight: form.weight || undefined, muscleMass: form.muscleMass || undefined,
+      musclePct: form.musclePct || undefined, bodyFatPct: form.bodyFatPct || undefined,
+      visceralFat: form.visceralFat || undefined,
+      perimetria: Object.keys(form.perimetria).length ? JSON.stringify(form.perimetria) : undefined,
+      dobras: Object.keys(form.dobras).length ? JSON.stringify(form.dobras) : undefined,
+      notes: form.notes || undefined, imageBase64: form.imageBase64 || undefined,
+    };
+    if (editId) updateMut.mutate({ id: editId, ...payload });
+    else createMut.mutate(payload);
+  }
+
+  const isPending = createMut.isPending || updateMut.isPending;
 
   return (
-    <div className="space-y-4 p-4 md:p-0">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+    <div className="p-4 md:p-6 max-w-5xl mx-auto space-y-6">
+      <div className="mb-4">
         <div>
-          <h2 className="text-2xl font-bold">Evolução</h2>
-          <p className="text-sm text-muted-foreground">Acompanhe o progresso dos seus clientes</p>
+          <h1 className="text-xl font-semibold text-foreground">Exames</h1>
+          <p className="text-sm text-muted-foreground mt-0.5">Bioimpedância, perimetria e dobras cutâneas</p>
         </div>
-        <Button onClick={openNew} disabled={!clientId}>
-          <Plus className="h-4 w-4 mr-2" /> Nova Avaliação
-        </Button>
+        {selectedClientId && (
+          <div className="flex gap-2">
+            <Button onClick={openNew} size="sm" className="gap-1.5">
+              <Plus className="w-4 h-4" /> Novo Exame
+            </Button>
+            {selectedExamIds.size > 0 && (
+              <Button
+                variant="destructive"
+                size="sm"
+                onClick={() => setShowConfirmDelete(true)}
+              >
+                <Trash2 className="w-4 h-4 mr-1.5" /> Apagar {selectedExamIds.size}
+              </Button>
+            )}
+          </div>
+        )}
       </div>
 
-      {/* Client selector */}
-      <div>
-        <Label className="text-sm font-medium">Selecione o cliente</Label>
-        <Select value={selectedClientId} onValueChange={setSelectedClientId}>
-          <SelectTrigger className="mt-1">
-            <SelectValue placeholder="Escolha um cliente" />
-          </SelectTrigger>
-          <SelectContent>
-            {clients.map((c: any) => (
-              <SelectItem key={c.id} value={String(c.id)}>{c.name}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+      <div className="bg-card border border-border rounded-xl p-4 space-y-4">
+        <div>
+          <Label className="text-sm font-medium mb-2 block">Selecionar Aluno</Label>
+          <Select
+            value={selectedClientId ? String(selectedClientId) : "none"}
+            onValueChange={(v) => setSelectedClientId(v === "none" ? null : Number(v))}
+          >
+            <SelectTrigger className="w-full max-w-xs">
+              <SelectValue placeholder="Escolha um aluno..." />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="none">Escolha um aluno...</SelectItem>
+              {clients.map((c) => (
+                <SelectItem key={c.id} value={String(c.id)}>{c.name}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        {selectedClientId && (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setShowDeleteByDate(true)}
+            className="w-full"
+          >
+            <Trash2 className="w-4 h-4 mr-2" /> Apagar Exames por Data
+          </Button>
+        )}
       </div>
 
-      {!clientId ? (
-        <div className="flex flex-col items-center justify-center py-16 text-center">
-          <Users className="h-12 w-12 text-muted-foreground/30 mb-4" />
-          <h3 className="text-lg font-medium text-muted-foreground">Selecione um cliente</h3>
-          <p className="text-sm text-muted-foreground/70 mt-1">Escolha um cliente para ver sua evolução.</p>
+      {!selectedClientId && (
+        <div className="text-center py-16 text-muted-foreground">
+          <Activity className="w-12 h-12 mx-auto mb-3 opacity-30" />
+          <p className="font-medium">Selecione um aluno para ver os exames</p>
         </div>
-      ) : (
-        <>
-          {/* Summary cards */}
-          {latestM && (
-            <div className="grid grid-cols-3 gap-3">
-              {[
-                { label: "Peso", value: (latestM as any).weight, unit: "kg", field: "weight" },
-                { label: "% Gordura", value: (latestM as any).bodyFat, unit: "%", field: "bodyFat" },
-                { label: "Cintura", value: (latestM as any).waist, unit: "cm", field: "waist" },
-              ].map(({ label, value, unit, field }) => {
-                const diff = getDiff(field);
-                return (
-                  <div key={field} className="rounded-xl border border-border bg-card p-3 text-center">
-                    <div className="text-xs text-muted-foreground">{label}</div>
-                    <div className="text-xl font-bold text-foreground">{value ? `${value}${unit}` : "-"}</div>
-                    {diff !== null && (
-                      <div className={`text-xs font-medium ${diff < 0 ? "text-green-400" : diff > 0 ? "text-red-400" : "text-muted-foreground"}`}>
-                        {diff > 0 ? "+" : ""}{diff.toFixed(1)}{unit}
+      )}
+
+      {selectedClientId && (
+        <Tabs defaultValue="historico">
+          <TabsList className="mb-4">
+            <TabsTrigger value="historico">Histórico</TabsTrigger>
+            <TabsTrigger value="graficos" disabled={exams.length < 2}>
+              Gráficos {exams.length < 2 && <span className="ml-1 text-xs opacity-50">(min. 2)</span>}
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="historico" className="space-y-3">
+            {exams.length === 0 && (
+              <div className="text-center py-12 text-muted-foreground">
+                <Activity className="w-10 h-10 mx-auto mb-2 opacity-30" />
+                <p>Nenhum exame cadastrado ainda.</p>
+              </div>
+            )}
+            {[...exams].sort((a, b) => b.date.localeCompare(a.date)).map((exam) => {
+              const perim = parseJSON<Perimetria>(exam.perimetria, {});
+              const dobr = parseJSON<Dobras>(exam.dobras, {});
+              const isExpanded = expandedId === exam.id;
+              const hasPerim = Object.values(perim).some(Boolean);
+              const hasDobras = Object.values(dobr).some(Boolean);
+              return (
+                <div key={exam.id} className="bg-card border border-border rounded-xl overflow-hidden">
+                  <div className="flex items-center justify-between p-4">
+                    <div className="flex items-center gap-3">
+                      <Checkbox
+                        checked={selectedExamIds.has(exam.id)}
+                        onCheckedChange={(checked) => {
+                          const newSet = new Set(selectedExamIds);
+                          if (checked) {
+                            newSet.add(exam.id);
+                          } else {
+                            newSet.delete(exam.id);
+                          }
+                          setSelectedExamIds(newSet);
+                        }}
+                      />
+                      <div className="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center">
+                        <Activity className="w-5 h-5 text-blue-600" />
                       </div>
-                    )}
+                      <div>
+                        <p className="font-semibold text-sm">{fmtDate(exam.date)}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {[
+                            exam.weight && `${fmtNum(exam.weight)} kg`,
+                            exam.bodyFatPct && `${fmtNum(exam.bodyFatPct)}% gord.`,
+                            exam.musclePct && `${fmtNum(exam.musclePct)}% musc.`,
+                          ].filter(Boolean).join(" · ") || "Dados parciais"}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEdit(exam)}>
+                        <Edit2 className="w-3.5 h-3.5" />
+                      </Button>
+                      <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive"
+                        onClick={() => { if (confirm("Remover exame?")) deleteMut.mutate({ id: exam.id }); }}>
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </Button>
+                      <Button variant="ghost" size="icon" className="h-8 w-8"
+                        onClick={() => setExpandedId(isExpanded ? null : exam.id)}>
+                        {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                      </Button>
+                    </div>
                   </div>
-                );
-              })}
-            </div>
-          )}
+                  {isExpanded && (
+                    <div className="border-t border-border px-4 pb-4 pt-3 space-y-4">
+                      <div>
+                        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Composição Corporal</p>
+                        <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
+                          {[
+                            { label: "Peso Total", value: exam.weight, unit: "kg" },
+                            { label: "Massa Muscular", value: exam.muscleMass, unit: "kg" },
+                            { label: "% Muscular", value: exam.musclePct, unit: "%" },
+                            { label: "% Gordura", value: exam.bodyFatPct, unit: "%" },
+                            { label: "Gordura Visceral", value: exam.visceralFat, unit: "" },
+                          ].map(({ label, value, unit }) => (
+                            <div key={label} className="bg-blue-50 rounded-lg p-2.5 text-center">
+                              <p className="text-xs text-muted-foreground leading-tight">{label}</p>
+                              <p className="text-base font-bold text-blue-700 mt-0.5">
+                                {value ? `${fmtNum(value)}${unit}` : "—"}
+                              </p>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                      {hasPerim && (
+                        <div>
+                          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2 flex items-center gap-1">
+                            <Ruler className="w-3 h-3" /> Perimetria (cm)
+                          </p>
+                          <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+                            {PERIMETRIA_FIELDS.filter((f) => perim[f.key]).map((f) => (
+                              <div key={f.key} className="bg-gray-50 rounded-lg p-2 text-center">
+                                <p className="text-xs text-muted-foreground">{f.label}</p>
+                                <p className="text-sm font-semibold">{perim[f.key]}</p>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                      {hasDobras && (
+                        <div>
+                          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2 flex items-center gap-1">
+                            <TrendingUp className="w-3 h-3" /> Dobras Cutâneas (mm)
+                          </p>
+                          <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+                            {DOBRAS_FIELDS.filter((f) => dobr[f.key]).map((f) => (
+                              <div key={f.key} className="bg-gray-50 rounded-lg p-2 text-center">
+                                <p className="text-xs text-muted-foreground">{f.label}</p>
+                                <p className="text-sm font-semibold">{dobr[f.key]}</p>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                      {exam.imageUrl && (
+                        <div>
+                          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2 flex items-center gap-1">
+                            <ImageIcon className="w-3 h-3" /> Laudo
+                          </p>
+                          <img src={exam.imageUrl} alt="Laudo" className="rounded-lg max-h-64 object-contain border border-border" />
+                        </div>
+                      )}
+                      {exam.notes && (
+                        <div>
+                          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">Observações</p>
+                          <p className="text-sm text-foreground bg-gray-50 rounded-lg p-3">{exam.notes}</p>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </TabsContent>
 
-          {/* Chart */}
-          {chartData.length > 1 && (
-            <div className="rounded-xl border border-border bg-card p-4">
-              <h3 className="font-semibold mb-3 flex items-center gap-2">
-                <TrendingUp className="h-4 w-4 text-primary" /> Evolução do Peso
+          <TabsContent value="graficos" className="space-y-6">
+            <div className="bg-card border border-border rounded-xl p-4">
+              <h3 className="text-sm font-semibold mb-4 flex items-center gap-2">
+                <TrendingUp className="w-4 h-4 text-blue-500" /> Peso e % Gordura
               </h3>
-              <ResponsiveContainer width="100%" height={200}>
+              <ResponsiveContainer width="100%" height={220}>
                 <LineChart data={chartData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                  <XAxis dataKey="date" tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }} axisLine={false} tickLine={false} />
-                  <YAxis tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }} axisLine={false} tickLine={false} />
-                  <Tooltip
-                    contentStyle={{ backgroundColor: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 8, fontSize: 12 }}
-                    labelStyle={{ color: "hsl(var(--muted-foreground))" }}
-                  />
-                  <Line type="monotone" dataKey="peso" stroke="#3B82F6" strokeWidth={2} dot={{ r: 4, fill: "#3B82F6" }} />
+                  <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                  <XAxis dataKey="date" tick={{ fontSize: 11 }} />
+                  <YAxis tick={{ fontSize: 11 }} />
+                  <Tooltip />
+                  <Legend />
+                  <Line type="monotone" dataKey="Peso (kg)" stroke="#3b82f6" strokeWidth={2} dot={{ r: 4 }} connectNulls />
+                  <Line type="monotone" dataKey="% Gordura" stroke="#ef4444" strokeWidth={2} dot={{ r: 4 }} connectNulls />
                 </LineChart>
               </ResponsiveContainer>
             </div>
-          )}
-
-          {/* Measurements list */}
-          <div className="space-y-2">
-            <h3 className="font-semibold flex items-center gap-2">
-              <Ruler className="h-4 w-4 text-primary" /> Histórico de Medidas
-            </h3>
-            {measurements.length === 0 ? (
-              <p className="text-sm text-muted-foreground italic py-4 text-center">Nenhuma avaliação registrada</p>
-            ) : (
-              measurements.map((m: any) => (
-                <div key={m.id} className="rounded-lg border border-border bg-card p-3">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm font-medium">{format(new Date(m.date), "dd/MM/yyyy")}</span>
-                    <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => deleteMutation.mutate({ id: m.id })}>
-                      <Trash2 className="h-3.5 w-3.5" />
-                    </Button>
+            <div className="bg-card border border-border rounded-xl p-4">
+              <h3 className="text-sm font-semibold mb-4 flex items-center gap-2">
+                <Activity className="w-4 h-4 text-emerald-500" /> % Massa Muscular e Gordura Visceral
+              </h3>
+              <ResponsiveContainer width="100%" height={220}>
+                <LineChart data={chartData}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                  <XAxis dataKey="date" tick={{ fontSize: 11 }} />
+                  <YAxis tick={{ fontSize: 11 }} />
+                  <Tooltip />
+                  <Legend />
+                  <Line type="monotone" dataKey="% Muscular" stroke="#10b981" strokeWidth={2} dot={{ r: 4 }} connectNulls />
+                  <Line type="monotone" dataKey="Visceral" stroke="#f59e0b" strokeWidth={2} dot={{ r: 4 }} connectNulls />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+            {(() => {
+              const sorted = [...exams].sort((a, b) => b.date.localeCompare(a.date));
+              if (sorted.length < 2) return null;
+              const last = parseJSON<Perimetria>(sorted[0].perimetria, {});
+              const prev = parseJSON<Perimetria>(sorted[1].perimetria, {});
+              const fields = PERIMETRIA_FIELDS.filter((f) => last[f.key] || prev[f.key]);
+              if (!fields.length) return null;
+              return (
+                <div className="space-y-4">
+                  <div className="bg-card border border-border rounded-xl p-4">
+                    <h3 className="text-sm font-semibold mb-4 flex items-center gap-2">
+                      <Ruler className="w-4 h-4 text-blue-500" /> Perimetria Comparativa (cm)
+                    </h3>
+                    <div className="grid grid-cols-2 gap-3">
+                      {fields.map((f) => {
+                        const prevVal = prev[f.key] ? parseFloat(prev[f.key]!) : null;
+                        const lastVal = last[f.key] ? parseFloat(last[f.key]!) : null;
+                        const diff = (prevVal && lastVal) ? (lastVal - prevVal).toFixed(1) : null;
+                        const diffColor = diff && parseFloat(diff) < 0 ? "text-green-600" : diff && parseFloat(diff) > 0 ? "text-red-600" : "text-muted-foreground";
+                        return (
+                          <div key={f.key} className="bg-muted/50 rounded-lg p-3 space-y-2">
+                            <p className="text-xs font-semibold text-muted-foreground">{f.label}</p>
+                            <div className="flex justify-between items-center">
+                              <div className="text-left">
+                                <p className="text-xs text-muted-foreground">{fmtDate(sorted[1].date)}</p>
+                                <p className="text-sm font-semibold">{fmtNum(prev[f.key])}</p>
+                              </div>
+                              <div className="text-right">
+                                <p className="text-xs text-muted-foreground">{fmtDate(sorted[0].date)}</p>
+                                <p className="text-sm font-semibold">{fmtNum(last[f.key])}</p>
+                              </div>
+                            </div>
+                            {diff && <p className={`text-xs font-semibold text-center ${diffColor}`}>{parseFloat(diff) > 0 ? "+" : ""}{diff} cm</p>}
+                          </div>
+                        );
+                      })}
+                    </div>
                   </div>
-                  <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 text-xs">
-                    {m.weight && <div><span className="text-muted-foreground">Peso:</span> <strong>{m.weight}kg</strong></div>}
-                    {m.bodyFat && <div><span className="text-muted-foreground">BF:</span> <strong>{m.bodyFat}%</strong></div>}
-                    {m.chest && <div><span className="text-muted-foreground">Peito:</span> <strong>{m.chest}cm</strong></div>}
-                    {m.waist && <div><span className="text-muted-foreground">Cintura:</span> <strong>{m.waist}cm</strong></div>}
-                    {m.hips && <div><span className="text-muted-foreground">Quadril:</span> <strong>{m.hips}cm</strong></div>}
-                    {m.leftArm && <div><span className="text-muted-foreground">Braço E:</span> <strong>{m.leftArm}cm</strong></div>}
-                    {m.rightArm && <div><span className="text-muted-foreground">Braço D:</span> <strong>{m.rightArm}cm</strong></div>}
-                    {m.leftThigh && <div><span className="text-muted-foreground">Coxa E:</span> <strong>{m.leftThigh}cm</strong></div>}
-                    {m.rightThigh && <div><span className="text-muted-foreground">Coxa D:</span> <strong>{m.rightThigh}cm</strong></div>}
+                  <div className="bg-card border border-border rounded-xl p-4">
+                    <h3 className="text-sm font-semibold mb-4">Gráfico Comparativo</h3>
+                    <ResponsiveContainer width="100%" height={250}>
+                      <BarChart data={fields.map((f) => ({
+                        name: f.label,
+                        [fmtDate(sorted[1].date)]: prev[f.key] ? parseFloat(prev[f.key]!) : undefined,
+                        [fmtDate(sorted[0].date)]: last[f.key] ? parseFloat(last[f.key]!) : undefined,
+                      }))} layout="vertical">
+                        <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                        <XAxis type="number" tick={{ fontSize: 11 }} />
+                        <YAxis dataKey="name" type="category" tick={{ fontSize: 11 }} width={80} />
+                        <Tooltip />
+                        <Legend />
+                        <Bar dataKey={fmtDate(sorted[1].date)} fill="#93c5fd" radius={[0, 4, 4, 0]} />
+                        <Bar dataKey={fmtDate(sorted[0].date)} fill="#3b82f6" radius={[0, 4, 4, 0]} />
+                      </BarChart>
+                    </ResponsiveContainer>
                   </div>
-                  {m.notes && <p className="text-xs text-muted-foreground mt-2">{m.notes}</p>}
                 </div>
-              ))
-            )}
-          </div>
-        </>
+              );
+            })()}
+          </TabsContent>
+        </Tabs>
       )}
 
-      {/* Modal */}
-      <Dialog open={showModal} onOpenChange={setShowModal}>
-        <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
+      <Dialog open={modalOpen} onOpenChange={setModalOpen}>
+        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Nova Avaliação</DialogTitle>
-            <DialogDescription className="sr-only">Preencha os dados da nova avaliação física</DialogDescription>
+            <DialogTitle>{editId ? "Editar Exame" : "Novo Exame"}</DialogTitle>
+            <DialogDescription>
+              Preencha os campos disponíveis. Todos são opcionais — salve com os dados que tiver.
+            </DialogDescription>
           </DialogHeader>
-          <div className="space-y-3">
+          <div className="space-y-5 pt-2">
             <div>
-              <Label>Data</Label>
-              <Input className="mt-1" type="date" value={formDate} onChange={(e) => setFormDate(e.target.value)} />
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div><Label>Peso (kg)</Label><Input className="mt-1" type="number" step="0.1" value={formWeight} onChange={(e) => setFormWeight(e.target.value)} /></div>
-              <div><Label>Altura (cm)</Label><Input className="mt-1" type="number" step="0.1" value={formHeight} onChange={(e) => setFormHeight(e.target.value)} /></div>
+              <Label className="text-sm font-medium">Data *</Label>
+              <Input type="date" value={form.date} onChange={(e) => setForm((f) => ({ ...f, date: e.target.value }))} className="mt-1" />
             </div>
             <div>
-              <Label>% Gordura Corporal</Label>
-              <Input className="mt-1" type="number" step="0.1" value={formBodyFat} onChange={(e) => setFormBodyFat(e.target.value)} />
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div><Label>Peito (cm)</Label><Input className="mt-1" type="number" step="0.1" value={formChest} onChange={(e) => setFormChest(e.target.value)} /></div>
-              <div><Label>Cintura (cm)</Label><Input className="mt-1" type="number" step="0.1" value={formWaist} onChange={(e) => setFormWaist(e.target.value)} /></div>
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div><Label>Quadril (cm)</Label><Input className="mt-1" type="number" step="0.1" value={formHips} onChange={(e) => setFormHips(e.target.value)} /></div>
-              <div><Label>Braço Esq (cm)</Label><Input className="mt-1" type="number" step="0.1" value={formLeftArm} onChange={(e) => setFormLeftArm(e.target.value)} /></div>
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div><Label>Braço Dir (cm)</Label><Input className="mt-1" type="number" step="0.1" value={formRightArm} onChange={(e) => setFormRightArm(e.target.value)} /></div>
-              <div><Label>Coxa Esq (cm)</Label><Input className="mt-1" type="number" step="0.1" value={formLeftThigh} onChange={(e) => setFormLeftThigh(e.target.value)} /></div>
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Composição Corporal</p>
+              <div className="grid grid-cols-2 gap-3">
+                {([
+                  { key: "weight", label: "Peso Total (kg)" },
+                  { key: "muscleMass", label: "Massa Muscular (kg)" },
+                  { key: "musclePct", label: "% Massa Muscular" },
+                  { key: "bodyFatPct", label: "% Gordura Corporal" },
+                  { key: "visceralFat", label: "Gordura Visceral" },
+                ] as { key: keyof typeof form; label: string }[]).map(({ key, label }) => (
+                  <div key={key}>
+                    <Label className="text-xs text-muted-foreground">{label}</Label>
+                    <Input type="number" step="0.1" placeholder="—"
+                      value={String(form[key] ?? "")}
+                      onChange={(e) => setForm((f) => ({ ...f, [key]: e.target.value }))}
+                      className="mt-1 h-9" />
+                  </div>
+                ))}
+              </div>
             </div>
             <div>
-              <Label>Coxa Dir (cm)</Label>
-              <Input className="mt-1" type="number" step="0.1" value={formRightThigh} onChange={(e) => setFormRightThigh(e.target.value)} />
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2 flex items-center gap-1">
+                <Ruler className="w-3 h-3" /> Perimetria (cm)
+              </p>
+              <div className="grid grid-cols-2 gap-3">
+                {PERIMETRIA_FIELDS.map(({ key, label }) => (
+                  <div key={key}>
+                    <Label className="text-xs text-muted-foreground">{label}</Label>
+                    <Input type="number" step="0.1" placeholder="—"
+                      value={form.perimetria[key] ?? ""}
+                      onChange={(e) => setForm((f) => ({ ...f, perimetria: { ...f.perimetria, [key]: e.target.value || undefined } }))}
+                      className="mt-1 h-9" />
+                  </div>
+                ))}
+              </div>
             </div>
             <div>
-              <Label>Observações</Label>
-              <Input className="mt-1" value={formNotes} onChange={(e) => setFormNotes(e.target.value)} placeholder="Notas opcionais..." />
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2 flex items-center gap-1">
+                <TrendingUp className="w-3 h-3" /> Dobras Cutâneas (mm)
+              </p>
+              <div className="grid grid-cols-2 gap-3">
+                {DOBRAS_FIELDS.map(({ key, label }) => (
+                  <div key={key}>
+                    <Label className="text-xs text-muted-foreground">{label}</Label>
+                    <Input type="number" step="0.1" placeholder="—"
+                      value={form.dobras[key] ?? ""}
+                      onChange={(e) => setForm((f) => ({ ...f, dobras: { ...f.dobras, [key]: e.target.value || undefined } }))}
+                      className="mt-1 h-9" />
+                  </div>
+                ))}
+              </div>
             </div>
-            <div className="flex gap-3 pt-2">
-              <Button variant="outline" className="flex-1" onClick={() => setShowModal(false)}>Cancelar</Button>
-              <Button className="flex-1" onClick={handleSubmit} disabled={createMutation.isPending}>Registrar</Button>
+            <div>
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2 flex items-center gap-1">
+                <ImageIcon className="w-3 h-3" /> Imagem do Laudo
+              </p>
+              {form.imagePreview && (
+                <img src={form.imagePreview} alt="Preview" className="rounded-lg max-h-40 object-contain border border-border mb-2" />
+              )}
+              <Button variant="outline" size="sm" type="button" onClick={() => fileRef.current?.click()} className="gap-1.5">
+                <ImageIcon className="w-3.5 h-3.5" /> {form.imagePreview ? "Trocar imagem" : "Adicionar imagem"}
+              </Button>
+              <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleImageChange} />
+            </div>
+            <div>
+              <Label className="text-xs text-muted-foreground">Observações</Label>
+              <Textarea placeholder="Anotações sobre o exame..."
+                value={form.notes}
+                onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))}
+                className="mt-1 resize-none" rows={3} />
+            </div>
+            <div className="flex gap-2 pt-1">
+              <Button variant="outline" className="flex-1" onClick={() => setModalOpen(false)}>Cancelar</Button>
+              <Button className="flex-1" onClick={handleSubmit} disabled={isPending || !form.date}>
+                {isPending ? "Salvando..." : editId ? "Atualizar" : "Salvar Exame"}
+              </Button>
             </div>
           </div>
         </DialogContent>

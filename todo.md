@@ -525,3 +525,11 @@
 - [x] Atualizar formulário de bioimpedância com novos campos
 - [x] Criar visualização comparativa lado a lado com cards e gráfico
 - [x] Exibir evolução de medidas entre exames com diferença em cm
+
+
+## Consolidação de Abas (v26)
+- [x] Renomear Bioimpedancia.tsx para Evolucao.tsx
+- [x] Atualizar rotas no App.tsx (remover /bioimpedancia, manter /evolucao)
+- [x] Remover aba Evolução antiga
+- [x] Atualizar sidebar e navegação
+- [x] Testar navegação e rotas

@@ -14,7 +14,6 @@ import Financas from "./pages/Financas";
 import Perfil from "./pages/Perfil";
 import Admin from "./pages/Admin";
 import Fotos from "./pages/Fotos";
-import Bioimpedancia from "./pages/Bioimpedancia";
 import RelatorioPlanos from "./pages/RelatorioPlanos";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
@@ -42,7 +41,6 @@ function Router() {
               <Route path="/clientes" component={Clientes} />
               <Route path="/clientes/:id" component={ClienteDetalhe} />
               <Route path="/fotos" component={Fotos} />
-              <Route path="/bioimpedancia" component={Bioimpedancia} />
               <Route path="/relatorio-planos" component={RelatorioPlanos} />
               <Route path="/evolucao" component={Evolucao} />
               <Route path="/financas" component={Financas} />

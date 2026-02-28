@@ -30,7 +30,6 @@ const navGroups = [
     items: [
       { icon: Users, label: "Alunos", path: "/clientes" },
       { icon: Image, label: "Fotos", path: "/fotos" },
-      { icon: Activity, label: "Bioimpedância", path: "/bioimpedancia" },
       { icon: TrendingUp, label: "Evolução", path: "/evolucao" },
     ],
   },
@@ -56,7 +55,6 @@ const PAGE_TITLES: Record<string, string> = {
   "/": "Agenda",
   "/clientes": "Alunos",
   "/fotos": "Fotos de Progresso",
-  "/bioimpedancia": "Bioimpedância",
   "/evolucao": "Evolução",
   "/relatorio-planos": "Relatórios",
   "/financas": "Financeiro",
