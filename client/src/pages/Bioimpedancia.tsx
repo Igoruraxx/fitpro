@@ -6,7 +6,9 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, BarChart, Bar
 } from "recharts";
@@ -62,6 +64,11 @@ export default function Bioimpedancia() {
   const [editId, setEditId] = useState<number | null>(null);
   const [form, setForm] = useState(emptyForm());
   const [expandedId, setExpandedId] = useState<number | null>(null);
+  const [selectedExamIds, setSelectedExamIds] = useState<Set<number>>(new Set());
+  const [showConfirmDelete, setShowConfirmDelete] = useState(false);
+  const [showDeleteByDate, setShowDeleteByDate] = useState(false);
+  const [deleteBeforeDate, setDeleteBeforeDate] = useState<string>("");
+  const [showConfirmDeleteByDate, setShowConfirmDeleteByDate] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
   const { data: clients = [] } = trpc.clients.list.useQuery();
@@ -143,28 +150,51 @@ export default function Bioimpedancia() {
           <p className="text-sm text-muted-foreground mt-0.5">Bioimpedância, perimetria e dobras cutâneas</p>
         </div>
         {selectedClientId && (
-          <Button onClick={openNew} size="sm" className="gap-1.5 mt-3">
-            <Plus className="w-4 h-4" /> Novo Exame
-          </Button>
+          <div className="flex gap-2">
+            <Button onClick={openNew} size="sm" className="gap-1.5">
+              <Plus className="w-4 h-4" /> Novo Exame
+            </Button>
+            {selectedExamIds.size > 0 && (
+              <Button
+                variant="destructive"
+                size="sm"
+                onClick={() => setShowConfirmDelete(true)}
+              >
+                <Trash2 className="w-4 h-4 mr-1.5" /> Apagar {selectedExamIds.size}
+              </Button>
+            )}
+          </div>
         )}
       </div>
 
-      <div className="bg-card border border-border rounded-xl p-4">
-        <Label className="text-sm font-medium mb-2 block">Selecionar Aluno</Label>
-        <Select
-          value={selectedClientId ? String(selectedClientId) : "none"}
-          onValueChange={(v) => setSelectedClientId(v === "none" ? null : Number(v))}
-        >
-          <SelectTrigger className="w-full max-w-xs">
-            <SelectValue placeholder="Escolha um aluno..." />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="none">Escolha um aluno...</SelectItem>
-            {clients.map((c) => (
-              <SelectItem key={c.id} value={String(c.id)}>{c.name}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+      <div className="bg-card border border-border rounded-xl p-4 space-y-4">
+        <div>
+          <Label className="text-sm font-medium mb-2 block">Selecionar Aluno</Label>
+          <Select
+            value={selectedClientId ? String(selectedClientId) : "none"}
+            onValueChange={(v) => setSelectedClientId(v === "none" ? null : Number(v))}
+          >
+            <SelectTrigger className="w-full max-w-xs">
+              <SelectValue placeholder="Escolha um aluno..." />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="none">Escolha um aluno...</SelectItem>
+              {clients.map((c) => (
+                <SelectItem key={c.id} value={String(c.id)}>{c.name}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        {selectedClientId && (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setShowDeleteByDate(true)}
+            className="w-full"
+          >
+            <Trash2 className="w-4 h-4 mr-2" /> Apagar Exames por Data
+          </Button>
+        )}
       </div>
 
       {!selectedClientId && (
@@ -200,6 +230,18 @@ export default function Bioimpedancia() {
                 <div key={exam.id} className="bg-card border border-border rounded-xl overflow-hidden">
                   <div className="flex items-center justify-between p-4">
                     <div className="flex items-center gap-3">
+                      <Checkbox
+                        checked={selectedExamIds.has(exam.id)}
+                        onCheckedChange={(checked) => {
+                          const newSet = new Set(selectedExamIds);
+                          if (checked) {
+                            newSet.add(exam.id);
+                          } else {
+                            newSet.delete(exam.id);
+                          }
+                          setSelectedExamIds(newSet);
+                        }}
+                      />
                       <div className="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center">
                         <Activity className="w-5 h-5 text-blue-600" />
                       </div>

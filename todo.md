@@ -477,3 +477,18 @@
 - [x] Mostrar quantidade de fotos e data de corte
 - [x] Botão de confirmação vermelho com aviso
 - [x] Toast de sucesso após apagar
+
+## Apagar Exames em Lote (v19)
+- [x] Adicionar estado de seleção de exames
+- [x] Adicionar checkboxes em cada exame da lista
+- [x] Botão "Apagar X" que aparece quando há exames selecionados
+- [x] AlertDialog de confirmação dupla
+- [x] Lógica de deleção em lote com mutação
+- [x] Toast de sucesso após apagar
+
+## Reorganização e Apagar Exames por Data (v20)
+- [x] Reorganizar layout do Bioimpedancia
+- [x] Colocar botão "Apagar Exames por Data" abaixo da seleção de aluno
+- [x] Modal com seletor de data para apagar por data
+- [x] AlertDialog de confirmação dupla
+- [x] Lógica de deleção de exames anteriores à data
