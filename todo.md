@@ -664,3 +664,12 @@
 - [x] Remover visualização semanal da agenda
 - [x] Adicionar linha laranja divisória na visualização por horários
 - [x] Manter visualizações de dia e mês
+
+## Correção de Bugs da Varredura (v47)
+- [x] Bug 1: Exibir horários por dia no perfil do aluno (ClienteDetalhe)
+- [x] Bug 2: Remover campo "Horário padrão" redundante do formulário
+- [x] Bug 3: Remover código morto de renderWeekView na Agenda
+- [x] Bug 4: Excluir pacotes da query de inadimplentes (já estava correto via dueDate IS NOT NULL)
+- [ ] Bug 5: Implementar desfazer exclusão de pagamentos (lixeira) — pendente por decisão do usuário
+- [x] Bug 6: Colorir sessões pendentes quando pacote atingir 80% (sem notificação)
+- [x] Bug 7: Carregar sessionTimesPerDay no formulário de edição de aluno

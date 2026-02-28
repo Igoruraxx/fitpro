@@ -659,66 +659,6 @@ export default function Agenda() {
     );
   };
 
-  // ─── VIEW: SEMANA ──────────────────────────────────────────────────────────
-
-  const renderWeekView = () => {
-    const weekStart = startOfWeek(currentDate, { weekStartsOn: 1 });
-    const days = eachDayOfInterval({ start: weekStart, end: addDays(weekStart, 6) });
-
-    return (
-      <div className="overflow-x-auto">
-        <div className="grid grid-cols-8 gap-1 min-w-[800px]">
-          {/* Header com horários */}
-          <div className="col-span-1 space-y-1">
-            <div className="text-center p-2 text-xs font-medium text-muted-foreground">Hora</div>
-            <div className="space-y-1">
-              {timeSlots.map((slot) => (
-                <div key={slot} className="text-xs text-muted-foreground text-center h-12 flex items-center justify-center">
-                  {slot}
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Dias da semana */}
-          {days.map((day) => {
-            const dayAppts = (appointments as any[])
-              .filter((a: any) => isSameDay(safeParseDate(a.date), day))
-              .sort((a: any, b: any) => a.startTime.localeCompare(b.startTime));
-            const today = isToday(day);
-
-            return (
-              <div key={day.toISOString()} className="space-y-1">
-                <div className={`text-center p-2 rounded-lg text-xs font-medium ${today ? "bg-primary text-primary-foreground" : "bg-muted"}`}>
-                  <div>{format(day, "EEE", { locale: ptBR })}</div>
-                  <div className="font-bold">{format(day, "d")}</div>
-                </div>
-
-                <div className="space-y-1">
-                  {timeSlots.map((slot) => {
-                    const apptAtSlot = dayAppts.find((a: any) => a.startTime === slot);
-                    return (
-                      <div key={`${day.toISOString()}-${slot}`} className="h-12 border border-border/30 rounded-md p-1 text-xs overflow-hidden bg-background hover:bg-muted/50 transition-colors">
-                        {apptAtSlot ? (
-                          <div className="bg-primary/10 border border-primary/30 rounded p-1 h-full flex flex-col justify-center">
-                            <div className="font-medium truncate">{getClientInfo(apptAtSlot).name}</div>
-                            <div className="text-xs text-muted-foreground truncate">{apptAtSlot.startTime}</div>
-                          </div>
-                        ) : (
-                          <div className="text-muted-foreground text-center h-full flex items-center justify-center">-</div>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-    );
-  };
-
   // ─── VIEW: MÊS ─────────────────────────────────────────────────────────────
 
   const renderMonthView = () => {

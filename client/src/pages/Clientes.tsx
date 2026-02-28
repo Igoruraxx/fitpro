@@ -644,7 +644,9 @@ export default function Clientes() {
 
               <div className="grid grid-cols-3 gap-3 mt-3">
                 <div>
-                  <Label className="text-xs text-muted-foreground">Horário padrão</Label>
+                  <Label className="text-xs text-muted-foreground">
+                    {Object.keys(sessionTimesPerDay).length > 0 ? "Horário base (para replicar)" : "Horário"}
+                  </Label>
                   <Input className="mt-1" type="time" value={sessionTime} onChange={(e) => {
                     setSessionTime(e.target.value);
                     // Clear per-day overrides when changing default

@@ -309,7 +309,26 @@ export default function ClienteDetalhe() {
                   <span className="font-medium">{client.sessionsPerWeek}x por semana</span>
                 </div>
               )}
-              {client.sessionTime && (
+              {client.sessionTimesPerDay && (() => {
+                try {
+                  const timesObj = typeof client.sessionTimesPerDay === 'string'
+                    ? JSON.parse(client.sessionTimesPerDay)
+                    : client.sessionTimesPerDay;
+                  const dayNames: Record<string, string> = { '0':'Dom','1':'Seg','2':'Ter','3':'Qua','4':'Qui','5':'Sex','6':'Sáb' };
+                  const entries = Object.entries(timesObj) as [string, string][];
+                  if (entries.length > 0) return (
+                    <div>
+                      <span className="text-muted-foreground text-xs block mb-1">Horários por dia</span>
+                      <div className="flex flex-wrap gap-1">
+                        {entries.sort((a,b)=>Number(a[0])-Number(b[0])).map(([day, time]) => (
+                          <span key={day} className="text-xs bg-muted rounded px-2 py-0.5 font-medium">{dayNames[day] ?? day}: {time}</span>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                } catch { return null; }
+              })()}
+              {client.sessionTime && !client.sessionTimesPerDay && (
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Horário padrão</span>
                   <span className="font-medium">{client.sessionTime}</span>
@@ -454,10 +473,22 @@ export default function ClienteDetalhe() {
               <p className="text-sm text-muted-foreground">Nenhuma sessão registrada</p>
             </div>
           ) : (
-            (appointments as any[]).map((a: any) => (
-              <div key={a.id} className="flex items-center gap-3 p-3.5 rounded-xl border border-border bg-card shadow-sm">
-                <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${APPT_STATUS_COLORS[a.status]?.replace("text-", "bg-").replace("-700", "-100") || "bg-slate-100"}`}>
-                  {a.status === "completed" ? <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+            (appointments as any[]).map((a: any) => {
+              const isPackageNearEnd80 = client?.planType === 'package' &&
+                client?.packageSessions &&
+                client?.sessionsRemaining !== null &&
+                ((client.packageSessions - (client.sessionsRemaining ?? 0)) / client.packageSessions) >= 0.8;
+              const isPendingSession = a.status === 'scheduled';
+              const highlightAmber = isPackageNearEnd80 && isPendingSession;
+              return (
+              <div key={a.id} className={`flex items-center gap-3 p-3.5 rounded-xl border shadow-sm ${
+                highlightAmber ? 'border-amber-300 bg-amber-50' : 'border-border bg-card'
+              }`}>
+                <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${
+                  highlightAmber ? 'bg-amber-100' : APPT_STATUS_COLORS[a.status]?.replace("text-", "bg-").replace("-700", "-100") || "bg-slate-100"
+                }`}>
+                  {highlightAmber ? <AlertTriangle className="h-4 w-4 text-amber-600" />
+                    : a.status === "completed" ? <CheckCircle2 className="h-4 w-4 text-emerald-600" />
                     : a.status === "cancelled" ? <AlertCircle className="h-4 w-4 text-slate-400" />
                     : a.status === "no_show" ? <AlertCircle className="h-4 w-4 text-red-500" />
                     : <Clock className="h-4 w-4 text-blue-600" />}
@@ -467,8 +498,10 @@ export default function ClienteDetalhe() {
                     <span className="text-sm font-medium text-foreground">
                       {format(new Date(a.date + "T12:00:00"), "dd/MM/yyyy", { locale: ptBR })}
                     </span>
-                    <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${APPT_STATUS_COLORS[a.status] || ""}`}>
-                      {APPT_STATUS_LABELS[a.status] || a.status}
+                    <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${
+                      highlightAmber ? 'bg-amber-100 text-amber-700' : APPT_STATUS_COLORS[a.status] || ""
+                    }`}>
+                      {highlightAmber ? 'Pacote quase esgotado' : APPT_STATUS_LABELS[a.status] || a.status}
                     </span>
                   </div>
                   <p className="text-xs text-muted-foreground mt-0.5">{a.startTime} · {a.duration} min</p>
@@ -487,7 +520,8 @@ export default function ClienteDetalhe() {
                   </Button>
                 )}
               </div>
-            ))
+              );
+            })
           )}
         </div>
       )}

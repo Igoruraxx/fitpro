@@ -197,6 +197,12 @@ export default function Financas() {
             const client = t.clientId ? clientMap[t.clientId] : null;
             const overdue = isOverdue(t);
             const effectiveStatus = overdue && t.status === "pending" ? "overdue" : t.status;
+            // Verifica se pacote atingiu 80% de conclusão
+            const isPackageNearEnd80 = client &&
+              (t.category === "Pacote de Sessões" || t.category === "Pacote de Sessoes") &&
+              client.packageSessions &&
+              client.sessionsRemaining !== null &&
+              ((client.packageSessions - (client.sessionsRemaining ?? 0)) / client.packageSessions) >= 0.8;
 
             return (
               <div
@@ -206,6 +212,8 @@ export default function Financas() {
                     ? "border-emerald-200 bg-emerald-100/40 hover:bg-emerald-100/50"
                     : overdue
                     ? "border-red-200 bg-red-100/40 hover:bg-red-100/50"
+                    : isPackageNearEnd80
+                    ? "border-orange-300 bg-orange-50 hover:bg-orange-100/50"
                     : "border-amber-200 bg-amber-100/40 hover:bg-amber-100/50"
                 }`}
               >
