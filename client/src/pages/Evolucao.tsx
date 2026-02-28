@@ -395,19 +395,19 @@ export default function Evolucao() {
                         const diff = (prevVal && lastVal) ? (lastVal - prevVal).toFixed(1) : null;
                         const diffColor = diff && parseFloat(diff) < 0 ? "text-green-600" : diff && parseFloat(diff) > 0 ? "text-red-600" : "text-muted-foreground";
                         return (
-                          <div key={f.key} className="bg-muted/50 rounded-lg p-3 space-y-2">
-                            <p className="text-xs font-semibold text-muted-foreground">{f.label}</p>
-                            <div className="flex justify-between items-center">
-                              <div className="text-left">
-                                <p className="text-xs text-muted-foreground">{fmtDate(sorted[1].date)}</p>
-                                <p className="text-sm font-semibold">{fmtNum(prev[f.key])}</p>
+                          <div key={f.key} className="bg-muted/50 rounded-lg p-3 space-y-2 min-w-0 overflow-hidden">
+                            <p className="text-xs font-semibold text-muted-foreground truncate">{f.label}</p>
+                            <div className="flex justify-between items-center gap-2 min-w-0">
+                              <div className="text-left min-w-0">
+                                <p className="text-xs text-muted-foreground truncate">{fmtDate(sorted[1].date)}</p>
+                                <p className="text-sm font-semibold truncate">{fmtNum(prev[f.key])}</p>
                               </div>
-                              <div className="text-right">
-                                <p className="text-xs text-muted-foreground">{fmtDate(sorted[0].date)}</p>
-                                <p className="text-sm font-semibold">{fmtNum(last[f.key])}</p>
+                              <div className="text-right min-w-0">
+                                <p className="text-xs text-muted-foreground truncate">{fmtDate(sorted[0].date)}</p>
+                                <p className="text-sm font-semibold truncate">{fmtNum(last[f.key])}</p>
                               </div>
                             </div>
-                            {diff && <p className={`text-xs font-semibold text-center ${diffColor}`}>{parseFloat(diff) > 0 ? "+" : ""}{diff} cm</p>}
+                            {diff && <p className={`text-xs font-semibold text-center truncate ${diffColor}`}>{parseFloat(diff) > 0 ? "+" : ""}{diff} cm</p>}
                           </div>
                         );
                       })}

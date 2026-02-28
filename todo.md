@@ -533,3 +533,8 @@
 - [x] Remover aba Evolução antiga
 - [x] Atualizar sidebar e navegação
 - [x] Testar navegação e rotas
+
+
+## Correção de Layout (v27)
+- [x] Ajustar CSS das cards de perimetria para evitar extravasamento de texto
+- [x] Adicionar truncate e min-w-0 para controle de overflow
