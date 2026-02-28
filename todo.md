@@ -492,3 +492,8 @@
 - [x] Modal com seletor de data para apagar por data
 - [x] AlertDialog de confirmação dupla
 - [x] Lógica de deleção de exames anteriores à data
+
+## Reorganização do Layout Fotos (v21)
+- [x] Reorganizar layout do Fotos.tsx
+- [x] Colocar botão "Apagar Fotos por Data" abaixo da seleção de aluno
+- [x] Consistência visual com Bioimpedancia.tsx

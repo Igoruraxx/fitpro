@@ -288,21 +288,33 @@ export default function Fotos() {
       </div>
 
       {/* Client selector */}
-      <div className="flex items-center gap-2">
-        <Users className="h-4 w-4 text-muted-foreground shrink-0" />
-        <Select value={filterClientId} onValueChange={(v) => { setFilterClientId(v); setMode("gallery"); }}>
-          <SelectTrigger className="w-56">
-            <SelectValue placeholder="Selecione um aluno" />
-          </SelectTrigger>
-          <SelectContent>
-            {clients.map((c: any) => (
-              <SelectItem key={c.id} value={String(c.id)}>{c.name}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+      <div className="bg-card border border-border rounded-xl p-4 space-y-4">
+        <div className="flex items-center gap-2">
+          <Users className="h-4 w-4 text-muted-foreground shrink-0" />
+          <Select value={filterClientId} onValueChange={(v) => { setFilterClientId(v); setMode("gallery"); }}>
+            <SelectTrigger className="w-56">
+              <SelectValue placeholder="Selecione um aluno" />
+            </SelectTrigger>
+            <SelectContent>
+              {clients.map((c: any) => (
+                <SelectItem key={c.id} value={String(c.id)}>{c.name}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          {filterClientId && (
+            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => { setFilterClientId(""); setMode("gallery"); }}>
+              <X className="h-4 w-4" />
+            </Button>
+          )}
+        </div>
         {filterClientId && (
-          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => { setFilterClientId(""); setMode("gallery"); }}>
-            <X className="h-4 w-4" />
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setShowDeleteByDate(true)}
+            className="w-full"
+          >
+            <Trash2 className="w-4 h-4 mr-2" /> Apagar Fotos por Data
           </Button>
         )}
       </div>
