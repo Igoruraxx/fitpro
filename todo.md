@@ -544,3 +544,9 @@
 - [x] Ajustar layout de Bioimpedância no ClienteDetalhe
 - [x] Adicionar truncate e min-w-0 para evitar overflow de texto
 - [x] Melhorar espaçamento entre elementos
+
+
+## Reorganização de Layout Bioimpedância (v29)
+- [x] Data pequena no topo, dados abaixo em coluna
+- [x] Remover botão de excluir, manter apenas editar
+- [x] Layout vertical mais limpo e organizado

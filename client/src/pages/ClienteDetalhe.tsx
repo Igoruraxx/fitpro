@@ -518,36 +518,24 @@ export default function ClienteDetalhe() {
             {(bioExams as any[]).length === 0 ? (
               <p className="text-sm text-muted-foreground text-center py-4">Nenhum exame registrado</p>
             ) : (
-              <div className="space-y-2">
+              <div className="space-y-3">
                 {(bioExams as any[]).slice(0, 3).map((exam: any) => (
-                  <div key={exam.id} className="flex items-center justify-between text-sm p-2 rounded-lg bg-muted/30 gap-2 min-w-0">
-                    <span className="text-muted-foreground shrink-0">{format(new Date(exam.date + "T12:00:00"), "dd/MM/yyyy")}</span>
-                    <div className="flex gap-2 text-xs min-w-0 overflow-hidden">
-                      {exam.weight && <span className="truncate">Peso: <strong>{exam.weight}kg</strong></span>}
-                      {exam.bodyFatPct && <span className="truncate">Gordura: <strong>{exam.bodyFatPct}%</strong></span>}
-                      {exam.musclePct && <span className="truncate">Músculo: <strong>{exam.musclePct}%</strong></span>}
-                    </div>
-                    <div className="flex gap-1 shrink-0">
+                  <div key={exam.id} className="rounded-lg bg-muted/30 p-3 space-y-2">
+                    <div className="flex items-start justify-between">
+                      <span className="text-xs text-muted-foreground">{format(new Date(exam.date + "T12:00:00"), "dd/MM/yyyy")}</span>
                       <Button
                         variant="ghost" size="icon"
-                        className="h-6 w-6 text-blue-600 hover:bg-blue-50"
+                        className="h-5 w-5 text-blue-600 hover:bg-blue-50"
                         title="Editar exame"
                         onClick={() => toast.info("Edição de exames em breve")}
                       >
-                        <Edit2 className="h-3.5 w-3.5" />
+                        <Edit2 className="h-3 w-3" />
                       </Button>
-                      <Button
-                        variant="ghost" size="icon"
-                        className="h-6 w-6 text-red-600 hover:bg-red-50"
-                        title="Excluir exame"
-                        onClick={() => {
-                          if (confirm("Tem certeza que deseja excluir este exame?")) {
-                            toast.success("Exame excluído");
-                          }
-                        }}
-                      >
-                        <Trash2 className="h-3.5 w-3.5" />
-                      </Button>
+                    </div>
+                    <div className="space-y-1 text-xs">
+                      {exam.weight && <div className="flex justify-between"><span className="text-muted-foreground">Peso:</span> <strong>{exam.weight}kg</strong></div>}
+                      {exam.bodyFatPct && <div className="flex justify-between"><span className="text-muted-foreground">Gordura:</span> <strong>{exam.bodyFatPct}%</strong></div>}
+                      {exam.musclePct && <div className="flex justify-between"><span className="text-muted-foreground">Músculo:</span> <strong>{exam.musclePct}%</strong></div>}
                     </div>
                   </div>
                 ))}
