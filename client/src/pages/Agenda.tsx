@@ -31,6 +31,7 @@ import {
 import { useDraggable, useDroppable } from "@dnd-kit/core";
 import { CSS } from "@dnd-kit/utilities";
 import { useAuth } from "@/_core/hooks/useAuth";
+import { useOfflineData } from "@/hooks/useOfflineData";
 
 type ViewMode = "day" | "list" | "week" | "month";
 
@@ -332,12 +333,19 @@ export default function Agenda() {
     return { start: format(s, "yyyy-MM-dd"), end: format(e, "yyyy-MM-dd") };
   }, [currentDate, viewMode]);
 
-  const { data: appointments = [], refetch } = trpc.appointments.list.useQuery(
+  const { data: appointmentsData = [], isLoading: appointmentsLoading, refetch } = trpc.appointments.list.useQuery(
     {
       startDate: dateRange.start,
       endDate: dateRange.end,
     },
     { enabled: !!user }
+  );
+
+  // Use offline cache for appointments
+  const { data: appointments = [], isFromCache: appointmentsFromCache, isOnline } = useOfflineData(
+    `appointments-${dateRange.start}-${dateRange.end}`,
+    appointmentsData,
+    appointmentsLoading
   );
 
   const createMutation = trpc.appointments.create.useMutation({

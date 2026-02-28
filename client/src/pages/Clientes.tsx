@@ -1,5 +1,6 @@
 import { trpc } from "@/lib/trpc";
 import { useState } from "react";
+import { useOfflineData } from "@/hooks/useOfflineData";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import {
@@ -113,8 +114,12 @@ export default function Clientes() {
 
   const utils = trpc.useUtils();
 
-  const { data: clients = [], isLoading } = trpc.clients.list.useQuery();
-  const { data: overdueClients = [] } = trpc.finances.overdueClients.useQuery();
+  const { data: clientsData = [], isLoading } = trpc.clients.list.useQuery();
+  const { data: overdueClientsData = [] } = trpc.finances.overdueClients.useQuery();
+  
+  // Use offline cache
+  const { data: clients = [], isFromCache: clientsFromCache, isOnline } = useOfflineData('clients-list', clientsData, isLoading);
+  const { data: overdueClients = [], isFromCache: overdueFromCache } = useOfflineData('overdue-clients', overdueClientsData, isLoading);
   const overdueClientIds = new Set((overdueClients as any[]).map((c: any) => c.id));
 
   const createMutation = trpc.clients.create.useMutation({
@@ -137,7 +142,7 @@ export default function Clientes() {
     onError: (e) => toast.error(e.message),
   });
 
-  const filtered = clients.filter((c: any) => {
+  const filtered = (clients || []).filter((c: any) => {
     const matchesSearch = c.name.toLowerCase().includes(search.toLowerCase()) || (c.phone && c.phone.includes(search));
     const matchesStatus = filterStatus === "all" || !filterStatus || c.status === filterStatus;
     const matchesPlanType = filterPlanType === "all" || !filterPlanType || c.planType === filterPlanType;
@@ -253,7 +258,7 @@ export default function Clientes() {
     }
   };
 
-  const activeCount = clients.filter((c: any) => c.status === "active").length;
+  const activeCount = (clients || []).filter((c: any) => c.status === "active").length;
 
   return (
     <div className="space-y-5">
@@ -261,7 +266,7 @@ export default function Clientes() {
         <div>
           <h1 className="text-xl font-bold text-foreground">Alunos</h1>
           <p className="text-sm text-muted-foreground mt-0.5">
-            {activeCount} ativo{activeCount !== 1 ? "s" : ""} · {clients.length} total
+            {activeCount} ativo{activeCount !== 1 ? "s" : ""} · {(clients || []).length} total
           </p>
         </div>
         <Button onClick={openNew} size="sm">

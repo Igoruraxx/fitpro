@@ -800,3 +800,11 @@
 - [x] Otimizar layout Admin para mobile (botões hidden)
 - [x] Otimizar espaçamento para mobile
 - [x] Registrar service worker em main.tsx
+
+
+## Cache Offline (v58)
+- [x] Criar hook useOfflineCache para gerenciar dados em IndexedDB
+- [x] Implementar cache de clientes e agendamentos
+- [x] Criar hook useOfflineData para integrar com tRPC
+- [x] Adicionar indicador de modo offline (OfflineIndicator)
+- [x] Sincronizar dados quando voltar online com toast

@@ -19,6 +19,7 @@ import { Button } from "./ui/button";
 import { useEffect, useState } from "react";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
+import { OfflineIndicator } from "./OfflineIndicator";
 
 // Nav groups for better organization
 const navGroups = [
@@ -475,6 +476,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           </div>
         )}
       </div>
+      <OfflineIndicator />
     </div>
   );
 }
