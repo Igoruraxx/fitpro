@@ -124,9 +124,18 @@ export default function ClienteDetalhe() {
 
   const renewPackageMutation = trpc.clients.renewPackage.useMutation({
     onSuccess: () => {
-      toast.success("Pacote renovado com sucesso!");
+      toast.success("Pacote renovado! Recebimento lançado no financeiro.");
       utils.clients.getById.invalidate({ id: clientId });
       utils.finances.listByClient.invalidate({ clientId });
+      utils.appointments.listByClient.invalidate({ clientId });
+    },
+    onError: (e) => toast.error(e.message),
+  });
+
+  const generateRemainingMutation = trpc.clients.generateRemainingAppointments.useMutation({
+    onSuccess: (data) => {
+      toast.success(`${data.created ?? 0} sessões agendadas com sucesso!`);
+      utils.appointments.listByClient.invalidate({ clientId });
     },
     onError: (e) => toast.error(e.message),
   });
@@ -302,25 +311,48 @@ export default function ClienteDetalhe() {
                       {client.sessionsRemaining ?? 0}
                     </span>
                   </div>
-                  {/* Botão renovar pacote */}
-                  {(client.sessionsRemaining ?? 0) === 0 && (
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="w-full mt-2 text-primary border-primary hover:bg-primary/5"
-                      onClick={() => {
-                        const confirmRenew = window.confirm(
-                          `Renovar pacote de ${client.packageSessions} sessões por R$ ${parseFloat(client.packageValue || "0").toFixed(2)}?`
-                        );
-                        if (confirmRenew) {
-                          renewPackageMutation.mutate({ clientId });
-                        }
-                      }}
-                      disabled={renewPackageMutation.isPending}
-                    >
-                      {renewPackageMutation.isPending ? "Renovando..." : "Renovar Pacote"}
-                    </Button>
-                  )}
+                  {/* Botões de ação do pacote */}
+                  <div className="flex flex-col gap-2 mt-2">
+                    {/* Botão criar sessões restantes - aparece quando há sessões mas sem agendamentos futuros */}
+                    {(client.sessionsRemaining ?? 0) > 0 && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="w-full text-blue-600 border-blue-300 hover:bg-blue-50"
+                        onClick={() => {
+                          const confirmGen = window.confirm(
+                            `Criar agendamentos para as ${client.sessionsRemaining} sessões restantes?\nSerão geradas nas datas futuras conforme os dias e horários configurados.`
+                          );
+                          if (confirmGen) {
+                            generateRemainingMutation.mutate({ clientId });
+                          }
+                        }}
+                        disabled={generateRemainingMutation.isPending}
+                      >
+                        <CalendarClock className="h-4 w-4 mr-2" />
+                        {generateRemainingMutation.isPending ? "Agendando..." : `Criar ${client.sessionsRemaining} Sessões Restantes`}
+                      </Button>
+                    )}
+                    {/* Botão renovar pacote - aparece quando sessões chegam a 0 ou menos */}
+                    {(client.sessionsRemaining ?? 0) <= 0 && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="w-full text-primary border-primary hover:bg-primary/5"
+                        onClick={() => {
+                          const confirmRenew = window.confirm(
+                            `Renovar pacote de ${client.packageSessions} sessões por R$ ${parseFloat(client.packageValue || "0").toFixed(2)}?\nUma nova entrada será lançada no financeiro.`
+                          );
+                          if (confirmRenew) {
+                            renewPackageMutation.mutate({ clientId });
+                          }
+                        }}
+                        disabled={renewPackageMutation.isPending}
+                      >
+                        {renewPackageMutation.isPending ? "Renovando..." : "Renovar Pacote"}
+                      </Button>
+                    )}
+                  </div>
                   {/* Sessões pendentes agendadas */}
                   {(pendingSessions as any[]).length > 0 && (
                     <div className="flex items-center gap-2 mt-1 p-2 rounded-lg bg-blue-50 border border-blue-100">

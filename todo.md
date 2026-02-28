@@ -706,3 +706,10 @@
 - [x] Variar entre hipertrofia (ganho de massa) e emagrecimento
 - [x] Incluir dados de perimetria e dobras cutâneas
 - [x] Permitir testar aba de Evolução com dados reais
+
+## Sessões Restantes e Recebimentos (v53)
+- [x] Botão "Criar Sessões Restantes" no perfil do aluno com plano de pacote
+- [x] Lançar recebimento automaticamente ao criar aluno com plano mensal ou pacote
+- [x] Renovação de plano lança entrada no financeiro
+- [x] Verificar e corrigir fluxo completo de renovação (removida restrição de sessões=0)
+- [x] Perimetria fictícia adicionada nos 2 exames de cada aluno (16 exames atualizados)

@@ -198,6 +198,43 @@ export const appRouter = router({
           (input.sessionDuration || 60) as number
         );
       }
+
+      // Lançar recebimento automático ao criar aluno com plano pago
+      const now = new Date();
+      const dateStr = now.toISOString().split('T')[0];
+      if (id && input.planType === 'monthly' && input.monthlyFee) {
+        // Calcular próxima data de vencimento
+        const dueDay = input.paymentDay || 1;
+        const dueDate = new Date(now.getFullYear(), now.getMonth(), dueDay);
+        if (dueDate < now) dueDate.setMonth(dueDate.getMonth() + 1);
+        const dueDateStr = dueDate.toISOString().split('T')[0];
+        await createTransaction({
+          trainerId: ctx.user.id,
+          clientId: id as number,
+          type: 'income',
+          date: dateStr,
+          dueDate: dueDateStr,
+          category: 'Plano Mensal',
+          description: `Mensalidade — ${input.name}`,
+          amount: input.monthlyFee,
+          status: 'pending',
+          createdAt: now,
+          updatedAt: now,
+        } as any);
+      } else if (id && input.planType === 'package' && input.packageValue) {
+        await createTransaction({
+          trainerId: ctx.user.id,
+          clientId: id as number,
+          type: 'income',
+          date: dateStr,
+          category: 'Pacote de Sessões',
+          description: `Pacote ${input.packageSessions} sessões — ${input.name}`,
+          amount: input.packageValue,
+          status: 'pending',
+          createdAt: now,
+          updatedAt: now,
+        } as any);
+      }
       
       return { id };
     }),
@@ -244,12 +281,12 @@ export const appRouter = router({
       clientId: z.number(),
     })).mutation(async ({ ctx, input }) => {
       const client = await getClientById(input.clientId, ctx.user.id);
-      if (!client) throw new Error("Cliente nao encontrado");
-      if (client.planType !== "package") throw new Error("Cliente nao possui plano de pacote");
-      if ((client.sessionsRemaining ?? 0) !== 0) throw new Error("Pacote ainda possui sessoes restantes");
+      if (!client) throw new Error("Cliente não encontrado");
+      if (client.planType !== "package") throw new Error("Cliente não possui plano de pacote");
       
       const sessionsUsed = (client.packageSessions ?? 0) - (client.sessionsRemaining ?? 0);
       
+      // Resetar sessões restantes para o total do pacote
       await updateClient(input.clientId, ctx.user.id, {
         sessionsRemaining: client.packageSessions,
       } as any);
@@ -257,6 +294,7 @@ export const appRouter = router({
       const { recordPackageRenewal, generatePackageAppointments } = await import('./db');
       await recordPackageRenewal(input.clientId, ctx.user.id, sessionsUsed, client.packageSessions ?? 0);
       
+      // Lançar entrada no financeiro
       const now = new Date();
       const dateStr = now.toISOString().split('T')[0];
       await createTransaction({
@@ -264,7 +302,8 @@ export const appRouter = router({
         clientId: input.clientId,
         type: 'income',
         date: dateStr,
-        category: 'Pacote de Sessoes',
+        category: 'Pacote de Sessões',
+        description: `Renovação de pacote — ${client.name} (${client.packageSessions} sessões)`,
         amount: client.packageValue || '0',
         status: 'pending',
         createdAt: now,
@@ -285,6 +324,28 @@ export const appRouter = router({
       }
       
       return { success: true };
+    }),
+    generateRemainingAppointments: protectedProcedure.input(z.object({
+      clientId: z.number(),
+    })).mutation(async ({ ctx, input }) => {
+      const client = await getClientById(input.clientId, ctx.user.id);
+      if (!client) throw new Error("Cliente não encontrado");
+      if (client.planType !== 'package') throw new Error("Apenas clientes com plano de pacote podem gerar sessões");
+      const remaining = client.sessionsRemaining ?? 0;
+      if (remaining <= 0) throw new Error("Não há sessões restantes para agendar");
+      if (!client.sessionDays || !client.sessionsPerWeek) throw new Error("Configure os dias e frequência de treino antes de gerar sessões");
+      const { generatePackageAppointments } = await import('./db');
+      const created = await generatePackageAppointments(
+        input.clientId,
+        ctx.user.id,
+        remaining,
+        client.sessionsPerWeek as number,
+        client.sessionDays as string,
+        client.sessionTime || null,
+        client.sessionTimesPerDay || null,
+        (client.sessionDuration || 60) as number
+      );
+      return { success: true, created };
     }),
   }),
 
