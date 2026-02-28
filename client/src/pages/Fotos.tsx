@@ -684,19 +684,24 @@ export default function Fotos() {
           </DialogHeader>
           <div className="space-y-4">
             <div>
-              <Label htmlFor="deleteBeforeDate" className="text-sm">Apagar fotos anteriores a:</Label>
-              <Input
-                id="deleteBeforeDate"
-                type="date"
-                value={deleteBeforeDate}
-                onChange={(e) => setDeleteBeforeDate(e.target.value)}
-                className="mt-1"
-              />
+              <Label htmlFor="deleteBeforeDate" className="text-sm">Selecione a data:</Label>
+              <Select value={deleteBeforeDate} onValueChange={setDeleteBeforeDate}>
+                <SelectTrigger className="mt-1">
+                  <SelectValue placeholder="Escolha uma data..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {uniqueDates.map((date) => (
+                    <SelectItem key={date} value={date}>
+                      {formatDate(date)} ({photos.filter((p: any) => p.date === date).length} foto(s))
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             <div className="text-sm text-muted-foreground">
               {deleteBeforeDate && (
                 <>
-                  {photos.filter((p: any) => p.date < deleteBeforeDate).length} foto(s) serão apagadas
+                  {photos.filter((p: any) => p.date === deleteBeforeDate).length} foto(s) desta data serão apagadas
                 </>
               )}
             </div>
@@ -706,14 +711,14 @@ export default function Fotos() {
               </Button>
               <Button
                 variant="destructive"
-                disabled={!deleteBeforeDate || photos.filter((p: any) => p.date < deleteBeforeDate).length === 0}
+                disabled={!deleteBeforeDate || photos.filter((p: any) => p.date === deleteBeforeDate).length === 0}
                 onClick={() => {
-                  const count = photos.filter((p: any) => p.date < deleteBeforeDate).length;
+                  const count = photos.filter((p: any) => p.date === deleteBeforeDate).length;
                   setPhotosToDeleteCount(count);
                   setShowConfirmDeleteByDate(true);
                 }}
               >
-                Apagar {photos.filter((p: any) => p.date < deleteBeforeDate).length}
+                Apagar {photos.filter((p: any) => p.date === deleteBeforeDate).length}
               </Button>
             </div>
           </div>
@@ -726,7 +731,7 @@ export default function Fotos() {
           <AlertDialogHeader>
             <AlertDialogTitle>Confirmar exclusão de fotos</AlertDialogTitle>
             <AlertDialogDescription>
-              Você está prestes a apagar <strong>{photosToDeleteCount} foto(s)</strong> anteriores a {deleteBeforeDate}. Esta ação não pode ser desfeita.
+              Você está prestes a apagar <strong>{photosToDeleteCount} foto(s)</strong> de {deleteBeforeDate}. Esta ação não pode ser desfeita.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

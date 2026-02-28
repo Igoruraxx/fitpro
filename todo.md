@@ -497,3 +497,10 @@
 - [x] Reorganizar layout do Fotos.tsx
 - [x] Colocar botão "Apagar Fotos por Data" abaixo da seleção de aluno
 - [x] Consistência visual com Bioimpedancia.tsx
+
+## Apagar por Data com Seleção Específica (v22)
+- [x] Modificar Fotos.tsx para listar datas específicas com fotos
+- [x] Modificar Bioimpedancia.tsx para listar datas específicas com exames
+- [x] Mostrar contagem de fotos/exames por data
+- [x] Apagar apenas fotos/exames da data selecionada (não anteriores)
+- [x] Atualizar mensagens de confirmação
