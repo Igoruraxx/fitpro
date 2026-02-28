@@ -13,7 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
-import { Upload, ImageIcon, Trash2, X, ZoomIn, GitCompare, Users, Loader2, ArrowDown } from "lucide-react";
+import { Upload, ImageIcon, Trash2, X, ZoomIn, GitCompare, Users, Loader2, ArrowDown, Lock } from "lucide-react";
 import { toast } from "sonner";
 import { format, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";

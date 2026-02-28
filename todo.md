@@ -13,9 +13,10 @@
 - [x] Roles: user (personal) e admin (proprietário)
 
 ## Sistema de Assinaturas
-- [x] Planos: Básico, Pro, Premium
+- [x] Planos: Free (até 5 alunos), Pro (ilimitados)
 - [ ] Integração Stripe para pagamentos (placeholder - em breve)
 - [x] Controle de limites por plano
+- [x] Página /upgrade com comparativo Free vs Pro
 
 ## Módulo de Agenda
 - [x] Visualização Dia
@@ -754,3 +755,10 @@
 - [x] Integrar botão "Ver Planos" no modal de trial
 - [x] Exibir FAQ e seção de CTA
 - [x] Corrigir erro de hooks no Admin.tsx
+
+
+## Bloqueios de Funcionalidades Pro (v51)
+- [x] Travar aba Fotos para usuários Free (mostrar card bloqueado)
+- [x] Modal de trial ao clicar em função Pro pela primeira vez
+- [x] Notificação de expiração de trial (quando trial acabar)
+- [x] Exibir data de expiração Pro/trial no painel admin

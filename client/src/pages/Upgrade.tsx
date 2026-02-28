@@ -10,13 +10,13 @@ import {
 } from "lucide-react";
 
 const FEATURES = [
-  { name: "Alunos", free: "Até 5", pro: "Ilimitados", icon: Users },
-  { name: "Agenda", free: "Sim", pro: "Sim", icon: Calendar },
+  { name: "Alunos Ativos", free: "Até 5", pro: "Ilimitados", icon: Users },
+  { name: "Agenda Completa", free: "Sim", pro: "Sim", icon: Calendar },
   { name: "Financeiro Básico", free: "Sim", pro: "Sim", icon: DollarSign },
   { name: "Gráficos de Evolução", free: "Não", pro: "Sim", icon: TrendingUp },
   { name: "Relatórios Detalhados", free: "Não", pro: "Sim", icon: FileText },
-  { name: "Dashboard Avançado", free: "Não", pro: "Sim", icon: BarChart3 },
-  { name: "Suporte Prioritário", free: "Não", pro: "Sim", icon: Zap },
+  { name: "Fotos de Progresso", free: "Não", pro: "Sim", icon: BarChart3 },
+  { name: "Painel Admin", free: "Não", pro: "Sim", icon: Zap },
 ];
 
 export default function Upgrade() {
@@ -80,7 +80,7 @@ export default function Upgrade() {
               </div>
 
               <p className="text-sm text-muted-foreground mb-6">
-                Perfeito para começar e testar a plataforma
+                Perfeito para começar com até 5 alunos
               </p>
 
               <Button
@@ -132,7 +132,7 @@ export default function Upgrade() {
               </div>
 
               <p className="text-sm text-muted-foreground mb-6">
-                Desbloqueie todo o potencial da plataforma
+                Alunos ilimitados + acesso a todas as funcionalidades
               </p>
 
               {isPro ? (

@@ -270,6 +270,11 @@ export default function Admin() {
                         <span>{trainer.activeClients ?? 0} alunos ativos</span>
                         <span>Max: {trainer.maxClients}</span>
                         <span>Desde {format(new Date(trainer.createdAt), "dd/MM/yy", { locale: ptBR })}</span>
+                        {trainer.subscriptionPlan === "pro" && trainer.proExpiresAt && (
+                          <span className="text-orange-400 font-medium">
+                            Expira: {format(new Date(trainer.proExpiresAt), "dd/MM/yy", { locale: ptBR })}
+                          </span>
+                        )}
                       </div>
                     </div>
                     <div className="flex flex-col gap-1 flex-shrink-0">

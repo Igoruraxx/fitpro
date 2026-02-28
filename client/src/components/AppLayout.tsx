@@ -112,6 +112,28 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const isPro = user ? ["pro", "premium", "basic"].includes((user as any).subscriptionPlan ?? "free") || user.role === "admin" : false;
   const isFree = !isPro;
 
+  // Check if trial has expired
+  useEffect(() => {
+    if (!user || user.role === "admin") return;
+    
+    const proSource = (user as any).proSource;
+    const proExpiresAt = (user as any).proExpiresAt;
+    
+    // Only show notification for trial users
+    if (proSource === "trial" && proExpiresAt) {
+      const expiresDate = new Date(proExpiresAt);
+      const now = new Date();
+      const daysLeft = Math.ceil((expiresDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+      
+      // Show notification if trial has expired
+      if (daysLeft <= 0) {
+        toast.error("Seu trial de 7 dias expirou!", {
+          description: "Faça upgrade para Pro para continuar.",
+        });
+      }
+    }
+  }, [user?.id]);
+
   useEffect(() => {
     if (!loading && !user) {
       window.location.href = "/login";
@@ -162,7 +184,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
               {group.items.map((item) => {
                 const active = isActive(item.path, location);
                 // Free plan restrictions
-                const isLocked = isFree && (item.path === "/evolucao" || item.path === "/relatorio-planos" || item.path === "/dashboard");
+                const isLocked = isFree && (item.path === "/evolucao" || item.path === "/relatorio-planos" || item.path === "/dashboard" || item.path === "/fotos");
                 return (
                   <button
                     key={item.path}
