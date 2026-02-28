@@ -833,3 +833,10 @@
 - [x] Corrigir pendingGrouped para filtrar agendamentos futuros
 - [x] Atualizar ClienteDetalhe.tsx para contar apenas agendamentos futuros
 - [x] Alterar label de "Sessões" para "Concluídas" para clareza
+
+
+## Verificação de Sessões Criadas (v62)
+- [x] Calcular quantas sessões já foram criadas (agendadas) vs sessões restantes
+- [x] Mostrar botão "Criar" apenas se houver sessões não criadas (totalSessions < totalPackageSessions)
+- [x] Adicionar indicador de status "Todas as X sessões já foram criadas" em verde
+- [x] Botão desabilitado automaticamente quando todas as sessões já foram criadas

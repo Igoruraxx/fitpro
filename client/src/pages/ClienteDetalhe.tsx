@@ -172,6 +172,11 @@ export default function ClienteDetalhe() {
   });
   const completedSessions = (appointments as any[]).filter(a => a.status === "completed").length;
   const totalSessions = futureAppointments.length;
+  
+  // Calcular quantas sessões já foram criadas (agendadas)
+  const totalPackageSessions = client.packageSessions ?? 0;
+  const sessionsCreated = totalPackageSessions - (client.sessionsRemaining ?? 0);
+  const allSessionsCreated = (client.sessionsRemaining ?? 0) <= 0 && totalSessions >= totalPackageSessions;
   const paidTransactions = (transactions as any[]).filter(t => t.status === "paid");
   const totalPaid = paidTransactions.reduce((s, t) => s + parseFloat(t.amount), 0);
   const pendingTransactions = (transactions as any[]).filter(t => t.status !== "paid" && t.status !== "cancelled");
@@ -325,8 +330,8 @@ export default function ClienteDetalhe() {
                   </div>
                   {/* Botões de ação do pacote */}
                   <div className="flex flex-col gap-2 mt-2">
-                    {/* Botão criar sessões restantes - aparece quando há sessões mas sem agendamentos futuros */}
-                    {(client.sessionsRemaining ?? 0) > 0 && (
+                    {/* Botão criar sessões restantes - aparece apenas se há sessões não criadas */}
+                    {(client.sessionsRemaining ?? 0) > 0 && totalSessions < totalPackageSessions && (
                       <Button
                         size="sm"
                         variant="outline"
@@ -363,6 +368,15 @@ export default function ClienteDetalhe() {
                       >
                         {renewPackageMutation.isPending ? "Renovando..." : "Renovar Pacote"}
                       </Button>
+                    )}
+                    {/* Indicador: todas as sessões já foram criadas */}
+                    {totalSessions >= totalPackageSessions && totalPackageSessions > 0 && (
+                      <div className="flex items-center gap-2 p-2 rounded-lg bg-emerald-50 border border-emerald-200">
+                        <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0" />
+                        <span className="text-xs text-emerald-700 font-medium">
+                          Todas as {totalPackageSessions} sessões já foram criadas
+                        </span>
+                      </div>
                     )}
                   </div>
                   {/* Sessões pendentes agendadas */}
