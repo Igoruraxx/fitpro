@@ -10,8 +10,14 @@ import { Label } from "@/components/ui/label";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
   Shield, Users, Calendar, Crown, Edit, ArrowLeft, Loader2,
-  Eye, UserCheck, AlertCircle, CheckCircle2, Zap, Lock
+  Eye, UserCheck, AlertCircle, CheckCircle2, Zap, Lock, MoreVertical
 } from "lucide-react";
 import { toast } from "sonner";
 import { useLocation } from "wouter";
@@ -319,41 +325,58 @@ export default function Admin() {
                         )}
                       </div>
                     </div>
-                    <div className="flex gap-1 flex-shrink-0 flex-wrap justify-end">
-                      {/* Quick plan toggle */}
+                    <div className="flex gap-1 flex-shrink-0 justify-end">
+                      {/* Desktop buttons - hidden on mobile */}
                       {!isMe && (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className={`h-7 text-[10px] px-2 ${trainer.subscriptionPlan === "pro" ? "border-orange-500/40 text-orange-400 hover:bg-orange-500/10" : "border-gray-500/40 text-gray-400 hover:bg-gray-500/10"}`}
-                          onClick={() => updatePlanMutation.mutate({ userId: trainer.id, plan: trainer.subscriptionPlan === "pro" ? "free" : "pro" })}
-                          disabled={updatePlanMutation.isPending}
-                        >
-                          {updatePlanMutation.isPending ? <Loader2 className="h-3 w-3 animate-spin" /> : trainer.subscriptionPlan === "pro" ? "→ Free" : "→ Pro"}
-                        </Button>
+                        <>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className={`h-7 text-[10px] px-2 hidden sm:flex ${trainer.subscriptionPlan === "pro" ? "border-orange-500/40 text-orange-400 hover:bg-orange-500/10" : "border-gray-500/40 text-gray-400 hover:bg-gray-500/10"}`}
+                            onClick={() => updatePlanMutation.mutate({ userId: trainer.id, plan: trainer.subscriptionPlan === "pro" ? "free" : "pro" })}
+                            disabled={updatePlanMutation.isPending}
+                          >
+                            {updatePlanMutation.isPending ? <Loader2 className="h-3 w-3 animate-spin" /> : trainer.subscriptionPlan === "pro" ? "→ Free" : "→ Pro"}
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="h-7 text-[10px] px-2 border-green-500/40 text-green-400 hover:bg-green-500/10 hidden sm:flex"
+                            onClick={() => setCourtesyTrainer(trainer)}
+                          >
+                            <Crown className="h-3 w-3 mr-1" />Cortesia
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="h-7 text-[10px] px-2 border-blue-500/40 text-blue-400 hover:bg-blue-500/10 hidden sm:flex"
+                            onClick={() => impersonateMutation.mutate({ targetUserId: trainer.id })}
+                            disabled={impersonateMutation.isPending}
+                          >
+                            {impersonateMutation.isPending ? <Loader2 className="h-3 w-3 animate-spin" /> : <><Eye className="h-3 w-3 mr-1" />Ver</>}
+                          </Button>
+                        </>
                       )}
-                      {/* Grant courtesy */}
+                      {/* Mobile menu - shown only on mobile */}
                       {!isMe && (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="h-7 text-[10px] px-2 border-green-500/40 text-green-400 hover:bg-green-500/10"
-                          onClick={() => setCourtesyTrainer(trainer)}
-                        >
-                          <Crown className="h-3 w-3 mr-1" />Cortesia
-                        </Button>
-                      )}
-                      {/* View as trainer */}
-                      {!isMe && (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="h-7 text-[10px] px-2 border-blue-500/40 text-blue-400 hover:bg-blue-500/10"
-                          onClick={() => impersonateMutation.mutate({ targetUserId: trainer.id })}
-                          disabled={impersonateMutation.isPending}
-                        >
-                          {impersonateMutation.isPending ? <Loader2 className="h-3 w-3 animate-spin" /> : <><Eye className="h-3 w-3 mr-1" />Ver</>}
-                        </Button>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="sm" className="h-7 w-7 p-0 sm:hidden">
+                              <MoreVertical className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" className="w-40">
+                            <DropdownMenuItem onClick={() => updatePlanMutation.mutate({ userId: trainer.id, plan: trainer.subscriptionPlan === "pro" ? "free" : "pro" })} disabled={updatePlanMutation.isPending}>
+                              {trainer.subscriptionPlan === "pro" ? "Downgrade para Free" : "Upgrade para Pro"}
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => setCourtesyTrainer(trainer)}>
+                              <Crown className="h-3 w-3 mr-2" />Conceder Cortesia
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => impersonateMutation.mutate({ targetUserId: trainer.id })} disabled={impersonateMutation.isPending}>
+                              <Eye className="h-3 w-3 mr-2" />Visualizar como
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                       )}
                       {/* Edit - always visible */}
                       <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={() => openEdit(trainer)}>

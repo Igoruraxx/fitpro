@@ -862,3 +862,9 @@
 - [x] Corrigir layout dos filtros para ser responsivo em mobile
 - [x] Remover whitespace-nowrap para permitir quebra de linha
 - [x] Todos os 75 testes passando
+
+## Refatorar Admin Mobile com Menu Dropdown (v67)
+- [x] Criar menu dropdown para ações em mobile
+- [x] Manter botões vistos em desktop (sm:)
+- [x] Garantir layout compacto em mobile
+- [x] Todos os 75 testes passando
