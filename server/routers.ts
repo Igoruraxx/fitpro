@@ -173,6 +173,7 @@ export const appRouter = router({
       sessionsPerWeek: z.number().optional(),
       sessionDays: z.string().optional(),
       sessionTime: z.string().optional(),
+      sessionTimesPerDay: z.string().optional(), // JSON: {"1":"07:00","3":"08:00"}
       sessionDuration: z.number().optional(),
       // Prepaid
       prepaidValue: z.string().optional(),
@@ -205,6 +206,7 @@ export const appRouter = router({
       sessionsPerWeek: z.number().optional(),
       sessionDays: z.string().optional(),
       sessionTime: z.string().optional(),
+      sessionTimesPerDay: z.string().optional(), // JSON: {"1":"07:00","3":"08:00"}
       sessionDuration: z.number().optional(),
       // Prepaid
       prepaidValue: z.string().optional(),
@@ -365,6 +367,7 @@ export const appRouter = router({
       muscleGroups: z.string().optional(),
       recurrenceType: z.enum(["daily", "weekly", "biweekly", "monthly"]),
       recurrenceDays: z.string().optional(), // "1,3,5" for Mon,Wed,Fri
+      timesPerDay: z.string().optional(), // JSON: {"1":"07:00","3":"08:00"}
     })).mutation(async ({ ctx, input }) => {
       const groupId = nanoid();
       const dates = generateRecurringDates(
@@ -374,14 +377,22 @@ export const appRouter = router({
         input.endDate,
         input.occurrences ?? 8
       );
+      // Parse per-day times if provided
+      const timesPerDay: Record<string, string> = input.timesPerDay
+        ? JSON.parse(input.timesPerDay)
+        : {};
       const ids: number[] = [];
       for (const date of dates) {
+        // Get weekday (0=Sun..6=Sat) to look up per-day time
+        const d = new Date(date + "T12:00:00");
+        const weekday = String(d.getDay());
+        const startTime = timesPerDay[weekday] ?? input.startTime;
         const id = await createAppointment({
           trainerId: ctx.user.id,
           clientId: input.clientId ?? null,
           guestName: input.guestName ?? null,
           date: date as any,
-          startTime: input.startTime,
+          startTime,
           duration: input.duration,
           notes: input.notes ?? null,
           muscleGroups: input.muscleGroups ?? null,

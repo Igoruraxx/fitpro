@@ -14,7 +14,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Plus, Search, Phone, Trash2, Edit, Users, Calendar, Package, CreditCard, Clock, AlertTriangle, Briefcase, Dumbbell, AlertCircle } from "lucide-react";
+import { Plus, Search, Phone, Trash2, Edit, Users, Calendar, Package, CreditCard, Clock, AlertTriangle, Briefcase, Dumbbell, AlertCircle, Copy } from "lucide-react";
 import { toast } from "sonner";
 import { useLocation } from "wouter";
 
@@ -101,6 +101,7 @@ export default function Clientes() {
   const [sessionsPerWeek, setSessionsPerWeek] = useState("3");
   const [selectedDays, setSelectedDays] = useState<string[]>(["1", "3", "5"]);
   const [sessionTime, setSessionTime] = useState("07:00");
+  const [sessionTimesPerDay, setSessionTimesPerDay] = useState<Record<string, string>>({}); // {"1":"07:00",...}
   const [sessionDuration, setSessionDuration] = useState("60");
 
   // Prepaid
@@ -148,7 +149,7 @@ export default function Clientes() {
     setPlanType("monthly"); setMonthlyFee(""); setPaymentDay("5");
     setPackageSessions("10"); setPackageValue("");
     setSessionsPerWeek("3"); setSelectedDays(["1", "3", "5"]);
-    setSessionTime("07:00"); setSessionDuration("60");
+    setSessionTime("07:00"); setSessionTimesPerDay({}); setSessionDuration("60");
     setPrepaidValue(""); setPrepaidDueDate(""); setAutoSchedule(true);
   };
 
@@ -166,7 +167,9 @@ export default function Clientes() {
     setPackageSessions(String(c.packageSessions || 10)); setPackageValue(c.packageValue || "");
     setSessionsPerWeek(String(c.sessionsPerWeek || 3));
     setSelectedDays(c.sessionDays ? c.sessionDays.split(",") : ["1", "3", "5"]);
-    setSessionTime(c.sessionTime || "07:00"); setSessionDuration(String(c.sessionDuration || 60));
+    setSessionTime(c.sessionTime || "07:00");
+    setSessionTimesPerDay(c.sessionTimesPerDay ? JSON.parse(c.sessionTimesPerDay) : {});
+    setSessionDuration(String(c.sessionDuration || 60));
     setPrepaidValue(c.prepaidValue || ""); setPrepaidDueDate(c.prepaidDueDate || "");
     setAutoSchedule(false); // Don't auto-schedule on edit
     setShowModal(true);
@@ -205,6 +208,9 @@ export default function Clientes() {
       payload.sessionsPerWeek = parseInt(sessionsPerWeek) || 3;
       payload.sessionDays = selectedDays.sort().join(",");
       payload.sessionTime = sessionTime;
+      payload.sessionTimesPerDay = Object.keys(sessionTimesPerDay).length > 0
+        ? JSON.stringify(sessionTimesPerDay)
+        : undefined;
       payload.sessionDuration = parseInt(sessionDuration) || 60;
     }
 
@@ -239,6 +245,9 @@ export default function Clientes() {
           duration: parseInt(sessionDuration) || 60,
           recurrenceType: "weekly",
           recurrenceDays: selectedDays.sort().join(","),
+          timesPerDay: Object.keys(sessionTimesPerDay).length > 0
+            ? JSON.stringify(sessionTimesPerDay)
+            : undefined,
         });
       }
     }
@@ -589,10 +598,58 @@ export default function Clientes() {
                 )}
               </div>
 
+              {/* Per-day time pickers */}
+              {selectedDays.length > 0 && (
+                <div className="mt-3 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <Label className="text-xs text-muted-foreground">Horário por dia</Label>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="h-6 text-xs gap-1 text-primary"
+                      onClick={() => {
+                        // Replicar sessionTime para todos os dias selecionados
+                        const allSame: Record<string, string> = {};
+                        selectedDays.forEach(d => { allSame[d] = sessionTime; });
+                        setSessionTimesPerDay(allSame);
+                        toast.success("Horário replicado para todos os dias!");
+                      }}
+                    >
+                      <Copy className="h-3 w-3" />
+                      Replicar horário
+                    </Button>
+                  </div>
+                  {[...selectedDays].sort().map(day => {
+                    const dayLabel = WEEKDAYS.find(w => w.value === day)?.label || day;
+                    const timeVal = sessionTimesPerDay[day] || sessionTime;
+                    return (
+                      <div key={day} className="flex items-center gap-2">
+                        <span className="text-xs font-medium w-8 text-muted-foreground">{dayLabel}</span>
+                        <Input
+                          type="time"
+                          value={timeVal}
+                          className="h-8 text-xs flex-1"
+                          onChange={(e) => {
+                            setSessionTimesPerDay(prev => ({ ...prev, [day]: e.target.value }));
+                            // Update default sessionTime to first day
+                            if (selectedDays.sort()[0] === day) setSessionTime(e.target.value);
+                          }}
+                        />
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+
               <div className="grid grid-cols-3 gap-3 mt-3">
                 <div>
-                  <Label className="text-xs text-muted-foreground">Horário</Label>
-                  <Input className="mt-1" type="time" value={sessionTime} onChange={(e) => setSessionTime(e.target.value)} />
+                  <Label className="text-xs text-muted-foreground">Horário padrão</Label>
+                  <Input className="mt-1" type="time" value={sessionTime} onChange={(e) => {
+                    setSessionTime(e.target.value);
+                    // Clear per-day overrides when changing default
+                    setSessionTimesPerDay({});
+                  }} />
                 </div>
                 <div>
                   <Label className="text-xs text-muted-foreground">Duração (min)</Label>

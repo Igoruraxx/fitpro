@@ -83,6 +83,7 @@ export const clients = pgTable("clients", {
   sessionsPerWeek: integer("sessionsPerWeek"),
   sessionDays: varchar("sessionDays", { length: 20 }),  // comma-separated weekday numbers e.g. "1,3,5"
   sessionTime: varchar("sessionTime", { length: 5 }),   // default start time HH:MM
+  sessionTimesPerDay: text("sessionTimesPerDay"),          // JSON: {"1":"07:00","3":"08:00"} per weekday
   sessionDuration: integer("sessionDuration").default(60),  // minutes
 
   // Prepaid / advance payment

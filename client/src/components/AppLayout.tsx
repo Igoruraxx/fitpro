@@ -298,7 +298,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                       active ? "text-primary" : "text-muted-foreground"
                     }`}
                   >
-                    {isHome ? (
+                    {item.path === "/dashboard" ? (
                       <div className={`p-0.5 rounded-lg transition-all ${active ? "bg-primary/10" : ""}`}>
                         <img
                           src="https://d2xsxph8kpxj0f.cloudfront.net/310519663385249362/5UbJ997E6SHYZid72bThxF/fitpro-logo_005e8846.png"
