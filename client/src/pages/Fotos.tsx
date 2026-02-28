@@ -89,6 +89,8 @@ export default function Fotos() {
   const [selectedPhotoIds, setSelectedPhotoIds] = useState<Set<number>>(new Set());
   const [showDeleteByDate, setShowDeleteByDate] = useState(false);
   const [deleteBeforeDate, setDeleteBeforeDate] = useState<string>("");
+  const [showConfirmDeleteByDate, setShowConfirmDeleteByDate] = useState(false);
+  const [photosToDeleteCount, setPhotosToDeleteCount] = useState(0);
 
   const utils = trpc.useUtils();
   const { data: clients = [] } = trpc.clients.list.useQuery();
@@ -694,12 +696,9 @@ export default function Fotos() {
                 variant="destructive"
                 disabled={!deleteBeforeDate || photos.filter((p: any) => p.date < deleteBeforeDate).length === 0}
                 onClick={() => {
-                  const photosToDelete = photos.filter((p: any) => p.date < deleteBeforeDate);
-                  if (confirm(`Tem certeza que deseja apagar ${photosToDelete.length} foto(s)?`)) {
-                    photosToDelete.forEach((p: any) => deleteMutation.mutate({ id: p.id }));
-                    setShowDeleteByDate(false);
-                    setDeleteBeforeDate("");
-                  }
+                  const count = photos.filter((p: any) => p.date < deleteBeforeDate).length;
+                  setPhotosToDeleteCount(count);
+                  setShowConfirmDeleteByDate(true);
                 }}
               >
                 Apagar {photos.filter((p: any) => p.date < deleteBeforeDate).length}
@@ -708,6 +707,34 @@ export default function Fotos() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Confirm delete by date */}
+      <AlertDialog open={showConfirmDeleteByDate} onOpenChange={setShowConfirmDeleteByDate}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirmar exclusão de fotos</AlertDialogTitle>
+            <AlertDialogDescription>
+              Você está prestes a apagar <strong>{photosToDeleteCount} foto(s)</strong> anteriores a {deleteBeforeDate}. Esta ação não pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-red-600 hover:bg-red-700"
+              onClick={() => {
+                const photosToDelete = photos.filter((p: any) => p.date < deleteBeforeDate);
+                photosToDelete.forEach((p: any) => deleteMutation.mutate({ id: p.id }));
+                setShowConfirmDeleteByDate(false);
+                setShowDeleteByDate(false);
+                setDeleteBeforeDate("");
+                toast.success(`${photosToDeleteCount} foto(s) apagada(s)`);
+              }}
+            >
+              Apagar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {lightbox && (
         <div

@@ -470,3 +470,10 @@
 - [x] Botão "Apagar por Data" no header
 - [x] Confirmação antes de apagar em lote por data
 - [x] Lógica de deleção de fotos anteriores à data selecionada
+
+## Confirmação de Apagar por Data (v18)
+- [x] Adicionar estado para AlertDialog de confirmação
+- [x] Criar AlertDialog com detalhes da exclusão
+- [x] Mostrar quantidade de fotos e data de corte
+- [x] Botão de confirmação vermelho com aviso
+- [x] Toast de sucesso após apagar
