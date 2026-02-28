@@ -521,17 +521,7 @@ export default function ClienteDetalhe() {
               <div className="space-y-3">
                 {(bioExams as any[]).slice(0, 3).map((exam: any) => (
                   <div key={exam.id} className="rounded-lg bg-muted/30 p-3 space-y-2">
-                    <div className="flex items-start justify-between">
-                      <span className="text-xs text-muted-foreground">{format(new Date(exam.date + "T12:00:00"), "dd/MM/yyyy")}</span>
-                      <Button
-                        variant="ghost" size="icon"
-                        className="h-5 w-5 text-blue-600 hover:bg-blue-50"
-                        title="Editar exame"
-                        onClick={() => toast.info("Edição de exames em breve")}
-                      >
-                        <Edit2 className="h-3 w-3" />
-                      </Button>
-                    </div>
+                    <span className="text-xs text-muted-foreground">{format(new Date(exam.date + "T12:00:00"), "dd/MM/yyyy")}</span>
                     <div className="space-y-1 text-xs">
                       {exam.weight && <div className="flex justify-between"><span className="text-muted-foreground">Peso:</span> <strong>{exam.weight}kg</strong></div>}
                       {exam.bodyFatPct && <div className="flex justify-between"><span className="text-muted-foreground">Gordura:</span> <strong>{exam.bodyFatPct}%</strong></div>}

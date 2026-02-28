@@ -550,3 +550,8 @@
 - [x] Data pequena no topo, dados abaixo em coluna
 - [x] Remover botão de excluir, manter apenas editar
 - [x] Layout vertical mais limpo e organizado
+
+
+## Remoção de Botão de Edição (v30)
+- [x] Remover botão de edição (lapisinho) da aba de Bioimpedância
+- [x] Manter apenas exibição dos dados
