@@ -43,6 +43,11 @@ async function runMigrations(db: ReturnType<typeof drizzle>) {
         ADD COLUMN IF NOT EXISTS "perimetria" TEXT,
         ADD COLUMN IF NOT EXISTS "dobras" TEXT
     `);
+    // Ensure sessionTimesPerDay column exists in clients (added for per-day scheduling)
+    await db.execute(sql`
+      ALTER TABLE "clients"
+        ADD COLUMN IF NOT EXISTS "sessionTimesPerDay" TEXT
+    `);
     console.log("[Database] Migrations applied");
   } catch (err) {
     console.warn("[Database] Migration warning:", err);
@@ -227,8 +232,11 @@ export async function upsertCurrentMonthCharge(trainerId: number, clientId: numb
 
   if (existing.length > 0) {
     // Update existing pending charge with new amount/dueDate
+    // Pacotes não têm dueDate — nunca salvar dueDate para pacotes
+    const updateData: Record<string, unknown> = { amount, updatedAt: new Date() };
+    if (planType !== 'package') updateData.dueDate = dueDate;
     await db.update(transactions)
-      .set({ amount, dueDate, updatedAt: new Date() })
+      .set(updateData as any)
       .where(eq(transactions.id, existing[0].id));
   } else {
     // Create new charge
