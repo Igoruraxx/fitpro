@@ -768,3 +768,8 @@
 - [x] Corrigir todos os personals para subscriptionPlan = 'free'
 - [x] Limpar proSource, proExpiresAt, trialRequestedAt de todos os Free
 - [x] Remover role admin de todos exceto semap.igor@gmail.com
+
+## Concessão de Cortesia no Admin (v53)
+- [x] Criar procedure tRPC admin.grantCourtesy para conceder Pro como cortesia
+- [x] Adicionar modal no Admin para selecionar personal e definir dias
+- [x] Exibir feedback de sucesso/erro ao conceder cortesia

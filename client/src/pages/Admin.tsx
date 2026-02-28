@@ -44,6 +44,8 @@ export default function Admin() {
   const [editStatus, setEditStatus] = useState("");
   const [editMaxClients, setEditMaxClients] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
+  const [courtesyTrainer, setCourtesyTrainer] = useState<any>(null);
+  const [courtesyDays, setCourtesyDays] = useState("30");
 
   const utils = trpc.useUtils();
 
@@ -75,6 +77,16 @@ export default function Admin() {
       toast.success("Voltando ao painel admin...");
       utils.invalidate();
       setTimeout(() => setLocation("/admin"), 800);
+    },
+    onError: (e) => toast.error(e.message),
+  });
+
+  const grantCourtesyMutation = trpc.admin.grantCourtesy.useMutation({
+    onSuccess: (data) => {
+      toast.success(`Cortesia concedida por ${data.daysGranted} dias!`);
+      refetch();
+      setCourtesyTrainer(null);
+      setCourtesyDays("30");
     },
     onError: (e) => toast.error(e.message),
   });
@@ -290,6 +302,17 @@ export default function Admin() {
                           {updatePlanMutation.isPending ? <Loader2 className="h-3 w-3 animate-spin" /> : trainer.subscriptionPlan === "pro" ? "→ Free" : "→ Pro"}
                         </Button>
                       )}
+                      {/* Grant courtesy */}
+                      {!isMe && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="h-7 text-[10px] px-2 border-green-500/40 text-green-400 hover:bg-green-500/10"
+                          onClick={() => setCourtesyTrainer(trainer)}
+                        >
+                          <Crown className="h-3 w-3 mr-1" />Cortesia
+                        </Button>
+                      )}
                       {/* View as trainer */}
                       {!isMe && (
                         <Button
@@ -366,6 +389,53 @@ export default function Admin() {
                 <Button variant="outline" className="flex-1" onClick={() => setEditingTrainer(null)}>Cancelar</Button>
                 <Button className="flex-1" onClick={handleSave} disabled={updateMutation.isPending}>
                   {updateMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Salvar"}
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Courtesy modal */}
+      <Dialog open={!!courtesyTrainer} onOpenChange={(v) => !v && setCourtesyTrainer(null)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Conceder Pro como Cortesia</DialogTitle>
+          </DialogHeader>
+          {courtesyTrainer && (
+            <div className="space-y-4">
+              <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/30">
+                <Avatar className="h-10 w-10">
+                  <AvatarFallback className="bg-primary/20 text-primary">
+                    {courtesyTrainer.name?.charAt(0).toUpperCase() || "U"}
+                  </AvatarFallback>
+                </Avatar>
+                <div>
+                  <div className="font-semibold">{courtesyTrainer.name}</div>
+                  <div className="text-xs text-muted-foreground">{courtesyTrainer.email}</div>
+                </div>
+              </div>
+              <div>
+                <Label htmlFor="days">Dias de Cortesia</Label>
+                <Input
+                  id="days"
+                  type="number"
+                  min="1"
+                  max="365"
+                  value={courtesyDays}
+                  onChange={(e) => setCourtesyDays(e.target.value)}
+                  className="mt-1"
+                />
+                <p className="text-xs text-muted-foreground mt-1">Máximo 365 dias</p>
+              </div>
+              <div className="flex gap-3 pt-2">
+                <Button variant="outline" className="flex-1" onClick={() => setCourtesyTrainer(null)}>Cancelar</Button>
+                <Button
+                  className="flex-1"
+                  onClick={() => grantCourtesyMutation.mutate({ userId: courtesyTrainer.id, daysOfCourt: parseInt(courtesyDays) || 30 })}
+                  disabled={grantCourtesyMutation.isPending || !courtesyDays}
+                >
+                  {grantCourtesyMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Conceder"}
                 </Button>
               </div>
             </div>

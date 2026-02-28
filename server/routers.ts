@@ -849,6 +849,26 @@ export const appRouter = router({
         } : null,
       };
      }),
+
+    // Grant Pro as courtesy
+    grantCourtesy: adminProcedure.input(z.object({
+      userId: z.number(),
+      daysOfCourt: z.number().min(1).max(365),
+    })).mutation(async ({ input, ctx }) => {
+      if (!ctx.user) throw new Error('Nao autenticado');
+      
+      // Conceder Pro como cortesia
+      const now = new Date();
+      const expiresAt = new Date(now.getTime() + input.daysOfCourt * 24 * 60 * 60 * 1000);
+
+      await updateUserProfile(input.userId, {
+        subscriptionPlan: 'pro',
+        proSource: 'courtesy',
+        proExpiresAt: expiresAt,
+      } as any);
+
+      return { success: true, expiresAt, daysGranted: input.daysOfCourt };
+    }),
   }),
   users: router({
     requestTrial: protectedProcedure.mutation(async ({ ctx }) => {
