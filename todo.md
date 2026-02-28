@@ -819,3 +819,10 @@
 - [x] Implementar InstallPrompt (Android: BeforeInstallPrompt, iOS: instruções)
 - [x] Aprimorar service worker com cache-first para assets e network-first para API
 - [x] Adicionar safe-area-inset para iOS notch/home indicator
+
+
+## Otimização de Sessões Pendentes (v60)
+- [x] Implementar invalidação de cache tRPC após criar/agendar/cancelar sessões
+- [x] Atualizar ClienteDetalhe.tsx para recalcular em tempo real
+- [x] Adicionar loading state "Recalculando sessões pendentes..." durante refresh
+- [x] Invalidar pendingByClient em todas as mutations relevantes

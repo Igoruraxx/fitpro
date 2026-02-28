@@ -76,7 +76,7 @@ export default function ClienteDetalhe() {
   const { data: transactions = [] } = trpc.finances.listByClient.useQuery({ clientId });
   const { data: photos = [] } = trpc.photos.listAll.useQuery({ clientId });
   const { data: bioExams = [] } = trpc.bioimpedance.list.useQuery({ clientId });
-  const { data: pendingSessions = [] } = trpc.appointments.pendingByClient.useQuery({ clientId });
+  const { data: pendingSessions = [], isLoading: isPendingLoading } = trpc.appointments.pendingByClient.useQuery({ clientId });
 
   const markPaidMutation = trpc.finances.markPaid.useMutation({
     onSuccess: () => {
@@ -100,6 +100,7 @@ export default function ClienteDetalhe() {
     onSuccess: () => {
       toast.success("Sessão concluída!");
       utils.appointments.listByClient.invalidate({ clientId });
+      utils.appointments.pendingByClient.invalidate({ clientId });
     },
     onError: (e) => toast.error(e.message),
   });
@@ -108,6 +109,7 @@ export default function ClienteDetalhe() {
     onSuccess: (data) => {
       toast.success(`${data.deleted} agendamento(s) futuro(s) excluído(s)!`);
       utils.appointments.listByClient.invalidate({ clientId });
+      utils.appointments.pendingByClient.invalidate({ clientId });
       setShowDeleteFutureDialog(false);
     },
     onError: (e) => toast.error(e.message),
@@ -117,6 +119,7 @@ export default function ClienteDetalhe() {
     onSuccess: (data) => {
       toast.success(`${data.deleted} agendamento(s) excluído(s)!`);
       utils.appointments.listByClient.invalidate({ clientId });
+      utils.appointments.pendingByClient.invalidate({ clientId });
       setShowDeleteAllDialog(false);
     },
     onError: (e) => toast.error(e.message),
@@ -128,6 +131,7 @@ export default function ClienteDetalhe() {
       utils.clients.getById.invalidate({ id: clientId });
       utils.finances.listByClient.invalidate({ clientId });
       utils.appointments.listByClient.invalidate({ clientId });
+      utils.appointments.pendingByClient.invalidate({ clientId });
     },
     onError: (e) => toast.error(e.message),
   });
@@ -136,6 +140,8 @@ export default function ClienteDetalhe() {
     onSuccess: (data) => {
       toast.success(`${data.created ?? 0} sessões agendadas com sucesso!`);
       utils.appointments.listByClient.invalidate({ clientId });
+      utils.appointments.pendingByClient.invalidate({ clientId });
+      utils.clients.getById.invalidate({ id: clientId });
     },
     onError: (e) => toast.error(e.message),
   });
@@ -354,12 +360,21 @@ export default function ClienteDetalhe() {
                     )}
                   </div>
                   {/* Sessões pendentes agendadas */}
-                  {(pendingSessions as any[]).length > 0 && (
+                  {((pendingSessions as any[]).length > 0 || isPendingLoading) && (
                     <div className="flex items-center gap-2 mt-1 p-2 rounded-lg bg-blue-50 border border-blue-100">
-                      <CalendarClock className="h-4 w-4 text-blue-500 shrink-0" />
-                      <span className="text-xs text-blue-700 font-medium">
-                        {(pendingSessions as any[]).length} sessão(ões) agendada(s) pendente(s)
-                      </span>
+                      {isPendingLoading ? (
+                        <>
+                          <Loader2 className="h-4 w-4 text-blue-500 shrink-0 animate-spin" />
+                          <span className="text-xs text-blue-700 font-medium">Recalculando sessões pendentes...</span>
+                        </>
+                      ) : (
+                        <>
+                          <CalendarClock className="h-4 w-4 text-blue-500 shrink-0" />
+                          <span className="text-xs text-blue-700 font-medium">
+                            {(pendingSessions as any[]).length} sessão(ões) agendada(s) pendente(s)
+                          </span>
+                        </>
+                      )}
                     </div>
                   )}
                 </>
