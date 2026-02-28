@@ -3,6 +3,7 @@ import { useParams, useLocation } from "wouter";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import {
   ArrowLeft, Phone, Calendar, TrendingUp, Loader2,
   CheckCircle2, Clock, AlertCircle, MessageCircle,
@@ -64,6 +65,7 @@ export default function ClienteDetalhe() {
   const params = useParams<{ id: string }>();
   const [, setLocation] = useLocation();
   const [activeTab, setActiveTab] = useState<Tab>("overview");
+  const [sessionToComplete, setSessionToComplete] = useState<any>(null);
   const clientId = parseInt(params.id || "0");
 
   const utils = trpc.useUtils();
@@ -87,6 +89,14 @@ export default function ClienteDetalhe() {
       toast.success("Baixa desfeita!");
       utils.finances.listByClient.invalidate({ clientId });
       utils.finances.overdueClients.invalidate();
+    },
+    onError: (e) => toast.error(e.message),
+  });
+
+  const completeSessionMutation = trpc.appointments.update.useMutation({
+    onSuccess: () => {
+      toast.success("Sessão concluída!");
+      utils.appointments.listByClient.invalidate({ clientId });
     },
     onError: (e) => toast.error(e.message),
   });
@@ -416,6 +426,16 @@ export default function ClienteDetalhe() {
                     <p className="text-xs text-muted-foreground/70 mt-0.5 truncate">{a.muscleGroups.replace(/,/g, ", ")}</p>
                   )}
                 </div>
+                {a.status === "scheduled" && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="shrink-0"
+                    onClick={() => setSessionToComplete(a)}
+                  >
+                    Concluir
+                  </Button>
+                )}
               </div>
             ))
           )}
@@ -582,6 +602,35 @@ export default function ClienteDetalhe() {
           </div>
         </div>
       )}
+
+      {/* Dialog: Confirmar conclusão de sessão */}
+      <AlertDialog open={!!sessionToComplete} onOpenChange={(open) => !open && setSessionToComplete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Concluir sessão?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Deseja marcar a sessão de {sessionToComplete?.startTime} em {sessionToComplete?.date ? format(new Date(sessionToComplete.date + "T12:00:00"), "dd/MM/yyyy") : ""} como concluída?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (sessionToComplete) {
+                  completeSessionMutation.mutate({
+                    id: sessionToComplete.id,
+                    status: "completed"
+                  });
+                  setSessionToComplete(null);
+                }
+              }}
+              disabled={completeSessionMutation.isPending}
+            >
+              {completeSessionMutation.isPending ? "Concluindo..." : "Concluir"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

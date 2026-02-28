@@ -586,3 +586,10 @@
 - [x] Adicionar indicador visual em Últimas Sessões com fundo amarelo
 - [x] Exibir ícone de alerta mostrando quantas sessões faltam
 - [x] Integrar com sistema de notificações push do Manus
+
+## Botão de Concluir Sessão no Perfil (v35)
+- [x] Adicionar botão de concluir sessão na aba Sessões do ClienteDetalhe
+- [x] Mostrar botão apenas para sessões agendadas (status = scheduled)
+- [x] Ao clicar, marcar sessão como concluída e decrementar sessionsRemaining
+- [x] Exibir confirmação antes de concluir
+- [x] Atualizar UI após conclusão
