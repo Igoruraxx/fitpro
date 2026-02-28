@@ -510,3 +510,10 @@
 - [x] Adicionar colunas musclePct, perimetria, dobras via ALTER TABLE
 - [x] Atualizar schema Drizzle para incluir colunas legadas do banco
 - [x] Atualizar runMigrations para garantir colunas novas com ADD COLUMN IF NOT EXISTS
+
+## Layout Mobile Fotos (v24)
+- [x] Remover botões redundantes do header (Apagar por Data, Comparar, Apagar Selecionadas)
+- [x] Manter apenas botão "Adicionar" no header
+- [x] Seletor de aluno ocupa toda a largura no mobile (flex-1)
+- [x] Botões de ação (Comparar, Apagar Selecionadas, Apagar por Data) em coluna abaixo do seletor
+- [x] Layout mobile-first sem botões horizontais

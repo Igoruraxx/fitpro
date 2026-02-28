@@ -240,59 +240,26 @@ export default function Fotos() {
 
   return (
     <div className="space-y-4 p-4 md:p-0">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          {/* Header */}
+      <div className="flex items-center justify-between gap-3">
         <div>
-          <h2 className="text-2xl font-bold">Fotos de Progresso</h2>
-          <p className="text-sm text-muted-foreground">
+          <h2 className="text-xl font-bold">Fotos de Progresso</h2>
+          <p className="text-xs text-muted-foreground">
             {filterClientId
               ? `${photos.length} foto${photos.length !== 1 ? "s" : ""} de ${selectedClient?.name || "aluno"}`
-              : "Selecione um aluno para ver as fotos"}
-          </p>
+              : "Selecione um aluno"}</p>
         </div>
-        <div className="flex gap-2">
-          {filterClientId && photos.length > 0 && (
-            <>
-              <Button
-                variant={mode === "compare" ? "default" : "outline"}
-                onClick={() => setMode(mode === "compare" ? "gallery" : "compare")}
-              >
-                <GitCompare className="h-4 w-4 mr-2" />
-                {mode === "compare" ? "Galeria" : "Comparar"}
-              </Button>
-              {selectedPhotoIds.size > 0 && (
-                <Button
-                  variant="destructive"
-                  onClick={() => {
-                    if (confirm(`Tem certeza que deseja apagar ${selectedPhotoIds.size} foto(s)?`)) {
-                      selectedPhotoIds.forEach(id => deleteMutation.mutate({ id }));
-                      setSelectedPhotoIds(new Set());
-                    }
-                  }}
-                >
-                  <Trash2 className="h-4 w-4 mr-2" /> Apagar {selectedPhotoIds.size}
-                </Button>
-              )}
-              <Button
-                variant="outline"
-                onClick={() => setShowDeleteByDate(true)}
-              >
-                <Trash2 className="h-4 w-4 mr-2" /> Apagar por Data
-              </Button>
-            </>
-          )}
-          <Button onClick={() => setShowUpload(true)}>
-            <Upload className="h-4 w-4 mr-2" /> Adicionar Fotos
-          </Button>
-        </div>
+        <Button onClick={() => setShowUpload(true)} size="sm">
+          <Upload className="h-4 w-4 mr-1" /> Adicionar
+        </Button>
       </div>
 
       {/* Client selector */}
-      <div className="bg-card border border-border rounded-xl p-4 space-y-4">
+      <div className="bg-card border border-border rounded-xl p-4 space-y-3">
         <div className="flex items-center gap-2">
           <Users className="h-4 w-4 text-muted-foreground shrink-0" />
           <Select value={filterClientId} onValueChange={(v) => { setFilterClientId(v); setMode("gallery"); }}>
-            <SelectTrigger className="w-56">
+            <SelectTrigger className="flex-1">
               <SelectValue placeholder="Selecione um aluno" />
             </SelectTrigger>
             <SelectContent>
@@ -302,20 +269,46 @@ export default function Fotos() {
             </SelectContent>
           </Select>
           {filterClientId && (
-            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => { setFilterClientId(""); setMode("gallery"); }}>
+            <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0" onClick={() => { setFilterClientId(""); setMode("gallery"); }}>
               <X className="h-4 w-4" />
             </Button>
           )}
         </div>
-        {filterClientId && (
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setShowDeleteByDate(true)}
-            className="w-full"
-          >
-            <Trash2 className="w-4 h-4 mr-2" /> Apagar Fotos por Data
-          </Button>
+        {filterClientId && photos.length > 0 && (
+          <div className="flex flex-col gap-2">
+            <Button
+              variant={mode === "compare" ? "default" : "outline"}
+              size="sm"
+              className="w-full"
+              onClick={() => setMode(mode === "compare" ? "gallery" : "compare")}
+            >
+              <GitCompare className="h-4 w-4 mr-2" />
+              {mode === "compare" ? "Voltar para Galeria" : "Comparar Fotos"}
+            </Button>
+            {selectedPhotoIds.size > 0 && (
+              <Button
+                variant="destructive"
+                size="sm"
+                className="w-full"
+                onClick={() => {
+                  if (confirm(`Tem certeza que deseja apagar ${selectedPhotoIds.size} foto(s)?`)) {
+                    selectedPhotoIds.forEach(id => deleteMutation.mutate({ id }));
+                    setSelectedPhotoIds(new Set());
+                  }
+                }}
+              >
+                <Trash2 className="h-4 w-4 mr-2" /> Apagar Selecionadas ({selectedPhotoIds.size})
+              </Button>
+            )}
+            <Button
+              variant="outline"
+              size="sm"
+              className="w-full"
+              onClick={() => setShowDeleteByDate(true)}
+            >
+              <Trash2 className="w-4 h-4 mr-2" /> Apagar por Data
+            </Button>
+          </div>
         )}
       </div>
 
