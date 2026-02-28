@@ -164,8 +164,14 @@ export default function ClienteDetalhe() {
     );
   }
 
+  // Contar apenas agendamentos futuros (data >= hoje)
+  const today = new Date().toISOString().split('T')[0];
+  const futureAppointments = (appointments as any[]).filter(a => {
+    const apptDate = new Date(a.date).toISOString().split('T')[0];
+    return apptDate >= today;
+  });
   const completedSessions = (appointments as any[]).filter(a => a.status === "completed").length;
-  const totalSessions = (appointments as any[]).length;
+  const totalSessions = futureAppointments.length;
   const paidTransactions = (transactions as any[]).filter(t => t.status === "paid");
   const totalPaid = paidTransactions.reduce((s, t) => s + parseFloat(t.amount), 0);
   const pendingTransactions = (transactions as any[]).filter(t => t.status !== "paid" && t.status !== "cancelled");
@@ -247,7 +253,7 @@ export default function ClienteDetalhe() {
         <div className="grid grid-cols-3 gap-3 mt-4 pt-4 border-t border-border">
           <div className="text-center">
             <div className="text-lg font-bold text-foreground">{completedSessions}</div>
-            <div className="text-xs text-muted-foreground">Sessões</div>
+            <div className="text-xs text-muted-foreground">Concluídas</div>
           </div>
           <div className="text-center">
             <div className="text-lg font-bold text-foreground">{(bioExams as any[]).length}</div>

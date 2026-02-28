@@ -482,7 +482,11 @@ export const appRouter = router({
       const future = new Date(); future.setDate(future.getDate() + 365);
       const endDate = future.toISOString().split('T')[0];
       const all = await getAppointmentsByTrainer(ctx.user.id, today, endDate);
-      return all.filter((a: any) => a.clientId === input.clientId && a.status === 'scheduled');
+      // Contar apenas agendamentos futuros (data >= hoje) com status 'scheduled'
+      return all.filter((a: any) => {
+        const apptDate = new Date(a.date).toISOString().split('T')[0];
+        return a.clientId === input.clientId && a.status === 'scheduled' && apptDate >= today;
+      });
     }),
     // Get all pending (scheduled) sessions grouped by client
     pendingGrouped: protectedProcedure.query(async ({ ctx }) => {
@@ -490,7 +494,11 @@ export const appRouter = router({
       const future = new Date(); future.setDate(future.getDate() + 365);
       const endDate = future.toISOString().split('T')[0];
       const all = await getAppointmentsByTrainer(ctx.user.id, today, endDate);
-      const scheduled = all.filter((a: any) => a.status === 'scheduled');
+      // Contar apenas agendamentos futuros (data >= hoje) com status 'scheduled'
+      const scheduled = all.filter((a: any) => {
+        const apptDate = new Date(a.date).toISOString().split('T')[0];
+        return a.status === 'scheduled' && apptDate >= today;
+      });
       // Group by clientId
       const grouped: Record<number, number> = {};
       for (const a of scheduled) {

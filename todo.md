@@ -826,3 +826,10 @@
 - [x] Atualizar ClienteDetalhe.tsx para recalcular em tempo real
 - [x] Adicionar loading state "Recalculando sessões pendentes..." durante refresh
 - [x] Invalidar pendingByClient em todas as mutations relevantes
+
+
+## Correção de Lógica de Sessões (v61)
+- [x] Corrigir procedure pendingByClient para contar apenas agendamentos futuros (data >= hoje)
+- [x] Corrigir pendingGrouped para filtrar agendamentos futuros
+- [x] Atualizar ClienteDetalhe.tsx para contar apenas agendamentos futuros
+- [x] Alterar label de "Sessões" para "Concluídas" para clareza
