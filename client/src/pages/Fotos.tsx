@@ -10,6 +10,7 @@ import {
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { Upload, ImageIcon, Trash2, X, ZoomIn, GitCompare, Users, Loader2, ArrowDown } from "lucide-react";
@@ -83,6 +84,9 @@ export default function Fotos() {
   const [compareDate1, setCompareDate1] = useState<string>("");
   const [compareDate2, setCompareDate2] = useState<string>("");
   const [compareType, setCompareType] = useState<string>("front");
+
+  // Batch delete state
+  const [selectedPhotoIds, setSelectedPhotoIds] = useState<Set<number>>(new Set());
 
   const utils = trpc.useUtils();
   const { data: clients = [] } = trpc.clients.list.useQuery();
@@ -244,13 +248,28 @@ export default function Fotos() {
         </div>
         <div className="flex gap-2">
           {filterClientId && photos.length > 0 && (
-            <Button
-              variant={mode === "compare" ? "default" : "outline"}
-              onClick={() => setMode(mode === "compare" ? "gallery" : "compare")}
-            >
-              <GitCompare className="h-4 w-4 mr-2" />
-              {mode === "compare" ? "Galeria" : "Comparar"}
-            </Button>
+            <>
+              <Button
+                variant={mode === "compare" ? "default" : "outline"}
+                onClick={() => setMode(mode === "compare" ? "gallery" : "compare")}
+              >
+                <GitCompare className="h-4 w-4 mr-2" />
+                {mode === "compare" ? "Galeria" : "Comparar"}
+              </Button>
+              {selectedPhotoIds.size > 0 && (
+                <Button
+                  variant="destructive"
+                  onClick={() => {
+                    if (confirm(`Tem certeza que deseja apagar ${selectedPhotoIds.size} foto(s)?`)) {
+                      selectedPhotoIds.forEach(id => deleteMutation.mutate({ id }));
+                      setSelectedPhotoIds(new Set());
+                    }
+                  }}
+                >
+                  <Trash2 className="h-4 w-4 mr-2" /> Apagar {selectedPhotoIds.size}
+                </Button>
+              )}
+            </>
           )}
           <Button onClick={() => setShowUpload(true)}>
             <Upload className="h-4 w-4 mr-2" /> Adicionar Fotos
@@ -329,14 +348,29 @@ export default function Fotos() {
                       {datPhotos.map((photo: any) => (
                         <div
                           key={photo.id}
-                          className="relative aspect-[3/4] rounded-xl overflow-hidden group cursor-pointer border border-border"
-                          onClick={() => setLightbox(photo)}
+                          className="relative aspect-[3/4] rounded-xl overflow-hidden group border border-border"
                         >
+                          <div className="absolute top-2 left-2 z-10">
+                            <Checkbox
+                              checked={selectedPhotoIds.has(photo.id)}
+                              onCheckedChange={(checked) => {
+                                const newSet = new Set(selectedPhotoIds);
+                                if (checked) {
+                                  newSet.add(photo.id);
+                                } else {
+                                  newSet.delete(photo.id);
+                                }
+                                setSelectedPhotoIds(newSet);
+                              }}
+                              className="bg-white/80"
+                            />
+                          </div>
                           <img
                             src={photo.photoUrl}
                             alt={`Foto de ${getClientName(photo.clientId)}`}
-                            className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                            className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105 cursor-pointer"
                             loading="lazy"
+                            onClick={() => setLightbox(photo)}
                           />
                           <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-200">
                             <div className="absolute bottom-0 left-0 right-0 p-3">

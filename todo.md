@@ -455,3 +455,10 @@
 - [x] Adicionar botão excluir (Trash2) para exames de bioimpedância
 - [x] Reposicionar botão "Novo Exame" para abaixo do texto sobre perímetros e dobras
 - [x] Botões com confirmação de exclusão
+
+## Apagar Fotos em Lote (v16)
+- [x] Adicionar estado de seleção de fotos (Set de IDs)
+- [x] Adicionar checkboxes em cada foto da galeria
+- [x] Botão "Apagar X" que aparece quando há fotos selecionadas
+- [x] Confirmação antes de apagar em lote
+- [x] Lógica de deleção em lote com mutação
