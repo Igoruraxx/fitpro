@@ -520,12 +520,12 @@ export default function ClienteDetalhe() {
             ) : (
               <div className="space-y-2">
                 {(bioExams as any[]).slice(0, 3).map((exam: any) => (
-                  <div key={exam.id} className="flex items-center justify-between text-sm p-2 rounded-lg bg-muted/30">
-                    <span className="text-muted-foreground">{format(new Date(exam.date + "T12:00:00"), "dd/MM/yyyy")}</span>
-                    <div className="flex gap-4 text-xs">
-                      {exam.weight && <span>Peso: <strong>{exam.weight}kg</strong></span>}
-                      {exam.bodyFatPct && <span>Gordura: <strong>{exam.bodyFatPct}%</strong></span>}
-                      {exam.musclePct && <span>Músculo: <strong>{exam.musclePct}%</strong></span>}
+                  <div key={exam.id} className="flex items-center justify-between text-sm p-2 rounded-lg bg-muted/30 gap-2 min-w-0">
+                    <span className="text-muted-foreground shrink-0">{format(new Date(exam.date + "T12:00:00"), "dd/MM/yyyy")}</span>
+                    <div className="flex gap-2 text-xs min-w-0 overflow-hidden">
+                      {exam.weight && <span className="truncate">Peso: <strong>{exam.weight}kg</strong></span>}
+                      {exam.bodyFatPct && <span className="truncate">Gordura: <strong>{exam.bodyFatPct}%</strong></span>}
+                      {exam.musclePct && <span className="truncate">Músculo: <strong>{exam.musclePct}%</strong></span>}
                     </div>
                     <div className="flex gap-1 shrink-0">
                       <Button

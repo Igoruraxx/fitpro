@@ -538,3 +538,9 @@
 ## Correção de Layout (v27)
 - [x] Ajustar CSS das cards de perimetria para evitar extravasamento de texto
 - [x] Adicionar truncate e min-w-0 para controle de overflow
+
+
+## Correção de Extravasamento em ClienteDetalhe (v28)
+- [x] Ajustar layout de Bioimpedância no ClienteDetalhe
+- [x] Adicionar truncate e min-w-0 para evitar overflow de texto
+- [x] Melhorar espaçamento entre elementos
