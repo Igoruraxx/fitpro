@@ -273,9 +273,9 @@ export default function Admin() {
                         <span className={`text-[10px] px-1.5 py-0.5 rounded-full border flex items-center gap-1 ${plan.color}`}>
                           {plan.icon} {plan.label}
                         </span>
-                        <span className={`text-[10px] px-1.5 py-0.5 rounded-full border ${statusColors[trainer.subscriptionStatus] ?? ""}`}>
-                          {statusLabels[trainer.subscriptionStatus] ?? trainer.subscriptionStatus}
-                        </span>
+                        {trainer.subscriptionPlan === "pro" && (trainer as any).proSource === "trial" && (
+                          <Badge className="text-[10px] px-1.5 py-0 bg-yellow-500/20 text-yellow-400 border border-yellow-500/30">Trial</Badge>
+                        )}
                       </div>
                       <div className="text-xs text-muted-foreground mt-0.5 truncate">{trainer.email || "—"}</div>
                       <div className="flex items-center gap-3 text-[10px] text-muted-foreground/60 mt-0.5">
