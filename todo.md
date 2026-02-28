@@ -462,3 +462,11 @@
 - [x] Botão "Apagar X" que aparece quando há fotos selecionadas
 - [x] Confirmação antes de apagar em lote
 - [x] Lógica de deleção em lote com mutação
+
+## Apagar Fotos por Data (v17)
+- [x] Adicionar estado para modal de apagar por data
+- [x] Criar modal com seletor de data
+- [x] Mostrar contagem de fotos que serão apagadas
+- [x] Botão "Apagar por Data" no header
+- [x] Confirmação antes de apagar em lote por data
+- [x] Lógica de deleção de fotos anteriores à data selecionada

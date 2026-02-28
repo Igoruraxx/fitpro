@@ -87,6 +87,8 @@ export default function Fotos() {
 
   // Batch delete state
   const [selectedPhotoIds, setSelectedPhotoIds] = useState<Set<number>>(new Set());
+  const [showDeleteByDate, setShowDeleteByDate] = useState(false);
+  const [deleteBeforeDate, setDeleteBeforeDate] = useState<string>("");
 
   const utils = trpc.useUtils();
   const { data: clients = [] } = trpc.clients.list.useQuery();
@@ -269,6 +271,12 @@ export default function Fotos() {
                   <Trash2 className="h-4 w-4 mr-2" /> Apagar {selectedPhotoIds.size}
                 </Button>
               )}
+              <Button
+                variant="outline"
+                onClick={() => setShowDeleteByDate(true)}
+              >
+                <Trash2 className="h-4 w-4 mr-2" /> Apagar por Data
+              </Button>
             </>
           )}
           <Button onClick={() => setShowUpload(true)}>
@@ -654,6 +662,53 @@ export default function Fotos() {
       </Dialog>
 
       {/* Lightbox */}
+      {/* Delete by date modal */}
+      <Dialog open={showDeleteByDate} onOpenChange={setShowDeleteByDate}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Apagar Fotos por Data</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="deleteBeforeDate" className="text-sm">Apagar fotos anteriores a:</Label>
+              <Input
+                id="deleteBeforeDate"
+                type="date"
+                value={deleteBeforeDate}
+                onChange={(e) => setDeleteBeforeDate(e.target.value)}
+                className="mt-1"
+              />
+            </div>
+            <div className="text-sm text-muted-foreground">
+              {deleteBeforeDate && (
+                <>
+                  {photos.filter((p: any) => p.date < deleteBeforeDate).length} foto(s) serão apagadas
+                </>
+              )}
+            </div>
+            <div className="flex gap-2 justify-end">
+              <Button variant="outline" onClick={() => setShowDeleteByDate(false)}>
+                Cancelar
+              </Button>
+              <Button
+                variant="destructive"
+                disabled={!deleteBeforeDate || photos.filter((p: any) => p.date < deleteBeforeDate).length === 0}
+                onClick={() => {
+                  const photosToDelete = photos.filter((p: any) => p.date < deleteBeforeDate);
+                  if (confirm(`Tem certeza que deseja apagar ${photosToDelete.length} foto(s)?`)) {
+                    photosToDelete.forEach((p: any) => deleteMutation.mutate({ id: p.id }));
+                    setShowDeleteByDate(false);
+                    setDeleteBeforeDate("");
+                  }
+                }}
+              >
+                Apagar {photos.filter((p: any) => p.date < deleteBeforeDate).length}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       {lightbox && (
         <div
           className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center p-4"
