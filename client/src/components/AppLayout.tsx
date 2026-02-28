@@ -3,7 +3,7 @@ import { useIsMobile } from "@/hooks/useMobile";
 import {
   LayoutDashboard, Calendar, Users, TrendingUp, DollarSign, User,
   LogOut, Shield, Loader2, Image, Activity, BarChart3,
-  ChevronRight, Settings, Menu, X, Eye, Crown, Lock,
+  ChevronRight, Settings, Menu, X, Eye, Crown, Lock, CheckCircle2,
 } from "lucide-react";
 import { useLocation } from "wouter";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
@@ -82,7 +82,19 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const [location, setLocation] = useLocation();
   const isMobile = useIsMobile();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [showTrialModal, setShowTrialModal] = useState(false);
   const utils = trpc.useUtils();
+
+  const requestTrialMutation = trpc.users.requestTrial.useMutation({
+    onSuccess: () => {
+      toast.success("Trial de 7 dias ativado!", { description: "Aproveite todas as funcionalidades Pro." });
+      setShowTrialModal(false);
+      utils.invalidate();
+    },
+    onError: (error: any) => {
+      toast.error("Nao foi possivel ativar o trial", { description: error.message });
+    },
+  });
 
   const { data: impStatus } = trpc.admin.impersonationStatus.useQuery(undefined, {
     enabled: !!user,
@@ -156,7 +168,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                     key={item.path}
                     onClick={() => {
                       if (isLocked) {
-                        toast.error("Recurso disponível apenas no plano Pro", { description: "Faça upgrade para acessar gráficos, relatórios e evolução." });
+                        setShowTrialModal(true);
                         return;
                       }
                       setLocation(item.path);
@@ -384,6 +396,58 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
               })}
             </div>
           </nav>
+        )}
+
+        {/* Trial Modal */}
+        {showTrialModal && (
+          <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
+            <div className="bg-card rounded-lg shadow-lg max-w-sm w-full p-6 border border-border">
+              <div className="flex items-center gap-3 mb-4">
+                <Crown className="h-6 w-6 text-orange-400" />
+                <h2 className="text-lg font-bold text-foreground">Teste Pro por 7 Dias</h2>
+              </div>
+              <p className="text-sm text-muted-foreground mb-6">
+                Desbloqueie acesso completo a gráficos, relatórios e evolução de clientes. Sua solicitação só pode ser feita uma única vez.
+              </p>
+              <div className="space-y-3 mb-6">
+                <div className="flex items-start gap-3">
+                  <CheckCircle2 className="h-4 w-4 text-green-400 mt-0.5 shrink-0" />
+                  <span className="text-sm text-muted-foreground">Acesso a todos os gráficos de evolução</span>
+                </div>
+                <div className="flex items-start gap-3">
+                  <CheckCircle2 className="h-4 w-4 text-green-400 mt-0.5 shrink-0" />
+                  <span className="text-sm text-muted-foreground">Relatórios detalhados de planos</span>
+                </div>
+                <div className="flex items-start gap-3">
+                  <CheckCircle2 className="h-4 w-4 text-green-400 mt-0.5 shrink-0" />
+                  <span className="text-sm text-muted-foreground">Dashboard com métricas completas</span>
+                </div>
+              </div>
+              <div className="flex gap-3">
+                <Button
+                  variant="outline"
+                  onClick={() => setShowTrialModal(false)}
+                  className="flex-1"
+                >
+                  Cancelar
+                </Button>
+                <Button
+                  onClick={() => requestTrialMutation.mutate()}
+                  disabled={requestTrialMutation.isPending}
+                  className="flex-1 bg-orange-500 hover:bg-orange-600 text-white"
+                >
+                  {requestTrialMutation.isPending ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                      Ativando...
+                    </>
+                  ) : (
+                    "Ativar Trial"
+                  )}
+                </Button>
+              </div>
+            </div>
+          </div>
         )}
       </div>
     </div>

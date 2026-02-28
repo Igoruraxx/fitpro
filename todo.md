@@ -739,3 +739,10 @@
 - [x] Bloqueio frontend: toast de aviso ao clicar em recurso bloqueado
 - [x] Promover usuário admin (ID 16 - semap.igor@gmail.com) no banco de dados
 - [x] Comparativo Free vs Pro no painel admin
+
+
+## Sistema de Trial e Pro (v56)
+- [ ] Adicionar campos: trialRequestedAt, proSource (paid/trial/courtesy), proExpiresAt na tabela users
+- [ ] Procedure users.requestTrial: validar se já solicitou, criar trial de 7 dias
+- [ ] Procedure admin.grantPro: conceder dias Pro com origem (paid/trial/courtesy)
+- [ ] Modal de solicita

@@ -848,8 +848,35 @@ export const appRouter = router({
           email: ctx.user!.email,
         } : null,
       };
+     }),
+  }),
+  users: router({
+    requestTrial: protectedProcedure.mutation(async ({ ctx }) => {
+      if (!ctx.user) throw new Error('Não autenticado');
+      
+      // Verificar se já solicitou trial
+      if ((ctx.user as any).trialRequestedAt !== null) {
+        throw new Error('Você já utilizou seu trial de 7 dias');
+      }
+
+      // Verificar se já é Pro
+      if ((ctx.user as any).subscriptionPlan === 'pro') {
+        throw new Error('Você já é um usuário Pro');
+      }
+
+      // Conceder trial de 7 dias
+      const now = new Date();
+      const expiresAt = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+
+      await updateUserProfile(ctx.user.id, {
+        subscriptionPlan: 'pro',
+        proSource: 'trial',
+        proExpiresAt: expiresAt,
+        trialRequestedAt: now,
+      } as any);
+
+      return { success: true, expiresAt };
     }),
   }),
 });
-
 export type AppRouter = typeof appRouter;
