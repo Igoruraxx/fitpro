@@ -20,9 +20,8 @@ import { compressImage, formatBytes } from "@/lib/imageCompressor";
 
 const PHOTO_TYPES = [
   { value: "front", label: "Frente" },
+  { value: "side", label: "Lado" },
   { value: "back", label: "Costas" },
-  { value: "side_left", label: "Lateral Esq." },
-  { value: "side_right", label: "Lateral Dir." },
   { value: "other", label: "Outro" },
 ];
 
@@ -75,11 +74,9 @@ export default function Fotos() {
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Multi-upload slots: front, back, side_left by default
+  // Single upload slot
   const [slots, setSlots] = useState<UploadSlot[]>([
     emptySlot("front"),
-    emptySlot("back"),
-    emptySlot("side_left"),
   ]);
 
   // Compare mode state
@@ -116,7 +113,7 @@ export default function Fotos() {
     setUploadClientId("");
     setUploadDate(format(new Date(), "yyyy-MM-dd"));
     setUploadNotes("");
-    setSlots([emptySlot("front"), emptySlot("back"), emptySlot("side_left")]);
+    setSlots([emptySlot("front")]);
   };
 
   const handleFileSelect = useCallback(async (file: File, slotIdx: number) => {
@@ -374,39 +371,49 @@ export default function Fotos() {
       {/* Compare mode */}
       {filterClientId && mode === "compare" && (
         <div className="space-y-4">
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 p-4 rounded-xl border border-border bg-card/50">
+          <div className="space-y-3 p-4 rounded-xl border border-border bg-card/50">
+            {/* Photo type buttons */}
             <div>
-              <Label className="text-xs text-muted-foreground">Tipo de foto</Label>
-              <Select value={compareType} onValueChange={setCompareType}>
-                <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  {PHOTO_TYPES.map(t => (
-                    <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Label className="text-xs text-muted-foreground mb-2 block">Tipo de foto</Label>
+              <div className="flex gap-2 flex-wrap">
+                {PHOTO_TYPES.map(t => (
+                  <Button
+                    key={t.value}
+                    variant={compareType === t.value ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setCompareType(t.value)}
+                    className="text-xs"
+                  >
+                    {t.label}
+                  </Button>
+                ))}
+              </div>
             </div>
-            <div>
-              <Label className="text-xs text-muted-foreground">Data 1 (antes)</Label>
-              <Select value={compareDate1} onValueChange={setCompareDate1}>
-                <SelectTrigger className="mt-1"><SelectValue placeholder="Selecione" /></SelectTrigger>
-                <SelectContent>
-                  {uniqueDates.map(d => (
-                    <SelectItem key={d} value={d}>{formatDate(d)}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Label className="text-xs text-muted-foreground">Data 2 (depois)</Label>
-              <Select value={compareDate2} onValueChange={setCompareDate2}>
-                <SelectTrigger className="mt-1"><SelectValue placeholder="Selecione" /></SelectTrigger>
-                <SelectContent>
-                  {uniqueDates.map(d => (
-                    <SelectItem key={d} value={d}>{formatDate(d)}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+            
+            {/* Date selectors */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <Label className="text-xs text-muted-foreground">Data 1 (antes)</Label>
+                <Select value={compareDate1} onValueChange={setCompareDate1}>
+                  <SelectTrigger className="mt-1"><SelectValue placeholder="Selecione" /></SelectTrigger>
+                  <SelectContent>
+                    {uniqueDates.map(d => (
+                      <SelectItem key={d} value={d}>{formatDate(d)}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label className="text-xs text-muted-foreground">Data 2 (depois)</Label>
+                <Select value={compareDate2} onValueChange={setCompareDate2}>
+                  <SelectTrigger className="mt-1"><SelectValue placeholder="Selecione" /></SelectTrigger>
+                  <SelectContent>
+                    {uniqueDates.map(d => (
+                      <SelectItem key={d} value={d}>{formatDate(d)}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
           </div>
 
@@ -490,7 +497,7 @@ export default function Fotos() {
             {/* Multi-slot upload with compression info */}
             <div>
               <div className="flex items-center justify-between mb-2">
-                <Label className="text-sm font-medium">Fotos (até 3 ângulos)</Label>
+                <Label className="text-sm font-medium">Foto</Label>
                 {hasCompressedSlots && totalOriginal > 0 && (
                   <span className="text-xs text-emerald-500 flex items-center gap-1">
                     <ArrowDown className="h-3 w-3" />
@@ -503,7 +510,7 @@ export default function Fotos() {
                   </span>
                 )}
               </div>
-              <div className="grid grid-cols-3 gap-2">
+              <div className="space-y-2">
                 {slots.map((slot, idx) => (
                   <div key={idx} className="space-y-1">
                     <Select

@@ -428,3 +428,10 @@
 - [x] Botão desfazer baixa (ícone Clock, cor âmbar) em Financas.tsx para cobranças pagas
 - [x] Botão desfazer baixa em ClienteDetalhe.tsx na aba Financeiro
 - [x] Notificação ao dono quando baixa é desfeita
+
+## Refatoração Módulo de Fotos (v13)
+- [x] Remover upload duplo (side_left e side_right)
+- [x] Atualizar PHOTO_TYPES: Frente, Lado, Costas, Outro
+- [x] Upload simplificado: apenas 1 slot em vez de 3
+- [x] Modo comparativo: botões de filtro por tipo (Frente, Lado, Costas, Outro) em vez de dropdown
+- [x] Seletores de data lado a lado no comparativo
