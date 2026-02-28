@@ -55,9 +55,26 @@ const trpcClient = trpc.createClient({
 // Register service worker for PWA
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw.js').catch((err) => {
-      console.log('Service Worker registration failed:', err);
-    });
+    navigator.serviceWorker.register('/sw.js', { scope: '/' })
+      .then((registration) => {
+        // Check for updates every 60 seconds
+        setInterval(() => registration.update(), 60000);
+
+        // When a new SW is found, reload to apply it
+        registration.addEventListener('updatefound', () => {
+          const newWorker = registration.installing;
+          if (!newWorker) return;
+          newWorker.addEventListener('statechange', () => {
+            if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+              // New content available - reload silently
+              window.location.reload();
+            }
+          });
+        });
+      })
+      .catch((err) => {
+        console.warn('[SW] Registration failed:', err);
+      });
   });
 }
 

@@ -20,6 +20,7 @@ import { useEffect, useState } from "react";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
 import { OfflineIndicator } from "./OfflineIndicator";
+import { InstallPrompt } from "./InstallPrompt";
 
 // Nav groups for better organization
 const navGroups = [
@@ -381,7 +382,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
         {/* Mobile Bottom Navigation */}
         {isMobile && (
-          <nav className="fixed bottom-0 left-0 right-0 z-30 bg-card border-t border-border">
+          <nav className="fixed bottom-0 left-0 right-0 z-30 bg-card border-t border-border mobile-nav" style={{ paddingBottom: 'max(env(safe-area-inset-bottom), 0px)' }}>
             <div className="flex items-center justify-around h-16 px-1">
               {mobileNavItems.map((item) => {
                 const active = isActive(item.path, location);
@@ -477,6 +478,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         )}
       </div>
       <OfflineIndicator />
+      <InstallPrompt />
     </div>
   );
 }

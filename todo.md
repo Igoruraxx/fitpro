@@ -808,3 +808,14 @@
 - [x] Adicionar indicador de modo offline (OfflineIndicator)
 - [x] Sincronizar dados quando voltar online com toast
 - [x] Corrigir erro React #185 removendo hooks condicionais
+
+## PWA Aprimorado iOS/Android (v59)
+- [x] Gerar ícones PWA em todos os tamanhos (72, 96, 128, 144, 152, 192, 384, 512, maskable)
+- [x] Gerar splash screens para iOS (9 tamanhos, iPhone SE a iPad Pro)
+- [x] Aprimorar manifest.json com display_override, shortcuts, screenshots
+- [x] Adicionar apple-touch-icon para todos os tamanhos
+- [x] Adicionar apple-touch-startup-image para todos os iPhones
+- [x] Adicionar meta tags Android/Chrome (mobile-web-app-capable)
+- [x] Implementar InstallPrompt (Android: BeforeInstallPrompt, iOS: instruções)
+- [x] Aprimorar service worker com cache-first para assets e network-first para API
+- [x] Adicionar safe-area-inset para iOS notch/home indicator

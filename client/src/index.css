@@ -274,6 +274,18 @@
     @apply inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-blue-50 text-blue-700 border border-blue-200;
   }
 
+  /* ── iOS Safe Area / Notch Support ──────────────────────────── */
+  /* Ensures content is not hidden behind the iPhone notch or home indicator */
+  .safe-top    { padding-top: env(safe-area-inset-top); }
+  .safe-bottom { padding-bottom: env(safe-area-inset-bottom); }
+  .safe-left   { padding-left: env(safe-area-inset-left); }
+  .safe-right  { padding-right: env(safe-area-inset-right); }
+
+  /* Bottom nav bar respects home indicator on iPhone */
+  nav.mobile-nav {
+    padding-bottom: max(env(safe-area-inset-bottom), 0.5rem);
+  }
+
   /* Mobile optimizations */
   @media (max-width: 640px) {
     body {

@@ -1,79 +1,119 @@
-const CACHE_NAME = 'fitpro-v1';
-const urlsToCache = [
+// FITPRO Service Worker - v2
+// Cache-first strategy for assets, network-first for API calls
+
+const STATIC_CACHE = 'fitpro-static-v2';
+const API_CACHE = 'fitpro-api-v2';
+
+// Assets to pre-cache on install
+const PRECACHE_ASSETS = [
   '/',
-  '/index.html',
-  '/src/main.tsx',
+  '/manifest.json',
 ];
 
-// Install event
+// ── Install ──────────────────────────────────────────────────────────────────
 self.addEventListener('install', (event) => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => {
-      return cache.addAll(urlsToCache).catch(() => {
-        // Ignore errors during cache add
-        console.log('Some resources failed to cache');
+    caches.open(STATIC_CACHE).then((cache) => {
+      return cache.addAll(PRECACHE_ASSETS).catch(() => {
+        console.log('[SW] Some resources failed to pre-cache');
       });
-    })
+    }).then(() => self.skipWaiting())
   );
-  self.skipWaiting();
 });
 
-// Activate event
+// ── Activate ─────────────────────────────────────────────────────────────────
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then((cacheNames) => {
       return Promise.all(
-        cacheNames.map((cacheName) => {
-          if (cacheName !== CACHE_NAME) {
-            return caches.delete(cacheName);
-          }
-        })
+        cacheNames
+          .filter((name) => name !== STATIC_CACHE && name !== API_CACHE)
+          .map((name) => caches.delete(name))
       );
-    })
+    }).then(() => self.clients.claim())
   );
-  self.clients.claim();
 });
 
-// Fetch event - Network first, fallback to cache
+// ── Fetch ─────────────────────────────────────────────────────────────────────
 self.addEventListener('fetch', (event) => {
+  const { request } = event;
+  const url = new URL(request.url);
+
   // Skip non-GET requests
-  if (event.request.method !== 'GET') {
+  if (request.method !== 'GET') return;
+
+  // Skip tRPC/API calls - network first with short timeout
+  if (url.pathname.startsWith('/api/')) {
+    event.respondWith(networkFirst(request, API_CACHE, 5000));
     return;
   }
 
-  // Skip API calls (let them fail if offline)
-  if (event.request.url.includes('/api/')) {
+  // Skip external CDN/fonts - network only (don't cache third-party)
+  if (url.origin !== self.location.origin) {
     return;
   }
 
-  event.respondWith(
-    fetch(event.request)
-      .then((response) => {
-        // Don't cache if not successful
-        if (!response || response.status !== 200 || response.type === 'error') {
+  // HTML navigation - network first with fallback to cached shell
+  if (request.mode === 'navigate') {
+    event.respondWith(
+      fetch(request)
+        .then((response) => {
+          if (response.ok) {
+            const clone = response.clone();
+            caches.open(STATIC_CACHE).then((cache) => cache.put(request, clone));
+          }
           return response;
-        }
+        })
+        .catch(() =>
+          caches.match('/').then((r) => r || new Response('Offline', { status: 503 }))
+        )
+    );
+    return;
+  }
 
-        // Clone the response
-        const responseToCache = response.clone();
+  // Static assets (JS, CSS, images) - cache first
+  if (url.pathname.match(/\.(js|css|png|jpg|jpeg|svg|ico|woff2?|ttf)$/)) {
+    event.respondWith(cacheFirst(request, STATIC_CACHE));
+    return;
+  }
 
-        caches.open(CACHE_NAME).then((cache) => {
-          cache.put(event.request, responseToCache);
-        });
-
-        return response;
-      })
-      .catch(() => {
-        // Return cached version if network fails
-        return caches.match(event.request).then((response) => {
-          return response || new Response('Offline - página não disponível', {
-            status: 503,
-            statusText: 'Service Unavailable',
-            headers: new Headers({
-              'Content-Type': 'text/plain'
-            })
-          });
-        });
-      })
-  );
+  // Default: network first
+  event.respondWith(networkFirst(request, STATIC_CACHE, 3000));
 });
+
+// ── Strategies ───────────────────────────────────────────────────────────────
+
+async function cacheFirst(request, cacheName) {
+  const cached = await caches.match(request);
+  if (cached) return cached;
+
+  try {
+    const response = await fetch(request);
+    if (response.ok) {
+      const cache = await caches.open(cacheName);
+      cache.put(request, response.clone());
+    }
+    return response;
+  } catch {
+    return new Response('Asset not available offline', { status: 503 });
+  }
+}
+
+async function networkFirst(request, cacheName, timeout = 3000) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeout);
+
+  try {
+    const response = await fetch(request, { signal: controller.signal });
+    clearTimeout(timer);
+    if (response.ok) {
+      const cache = await caches.open(cacheName);
+      cache.put(request, response.clone());
+    }
+    return response;
+  } catch {
+    clearTimeout(timer);
+    const cached = await caches.match(request);
+    return cached || new Response('Offline', { status: 503 });
+  }
+}

@@ -3,23 +3,67 @@
 
   <head>
     <meta charset="UTF-8" />
-    <meta
-      name="viewport"
-      content="width=device-width, initial-scale=1.0, maximum-scale=1" />
+    <!-- Mobile-first viewport: prevent user scaling to enforce app-like feel -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no" />
     <title>FITPRO - Agenda Personal</title>
-    <link rel="icon" type="image/png" href="https://d2xsxph8kpxj0f.cloudfront.net/310519663385249362/5UbJ997E6SHYZid72bThxF/fitpro-logo_005e8846.png" />
-    <link rel="apple-touch-icon" href="https://d2xsxph8kpxj0f.cloudfront.net/310519663385249362/5UbJ997E6SHYZid72bThxF/fitpro-logo_005e8846.png" />
-    <link rel="manifest" href="/manifest.json" />
     <meta name="description" content="FITPRO - Agenda e Gestão para Personal Trainers" />
+
+    <!-- ── PWA Manifest ─────────────────────────────────────────── -->
+    <link rel="manifest" href="/manifest.json" />
+
+    <!-- ── Favicon ──────────────────────────────────────────────── -->
+    <link rel="icon" type="image/png" sizes="192x192" href="https://d2xsxph8kpxj0f.cloudfront.net/310519663385249362/5UbJ997E6SHYZid72bThxF/icon-192x192_e5bd9dd9.png" />
+    <link rel="icon" type="image/png" sizes="512x512" href="https://d2xsxph8kpxj0f.cloudfront.net/310519663385249362/5UbJ997E6SHYZid72bThxF/icon-512x512_4a646b25.png" />
+
+    <!-- ── Android / Chrome ─────────────────────────────────────── -->
     <meta name="theme-color" content="#FF4500" />
+    <meta name="mobile-web-app-capable" content="yes" />
+
+    <!-- ── iOS / Safari ─────────────────────────────────────────── -->
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="apple-mobile-web-app-title" content="FITPRO" />
+
+    <!-- Apple Touch Icons (all sizes) -->
+    <link rel="apple-touch-icon" sizes="72x72"  href="https://d2xsxph8kpxj0f.cloudfront.net/310519663385249362/5UbJ997E6SHYZid72bThxF/icon-72x72_2bd80746.png" />
+    <link rel="apple-touch-icon" sizes="96x96"  href="https://d2xsxph8kpxj0f.cloudfront.net/310519663385249362/5UbJ997E6SHYZid72bThxF/icon-96x96_33f7ef7b.png" />
+    <link rel="apple-touch-icon" sizes="128x128" href="https://d2xsxph8kpxj0f.cloudfront.net/310519663385249362/5UbJ997E6SHYZid72bThxF/icon-128x128_384cbc11.png" />
+    <link rel="apple-touch-icon" sizes="144x144" href="https://d2xsxph8kpxj0f.cloudfront.net/310519663385249362/5UbJ997E6SHYZid72bThxF/icon-144x144_b2ce5e6c.png" />
+    <link rel="apple-touch-icon" sizes="152x152" href="https://d2xsxph8kpxj0f.cloudfront.net/310519663385249362/5UbJ997E6SHYZid72bThxF/icon-152x152_f1562750.png" />
+    <link rel="apple-touch-icon" sizes="192x192" href="https://d2xsxph8kpxj0f.cloudfront.net/310519663385249362/5UbJ997E6SHYZid72bThxF/icon-192x192_e5bd9dd9.png" />
+    <link rel="apple-touch-icon" sizes="512x512" href="https://d2xsxph8kpxj0f.cloudfront.net/310519663385249362/5UbJ997E6SHYZid72bThxF/icon-512x512_4a646b25.png" />
+
+    <!-- Apple Splash Screens -->
+    <!-- iPhone SE (640x1136) -->
+    <link rel="apple-touch-startup-image" media="screen and (device-width: 320px) and (device-height: 568px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)" href="https://d2xsxph8kpxj0f.cloudfront.net/310519663385249362/5UbJ997E6SHYZid72bThxF/splash-640x1136_81b71d24.png" />
+    <!-- iPhone 8 (750x1334) -->
+    <link rel="apple-touch-startup-image" media="screen and (device-width: 375px) and (device-height: 667px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)" href="https://d2xsxph8kpxj0f.cloudfront.net/310519663385249362/5UbJ997E6SHYZid72bThxF/splash-750x1334_c8015b3d.png" />
+    <!-- iPhone XR (828x1792) -->
+    <link rel="apple-touch-startup-image" media="screen and (device-width: 414px) and (device-height: 896px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)" href="https://d2xsxph8kpxj0f.cloudfront.net/310519663385249362/5UbJ997E6SHYZid72bThxF/splash-828x1792_1307680f.png" />
+    <!-- iPhone X/XS (1125x2436) -->
+    <link rel="apple-touch-startup-image" media="screen and (device-width: 375px) and (device-height: 812px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" href="https://d2xsxph8kpxj0f.cloudfront.net/310519663385249362/5UbJ997E6SHYZid72bThxF/splash-1125x2436_7aa5d233.png" />
+    <!-- iPhone 12 (1170x2532) -->
+    <link rel="apple-touch-startup-image" media="screen and (device-width: 390px) and (device-height: 844px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" href="https://d2xsxph8kpxj0f.cloudfront.net/310519663385249362/5UbJ997E6SHYZid72bThxF/splash-1170x2532_f6f8bad6.png" />
+    <!-- iPhone 14 Pro (1179x2556) -->
+    <link rel="apple-touch-startup-image" media="screen and (device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" href="https://d2xsxph8kpxj0f.cloudfront.net/310519663385249362/5UbJ997E6SHYZid72bThxF/splash-1179x2556_3462fda9.png" />
+    <!-- iPhone XS Max (1242x2688) -->
+    <link rel="apple-touch-startup-image" media="screen and (device-width: 414px) and (device-height: 896px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" href="https://d2xsxph8kpxj0f.cloudfront.net/310519663385249362/5UbJ997E6SHYZid72bThxF/splash-1242x2688_4cb361ff.png" />
+    <!-- iPhone 12 Pro Max (1284x2778) -->
+    <link rel="apple-touch-startup-image" media="screen and (device-width: 428px) and (device-height: 926px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" href="https://d2xsxph8kpxj0f.cloudfront.net/310519663385249362/5UbJ997E6SHYZid72bThxF/splash-1284x2778_f3a6f0b8.png" />
+    <!-- iPad Pro 12.9" (2048x2732) -->
+    <link rel="apple-touch-startup-image" media="screen and (device-width: 1024px) and (device-height: 1366px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)" href="https://d2xsxph8kpxj0f.cloudfront.net/310519663385249362/5UbJ997E6SHYZid72bThxF/splash-2048x2732_b89b87d1.png" />
+
+    <!-- ── Open Graph ─────────────────────────────────────────────── -->
     <meta property="og:title" content="FITPRO - Agenda Personal" />
-    <meta property="og:image" content="https://d2xsxph8kpxj0f.cloudfront.net/310519663385249362/5UbJ997E6SHYZid72bThxF/fitpro-logo_005e8846.png" />
+    <meta property="og:description" content="Agenda e Gestão para Personal Trainers" />
+    <meta property="og:type" content="website" />
+    <meta property="og:image" content="https://d2xsxph8kpxj0f.cloudfront.net/310519663385249362/5UbJ997E6SHYZid72bThxF/icon-512x512_4a646b25.png" />
+
+    <!-- ── Fonts ─────────────────────────────────────────────────── -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+
     <script>
       // Force dark theme immediately to prevent flash of light theme
       document.documentElement.classList.add('dark');
