@@ -273,4 +273,26 @@
   .badge-primary {
     @apply inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-blue-50 text-blue-700 border border-blue-200;
   }
+
+  /* Mobile optimizations */
+  @media (max-width: 640px) {
+    body {
+      @apply text-base;
+    }
+    h1 {
+      @apply text-xl;
+    }
+    h2 {
+      @apply text-lg;
+    }
+    h3 {
+      @apply text-base;
+    }
+    .page-header {
+      @apply flex-col items-start gap-3 mb-4;
+    }
+    .page-title {
+      @apply text-lg;
+    }
+  }
 }

@@ -790,3 +790,13 @@
 ## Corre\u00e7\u00e3o de Erros (v56)
 - [x] Corrigir erro de permiss\u00e3o na p\u00e1gina / com User: null
 - [x] Adicionar enabled: !!user em queries de Agenda.tsx
+
+
+## PWA e Mobile-First (v57)
+- [x] Configurar manifest.json com ícones e metadados
+- [x] Implementar service worker para offline
+- [x] Adicionar meta tags viewport e PWA
+- [x] Auditar layout mobile em todas as páginas
+- [x] Otimizar layout Admin para mobile (botões hidden)
+- [x] Otimizar espaçamento para mobile
+- [x] Registrar service worker em main.tsx

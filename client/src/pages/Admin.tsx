@@ -322,43 +322,43 @@ export default function Admin() {
                         )}
                       </div>
                     </div>
-                    <div className="flex flex-col gap-1 flex-shrink-0">
-                      {/* Quick plan toggle */}
+                    <div className="flex gap-1 flex-shrink-0 flex-wrap justify-end">
+                      {/* Quick plan toggle - hidden on mobile */}
                       {!isMe && (
                         <Button
                           variant="outline"
                           size="sm"
-                          className={`h-7 text-[10px] px-2 ${trainer.subscriptionPlan === "pro" ? "border-orange-500/40 text-orange-400 hover:bg-orange-500/10" : "border-gray-500/40 text-gray-400 hover:bg-gray-500/10"}`}
+                          className={`h-7 text-[10px] px-2 hidden sm:flex ${trainer.subscriptionPlan === "pro" ? "border-orange-500/40 text-orange-400 hover:bg-orange-500/10" : "border-gray-500/40 text-gray-400 hover:bg-gray-500/10"}`}
                           onClick={() => updatePlanMutation.mutate({ userId: trainer.id, plan: trainer.subscriptionPlan === "pro" ? "free" : "pro" })}
                           disabled={updatePlanMutation.isPending}
                         >
                           {updatePlanMutation.isPending ? <Loader2 className="h-3 w-3 animate-spin" /> : trainer.subscriptionPlan === "pro" ? "→ Free" : "→ Pro"}
                         </Button>
                       )}
-                      {/* Grant courtesy */}
+                      {/* Grant courtesy - hidden on mobile */}
                       {!isMe && (
                         <Button
                           variant="outline"
                           size="sm"
-                          className="h-7 text-[10px] px-2 border-green-500/40 text-green-400 hover:bg-green-500/10"
+                          className="h-7 text-[10px] px-2 border-green-500/40 text-green-400 hover:bg-green-500/10 hidden sm:flex"
                           onClick={() => setCourtesyTrainer(trainer)}
                         >
                           <Crown className="h-3 w-3 mr-1" />Cortesia
                         </Button>
                       )}
-                      {/* View as trainer */}
+                      {/* View as trainer - hidden on mobile */}
                       {!isMe && (
                         <Button
                           variant="outline"
                           size="sm"
-                          className="h-7 text-[10px] px-2 border-blue-500/40 text-blue-400 hover:bg-blue-500/10"
+                          className="h-7 text-[10px] px-2 border-blue-500/40 text-blue-400 hover:bg-blue-500/10 hidden sm:flex"
                           onClick={() => impersonateMutation.mutate({ targetUserId: trainer.id })}
                           disabled={impersonateMutation.isPending}
                         >
                           {impersonateMutation.isPending ? <Loader2 className="h-3 w-3 animate-spin" /> : <><Eye className="h-3 w-3 mr-1" />Ver</>}
                         </Button>
                       )}
-                      {/* Edit */}
+                      {/* Edit - always visible */}
                       <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={() => openEdit(trainer)}>
                         <Edit className="h-3.5 w-3.5" />
                       </Button>
@@ -397,8 +397,6 @@ export default function Admin() {
                   <SelectContent>
                     <SelectItem value="free">Free (até 5 alunos)</SelectItem>
                     <SelectItem value="pro">Pro (ilimitado)</SelectItem>
-                    <SelectItem value="basic">Básico</SelectItem>
-                    <SelectItem value="premium">Premium</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
