@@ -555,3 +555,11 @@
 ## Remoção de Botão de Edição (v30)
 - [x] Remover botão de edição (lapisinho) da aba de Bioimpedância
 - [x] Manter apenas exibição dos dados
+
+
+## Melhorias no Financeiro (v31)
+- [x] Mostrar nome do aluno em evidência nas cobranças
+- [x] Adicionar barra de progresso para pacotes de sessões
+- [x] Remover vencimento para pacotes (pago previamente)
+- [ ] Implementar ciclo automático ao finalizar pacote
+- [x] Rastrear sessões completadas em pacotes

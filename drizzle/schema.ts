@@ -172,6 +172,8 @@ export const transactions = pgTable("transactions", {
   dueDate: date("dueDate"),           // vencimento da cobrança
   paidAt: date("paidAt"),             // data em que foi pago
   status: transactionStatusEnum("status").default("pending").notNull(),
+  packageSessionsTotal: integer("packageSessionsTotal"),  // total de sessões no pacote
+  packageSessionsCompleted: integer("packageSessionsCompleted").default(0),  // sessões já completadas
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().notNull(),
 });

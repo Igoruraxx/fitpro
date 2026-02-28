@@ -217,18 +217,31 @@ export default function Financas() {
                 {/* Info */}
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <span className="font-semibold text-sm text-foreground">{t.category}</span>
+                    <span className="font-semibold text-sm text-foreground">{client?.name || t.category}</span>
                     <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${STATUS_STYLES[effectiveStatus] || STATUS_STYLES.pending}`}>
                       {STATUS_LABELS[effectiveStatus] || effectiveStatus}
                     </span>
                   </div>
-                  {client && (
+                  {t.category && (
                     <div className="flex items-center gap-1 mt-0.5">
-                      <Users className="h-3 w-3 text-muted-foreground/60 shrink-0" />
-                      <span className="text-xs text-muted-foreground truncate">{client.name}</span>
+                      <span className="text-xs text-muted-foreground">{t.category}</span>
                     </div>
                   )}
-                  {t.dueDate && (
+                  {t.packageSessionsTotal && t.packageSessionsTotal > 0 && (
+                    <div className="mt-2 space-y-1">
+                      <div className="flex justify-between items-center text-xs text-muted-foreground">
+                        <span>Sessoes: {t.packageSessionsCompleted}/{t.packageSessionsTotal}</span>
+                        <span>{Math.round((t.packageSessionsCompleted / t.packageSessionsTotal) * 100)}%</span>
+                      </div>
+                      <div className="w-full h-1.5 bg-muted rounded-full overflow-hidden">
+                        <div
+                          className="h-full bg-blue-500 transition-all"
+                          style={{ width: `${(t.packageSessionsCompleted / t.packageSessionsTotal) * 100}%` }}
+                        />
+                      </div>
+                    </div>
+                  )}
+                  {t.dueDate && t.category !== "Pacote de Sessoes" && (
                     <div className="flex items-center gap-1 mt-0.5">
                       <Calendar className="h-3 w-3 text-muted-foreground/60 shrink-0" />
                       <span className={`text-xs ${overdue ? "text-red-600 font-medium" : "text-muted-foreground"}`}>
