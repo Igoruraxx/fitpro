@@ -845,3 +845,10 @@
 ## Correção de Invalidação de Cache (v63)
 - [x] Adicionar refetch explícito após invalidar appointments.list
 - [x] Garantir que UI atualiza imediatamente após criar sessões
+
+
+## Limite de Criação de Sessões (v64)
+- [x] Criar helper calculateMaxSessionsToCreate() no db.ts
+- [x] Refatorar generateRemainingAppointments para respeitar limite do plano
+- [x] Adicionar validação no frontend com mensagem de progresso (X/Y sessões)
+- [x] Todos os 75 testes passando

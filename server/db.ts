@@ -1,4 +1,4 @@
-import { eq, and, desc, asc, sql, count } from "drizzle-orm";
+import { eq, and, desc, asc, sql, count, gte } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
 import {
@@ -1069,6 +1069,10 @@ export async function generatePackageAppointments(
   const db = await getDb();
   if (!db) return 0;
 
+  // Calculate how many sessions can actually be created
+  const { canCreate } = await calculateMaxSessionsToCreate(clientId, packageSessions);
+  if (canCreate <= 0) return 0; // All sessions already created
+
   const daysArray = sessionDays.split(',').map(d => parseInt(d.trim())).filter(d => !isNaN(d));
   if (daysArray.length === 0) return 0;
 
@@ -1092,7 +1096,7 @@ export async function generatePackageAppointments(
   startDate.setHours(0, 0, 0, 0);
 
   let currentDate = new Date(startDate);
-  while (sessionsGenerated < packageSessions) {
+  while (sessionsGenerated < canCreate) {
     const dayOfWeek = currentDate.getDay();
 
     if (daysArray.includes(dayOfWeek)) {
@@ -1121,6 +1125,36 @@ export async function generatePackageAppointments(
   }
 
   return sessionsGenerated;
+}
+
+/**
+ * Calculate how many sessions can be created without exceeding the package limit
+ * Returns: { canCreate: number, totalExisting: number, packageLimit: number }
+ */
+export async function calculateMaxSessionsToCreate(
+  clientId: number,
+  packageSessions: number
+): Promise<{ canCreate: number; totalExisting: number; packageLimit: number }> {
+  const db = await getDb();
+  if (!db) return { canCreate: 0, totalExisting: 0, packageLimit: packageSessions };
+
+  // Count all future appointments (date >= today) with status 'scheduled'
+  const today = new Date().toISOString().split('T')[0];
+  const futureAppointments = await db
+    .select()
+    .from(appointments)
+    .where(
+      and(
+        eq(appointments.clientId, clientId),
+        eq(appointments.status, 'scheduled'),
+        gte(appointments.date, today)
+      )
+    );
+
+  const totalExisting = futureAppointments.length;
+  const canCreate = Math.max(0, packageSessions - totalExisting);
+
+  return { canCreate, totalExisting, packageLimit: packageSessions };
 }
 
 /**

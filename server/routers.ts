@@ -334,7 +334,13 @@ export const appRouter = router({
       const remaining = client.sessionsRemaining ?? 0;
       if (remaining <= 0) throw new Error("Não há sessões restantes para agendar");
       if (!client.sessionDays || !client.sessionsPerWeek) throw new Error("Configure os dias e frequência de treino antes de gerar sessões");
-      const { generatePackageAppointments } = await import('./db');
+      const { generatePackageAppointments, calculateMaxSessionsToCreate } = await import('./db');
+      
+      const { canCreate, totalExisting, packageLimit } = await calculateMaxSessionsToCreate(input.clientId, remaining);
+      if (canCreate <= 0) {
+        throw new Error(`Todas as ${packageLimit} sessoes do pacote ja foram criadas (${totalExisting} agendadas)`);
+      }
+      
       const created = await generatePackageAppointments(
         input.clientId,
         ctx.user.id,
@@ -345,7 +351,7 @@ export const appRouter = router({
         client.sessionTimesPerDay || null,
         (client.sessionDuration || 60) as number
       );
-      return { success: true, created };
+      return { success: true, created, totalExisting, packageLimit };
     }),
   }),
 
