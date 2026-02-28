@@ -563,3 +563,10 @@
 - [x] Remover vencimento para pacotes (pago previamente)
 - [ ] Implementar ciclo automático ao finalizar pacote
 - [x] Rastrear sessões completadas em pacotes
+
+
+## Correção de Erros de Query (v32)
+- [x] Sincronizar schema Drizzle com colunas packageSessionsTotal e packageSessionsCompleted
+- [x] Verificar se as colunas estão sendo reconhecidas nas queries
+- [x] Limpar cache e reinstalar dependências
+- [x] Reiniciar servidor
