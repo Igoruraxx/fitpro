@@ -382,27 +382,55 @@ export default function Bioimpedancia() {
               const prev = parseJSON<Perimetria>(sorted[1].perimetria, {});
               const fields = PERIMETRIA_FIELDS.filter((f) => last[f.key] || prev[f.key]);
               if (!fields.length) return null;
-              const data = fields.map((f) => ({
-                name: f.label,
-                [fmtDate(sorted[1].date)]: prev[f.key] ? parseFloat(prev[f.key]!) : undefined,
-                [fmtDate(sorted[0].date)]: last[f.key] ? parseFloat(last[f.key]!) : undefined,
-              }));
               return (
-                <div className="bg-card border border-border rounded-xl p-4">
-                  <h3 className="text-sm font-semibold mb-4 flex items-center gap-2">
-                    <Ruler className="w-4 h-4 text-blue-500" /> Perimetria Comparativa (cm)
-                  </h3>
-                  <ResponsiveContainer width="100%" height={220}>
-                    <BarChart data={data} layout="vertical">
-                      <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                      <XAxis type="number" tick={{ fontSize: 11 }} />
-                      <YAxis dataKey="name" type="category" tick={{ fontSize: 11 }} width={80} />
-                      <Tooltip />
-                      <Legend />
-                      <Bar dataKey={fmtDate(sorted[1].date)} fill="#93c5fd" radius={[0, 4, 4, 0]} />
-                      <Bar dataKey={fmtDate(sorted[0].date)} fill="#3b82f6" radius={[0, 4, 4, 0]} />
-                    </BarChart>
-                  </ResponsiveContainer>
+                <div className="space-y-4">
+                  <div className="bg-card border border-border rounded-xl p-4">
+                    <h3 className="text-sm font-semibold mb-4 flex items-center gap-2">
+                      <Ruler className="w-4 h-4 text-blue-500" /> Perimetria Comparativa (cm)
+                    </h3>
+                    <div className="grid grid-cols-2 gap-3">
+                      {fields.map((f) => {
+                        const prevVal = prev[f.key] ? parseFloat(prev[f.key]!) : null;
+                        const lastVal = last[f.key] ? parseFloat(last[f.key]!) : null;
+                        const diff = (prevVal && lastVal) ? (lastVal - prevVal).toFixed(1) : null;
+                        const diffColor = diff && parseFloat(diff) < 0 ? "text-green-600" : diff && parseFloat(diff) > 0 ? "text-red-600" : "text-muted-foreground";
+                        return (
+                          <div key={f.key} className="bg-muted/50 rounded-lg p-3 space-y-2">
+                            <p className="text-xs font-semibold text-muted-foreground">{f.label}</p>
+                            <div className="flex justify-between items-center">
+                              <div className="text-left">
+                                <p className="text-xs text-muted-foreground">{fmtDate(sorted[1].date)}</p>
+                                <p className="text-sm font-semibold">{fmtNum(prev[f.key])}</p>
+                              </div>
+                              <div className="text-right">
+                                <p className="text-xs text-muted-foreground">{fmtDate(sorted[0].date)}</p>
+                                <p className="text-sm font-semibold">{fmtNum(last[f.key])}</p>
+                              </div>
+                            </div>
+                            {diff && <p className={`text-xs font-semibold text-center ${diffColor}`}>{parseFloat(diff) > 0 ? "+" : ""}{diff} cm</p>}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                  <div className="bg-card border border-border rounded-xl p-4">
+                    <h3 className="text-sm font-semibold mb-4">Gráfico Comparativo</h3>
+                    <ResponsiveContainer width="100%" height={250}>
+                      <BarChart data={fields.map((f) => ({
+                        name: f.label,
+                        [fmtDate(sorted[1].date)]: prev[f.key] ? parseFloat(prev[f.key]!) : undefined,
+                        [fmtDate(sorted[0].date)]: last[f.key] ? parseFloat(last[f.key]!) : undefined,
+                      }))} layout="vertical">
+                        <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                        <XAxis type="number" tick={{ fontSize: 11 }} />
+                        <YAxis dataKey="name" type="category" tick={{ fontSize: 11 }} width={80} />
+                        <Tooltip />
+                        <Legend />
+                        <Bar dataKey={fmtDate(sorted[1].date)} fill="#93c5fd" radius={[0, 4, 4, 0]} />
+                        <Bar dataKey={fmtDate(sorted[0].date)} fill="#3b82f6" radius={[0, 4, 4, 0]} />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
                 </div>
               );
             })()}

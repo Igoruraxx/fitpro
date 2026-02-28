@@ -517,3 +517,11 @@
 - [x] Seletor de aluno ocupa toda a largura no mobile (flex-1)
 - [x] Botões de ação (Comparar, Apagar Selecionadas, Apagar por Data) em coluna abaixo do seletor
 - [x] Layout mobile-first sem botões horizontais
+
+
+## Perimetria Comparativa (v25)
+- [x] Adicionar campos de perimetria ao schema (cintura, braço, panturrilha, tórax)
+- [x] Migrar banco de dados com novos campos
+- [x] Atualizar formulário de bioimpedância com novos campos
+- [x] Criar visualização comparativa lado a lado com cards e gráfico
+- [x] Exibir evolução de medidas entre exames com diferença em cm
