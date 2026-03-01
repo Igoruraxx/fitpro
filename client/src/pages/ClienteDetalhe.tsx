@@ -573,13 +573,13 @@ export default function ClienteDetalhe() {
       {/* Tab: Sessões */}
       {activeTab === "sessions" && (
         <div className="space-y-2">
-          <div className="flex items-center justify-between mb-3">
+          <div className="flex flex-col gap-2 mb-3 sm:flex-row sm:items-center sm:justify-between">
             <span className="text-sm text-muted-foreground">{totalSessions} sessão{totalSessions !== 1 ? "ões" : ""} · {completedSessions} concluída{completedSessions !== 1 ? "s" : ""}</span>
-            <div className="flex gap-2">
+            <div className="flex gap-2 flex-wrap">
               <Button
                 size="sm"
                 variant="outline"
-                className="text-xs h-7 text-red-600 hover:text-red-700 hover:bg-red-50"
+                className="text-xs h-7 text-red-600 hover:text-red-700 hover:bg-red-50 flex-1 sm:flex-none"
                 onClick={() => setShowDeleteFutureDialog(true)}
               >
                 <Trash2 className="h-3 w-3 mr-1" />
@@ -588,7 +588,7 @@ export default function ClienteDetalhe() {
               <Button
                 size="sm"
                 variant="outline"
-                className="text-xs h-7 text-red-700 hover:text-red-800 hover:bg-red-100 border-red-300"
+                className="text-xs h-7 text-red-700 hover:text-red-800 hover:bg-red-100 border-red-300 flex-1 sm:flex-none"
                 onClick={() => setShowDeleteAllDialog(true)}
               >
                 <Trash2 className="h-3 w-3 mr-1" />
