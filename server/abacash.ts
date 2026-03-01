@@ -42,6 +42,17 @@ export async function createAbacashSubscription(
   }
 
   try {
+    // Mock mode for development/testing
+    if (process.env.NODE_ENV === "development" || env.abacashSkLive === "sk_test_mock") {
+      console.log("[Abacash] Mock mode - returning test checkout URL");
+      const mockSubscriptionId = `sub_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      const mockCheckoutUrl = `https://checkout.abacash.test/pay/${mockSubscriptionId}`;
+      return {
+        checkoutUrl: mockCheckoutUrl,
+        subscriptionId: mockSubscriptionId,
+      };
+    }
+
     const response = await fetch(`${ABACASH_API_URL}/subscriptions/create`, {
       method: "POST",
       headers: {

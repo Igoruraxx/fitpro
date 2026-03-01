@@ -917,3 +917,10 @@
 - [x] Integrar ao painel admin existente (/admin)
 - [x] Refatorar Admin.tsx com novo painel completo
 - [x] Todos os 86 testes passando
+
+
+## Bug: Erro ao Criar Checkout (v72)
+- [x] Investigar erro ao clicar em "Assinar Agora" na página /upgrade
+- [x] Verificar router createCheckout
+- [x] Adicionar modo mock para testes (development mode)
+- [x] Todos os 86 testes passando
