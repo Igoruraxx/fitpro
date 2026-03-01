@@ -1,0 +1,9 @@
+{
+  "query": "ALTER TABLE users ADD COLUMN abacatepayCustomerId VARCHAR(255);\nALTER TABLE users ADD COLUMN abacatepaySubscriptionId VARCHAR(255);\nALTER TABLE users ADD COLUMN planStartAt TIMESTAMP NULL;\nALTER TABLE users ADD COLUMN planExpiresAt TIMESTAMP NULL;\nALTER TABLE users ADD COLUMN planGrantedBy INT NULL;\nALTER TABLE users ADD COLUMN lastPaymentId VARCHAR(255) NULL;\nALTER TABLE users ADD COLUMN lastPaymentDate TIMESTAMP NULL;\nALTER TABLE users ADD COLUMN lastPaymentAmount DECIMAL(10,2) NULL;\nALTER TABLE users ADD UNIQUE KEY uk_abacatepayCustomerId (abacatepayCustomerId);\nALTER TABLE users ADD UNIQUE KEY uk_abacatepaySubscriptionId (abacatepaySubscriptionId);\nALTER TABLE users ADD CONSTRAINT fk_planGrantedBy FOREIGN KEY (planGrantedBy) REFERENCES users(id) ON DELETE SET NULL;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 4PiQ8e52qW4Xjb6.root --database 5UbJ997E6SHYZid72bThxF --execute ALTER TABLE users ADD COLUMN abacatepayCustomerId VARCHAR(255);\nALTER TABLE users ADD COLUMN abacatepaySubscriptionId VARCHAR(255);\nALTER TABLE users ADD COLUMN planStartAt TIMESTAMP NULL;\nALTER TABLE users ADD COLUMN planExpiresAt TIMESTAMP NULL;\nALTER TABLE users ADD COLUMN planGrantedBy INT NULL;\nALTER TABLE users ADD COLUMN lastPaymentId VARCHAR(255) NULL;\nALTER TABLE users ADD COLUMN lastPaymentDate TIMESTAMP NULL;\nALTER TABLE users ADD COLUMN lastPaymentAmount DECIMAL(10,2) NULL;\nALTER TABLE users ADD UNIQUE KEY uk_abacatepayCustomerId (abacatepayCustomerId);\nALTER TABLE users ADD UNIQUE KEY uk_abacatepaySubscriptionId (abacatepaySubscriptionId);\nALTER TABLE users ADD CONSTRAINT fk_planGrantedBy FOREIGN KEY (planGrantedBy) REFERENCES users(id) ON DELETE SET NULL;",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 3668
+}

@@ -8,6 +8,13 @@
       "when": 1772309229922,
       "tag": "0000_supreme_mephistopheles",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1772406218631,
+      "tag": "0001_uneven_prodigy",
+      "breakpoints": true
     }
   ]
 }

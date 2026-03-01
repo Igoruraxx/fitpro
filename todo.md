@@ -924,3 +924,30 @@
 - [x] Verificar router createCheckout
 - [x] Adicionar modo mock para testes (development mode)
 - [x] Todos os 86 testes passando
+
+
+## Refatoração Painel Admin com AbacatePay (v73)
+- [ ] Atualizar schema: plan_type, plan_origin, abacatepay_customer_id, plan_expires_at, plan_granted_by
+- [ ] Criar helpers AbacatePay (checkout, status, webhook verification)
+- [ ] Criar routers tRPC: listPersonals avançado, updatePlanManual, getPaymentHistory
+- [ ] Implementar webhook handler /api/webhooks/abacatepay
+- [ ] Criar tabela com colunas: nome, email, clientes, plano, origem, expiração, ações
+- [ ] Implementar filtros: plano, origem, busca, ordenação
+- [ ] Badges com cores: verde (FREE), azul (PRO-Pagamento), roxo (PRO-Cortesia), laranja (PRO-Trial)
+- [ ] Ações: ver detalhes, editar plano, cancelar trial, histórico de pagamentos
+- [ ] Cron job para expiração automática de trials
+- [ ] Logging de mudanças de plano
+- [ ] Testes e validação
+
+
+## Refatoração Painel Admin com AbacatePay (v73)
+- [x] Atualizar schema com campos abacatepay_customer_id, abacatepay_subscription_id, plan_start_at, plan_expires_at
+- [x] Criar skill reutilizável abacatepay-saas-integration com documentação completa
+- [x] Implementar helper AbacatePay (checkout, webhook verification, status queries)
+- [x] Integrar webhook handler AbacatePay no servidor (/api/webhooks/abacatepay)
+- [x] Criar componente PersonalsTable com filtros, busca, badges coloridas
+- [x] Criar página AdminAbacatepay com ações (cortesia, cancelar, trial)
+- [ ] Criar routers tRPC admin avançados (listPersonals, convertToProCourtesy, etc)
+- [ ] Implementar cron job para expiração automática de trials
+- [ ] Criar testes para webhooks e routers admin
+- [ ] Integrar logging de mudanças de plano

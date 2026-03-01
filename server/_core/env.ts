@@ -14,4 +14,6 @@ export const ENV = {
   supabaseDbUrl: process.env.SUPABASE_DB_URL ?? "",
   // Abacash
   abacashSkLive: process.env.ABACASH_SK_LIVE ?? "",
+  // AbacatePay
+  abacatepaySkLive: process.env.ABACATEPAY_SK_LIVE ?? "",
 };
