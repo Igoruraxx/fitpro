@@ -951,3 +951,19 @@
 - [ ] Implementar cron job para expiração automática de trials
 - [ ] Criar testes para webhooks e routers admin
 - [ ] Integrar logging de mudanças de plano
+
+
+## Cron Job: Downgrade de Trials Expirados (v74)
+- [x] Criar job que roda diariamente (00:00 UTC)
+- [x] Buscar todos os usuários com plano PRO, origem TRIAL e data expiração <= hoje
+- [x] Fazer downgrade para FREE (limpar proSource, proExpiresAt, etc)
+- [x] Registrar log de downgrade automático
+- [x] Criar testes para o job (5 testes criados)
+- [x] Job integrado no sistema de jobs existente
+
+
+## Bug: Erro de Query SQL no Login (v75)
+- [x] Investigar erro: campo subscriptionStatus não existe no schema
+- [x] Remover subscriptionStatus: "trial" do createUser em db.ts
+- [x] Login deve funcionar agora com apenas subscriptionPlan: "free"
+- [x] Todos os 86 testes passando

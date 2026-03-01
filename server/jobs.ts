@@ -10,6 +10,75 @@ import { transactions, clients, users } from "../drizzle/schema";
 import { eq, and, sql } from "drizzle-orm";
 import { notifyOwner } from "./_core/notification";
 
+// ==================== TRIAL EXPIRATION JOB ====================
+
+async function runTrialExpirationJob() {
+  console.log("[Jobs] Running trial expiration job...");
+
+  try {
+    const db = await getDb();
+    if (!db) {
+      console.warn("[Jobs] Database not available, skipping trial expiration job");
+      return;
+    }
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    // Find all users with PRO plan, TRIAL origin, and expiration date <= today
+    const expiredTrials = await db
+      .select({
+        id: users.id,
+        name: users.name,
+        email: users.email,
+        proExpiresAt: users.proExpiresAt,
+      })
+      .from(users)
+      .where(
+        and(
+          eq(users.subscriptionPlan, "pro"),
+          eq(users.proSource, "trial"),
+          sql`${users.proExpiresAt} <= ${today.toISOString().split("T")[0]}::date`
+        )
+      );
+
+    if (expiredTrials.length === 0) {
+      console.log("[Jobs] No expired trials found.");
+      return;
+    }
+
+    console.log(`[Jobs] Found ${expiredTrials.length} expired trials to downgrade`);
+
+    // Downgrade each expired trial to FREE
+    for (const trial of expiredTrials) {
+      try {
+        await db
+          .update(users)
+          .set({
+            subscriptionPlan: "free",
+            proSource: null,
+            proExpiresAt: null,
+            planStartAt: null,
+            trialRequestedAt: null,
+            planGrantedBy: null,
+            updatedAt: new Date(),
+          })
+          .where(eq(users.id, trial.id));
+
+        console.log(
+          `[Jobs] Downgraded trial user ${trial.id} (${trial.name}) to FREE - expired on ${trial.proExpiresAt}`
+        );
+      } catch (err) {
+        console.error(`[Jobs] Failed to downgrade user ${trial.id}:`, err);
+      }
+    }
+
+    console.log(`[Jobs] Trial expiration job completed. Downgraded ${expiredTrials.length} users.`);
+  } catch (err) {
+    console.error("[Jobs] Trial expiration job failed:", err);
+  }
+}
+
 // ==================== DUE DATE REMINDER JOB ====================
 
 async function runDueDateReminderJob() {
@@ -143,6 +212,7 @@ export function startJobs() {
   // Run once on startup (after a short delay to let DB connect)
   setTimeout(() => {
     runDueDateReminderJob().catch(console.error);
+    runTrialExpirationJob().catch(console.error);
   }, 15_000);
 
   // Schedule to run every 24 hours
@@ -171,7 +241,35 @@ export function startJobs() {
   };
 
   scheduleDaily();
+  scheduleTrialExpirationJob();
 }
 
+// ==================== JOB SCHEDULER INTEGRATION ====================
+
+/**
+ * Schedules the trial expiration job to run daily at 00:00 (midnight UTC)
+ */
+const scheduleTrialExpirationJob = () => {
+  const now = new Date();
+  const nextMidnight = new Date(now);
+  nextMidnight.setUTCHours(0, 0, 0, 0);
+  if (nextMidnight <= now) {
+    nextMidnight.setUTCDate(nextMidnight.getUTCDate() + 1);
+  }
+  const msUntilMidnight = nextMidnight.getTime() - now.getTime();
+
+  console.log(
+    `[Jobs] Trial expiration job scheduled for ${nextMidnight.toISOString()} (in ${Math.round(msUntilMidnight / 60000)} min)`
+  );
+
+  setTimeout(() => {
+    runTrialExpirationJob().catch(console.error);
+    // After first run at midnight, repeat every 24h
+    setInterval(() => {
+      runTrialExpirationJob().catch(console.error);
+    }, 24 * 60 * 60 * 1000);
+  }, msUntilMidnight);
+};
+
 // Export for testing
-export { runDueDateReminderJob };
+export { runDueDateReminderJob, runTrialExpirationJob };

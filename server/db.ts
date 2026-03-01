@@ -815,7 +815,6 @@ export async function createUser(email: string, passwordHash: string, name?: str
     loginMethod: "email",
     role: "user",
     subscriptionPlan: "free",
-    subscriptionStatus: "trial",
     maxClients: 5,
   }).returning();
 
