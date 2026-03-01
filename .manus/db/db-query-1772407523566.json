@@ -1,0 +1,170 @@
+{
+  "query": "SELECT column_name, data_type, is_nullable\nFROM information_schema.columns\nWHERE table_name = 'users'\nORDER BY ordinal_position;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 4PiQ8e52qW4Xjb6.root --database 5UbJ997E6SHYZid72bThxF --execute SELECT column_name, data_type, is_nullable\nFROM information_schema.columns\nWHERE table_name = 'users'\nORDER BY ordinal_position;",
+  "rows": [
+    {
+      "column_name": "id",
+      "data_type": "int",
+      "is_nullable": "NO"
+    },
+    {
+      "column_name": "openId",
+      "data_type": "varchar",
+      "is_nullable": "NO"
+    },
+    {
+      "column_name": "name",
+      "data_type": "text",
+      "is_nullable": "YES"
+    },
+    {
+      "column_name": "email",
+      "data_type": "varchar",
+      "is_nullable": "YES"
+    },
+    {
+      "column_name": "loginMethod",
+      "data_type": "varchar",
+      "is_nullable": "YES"
+    },
+    {
+      "column_name": "role",
+      "data_type": "enum",
+      "is_nullable": "NO"
+    },
+    {
+      "column_name": "createdAt",
+      "data_type": "timestamp",
+      "is_nullable": "NO"
+    },
+    {
+      "column_name": "updatedAt",
+      "data_type": "timestamp",
+      "is_nullable": "NO"
+    },
+    {
+      "column_name": "lastSignedIn",
+      "data_type": "timestamp",
+      "is_nullable": "NO"
+    },
+    {
+      "column_name": "phone",
+      "data_type": "varchar",
+      "is_nullable": "YES"
+    },
+    {
+      "column_name": "photoUrl",
+      "data_type": "text",
+      "is_nullable": "YES"
+    },
+    {
+      "column_name": "specialties",
+      "data_type": "text",
+      "is_nullable": "YES"
+    },
+    {
+      "column_name": "bio",
+      "data_type": "text",
+      "is_nullable": "YES"
+    },
+    {
+      "column_name": "cref",
+      "data_type": "varchar",
+      "is_nullable": "YES"
+    },
+    {
+      "column_name": "subscriptionPlan",
+      "data_type": "enum",
+      "is_nullable": "NO"
+    },
+    {
+      "column_name": "subscriptionStatus",
+      "data_type": "enum",
+      "is_nullable": "NO"
+    },
+    {
+      "column_name": "subscriptionExpiresAt",
+      "data_type": "timestamp",
+      "is_nullable": "YES"
+    },
+    {
+      "column_name": "maxClients",
+      "data_type": "int",
+      "is_nullable": "NO"
+    },
+    {
+      "column_name": "passwordHash",
+      "data_type": "text",
+      "is_nullable": "YES"
+    },
+    {
+      "column_name": "emailVerified",
+      "data_type": "tinyint",
+      "is_nullable": "YES"
+    },
+    {
+      "column_name": "googleId",
+      "data_type": "varchar",
+      "is_nullable": "YES"
+    },
+    {
+      "column_name": "proSource",
+      "data_type": "varchar",
+      "is_nullable": "YES"
+    },
+    {
+      "column_name": "proExpiresAt",
+      "data_type": "timestamp",
+      "is_nullable": "YES"
+    },
+    {
+      "column_name": "trialRequestedAt",
+      "data_type": "timestamp",
+      "is_nullable": "YES"
+    },
+    {
+      "column_name": "abacatepayCustomerId",
+      "data_type": "varchar",
+      "is_nullable": "YES"
+    },
+    {
+      "column_name": "abacatepaySubscriptionId",
+      "data_type": "varchar",
+      "is_nullable": "YES"
+    },
+    {
+      "column_name": "planStartAt",
+      "data_type": "timestamp",
+      "is_nullable": "YES"
+    },
+    {
+      "column_name": "planExpiresAt",
+      "data_type": "timestamp",
+      "is_nullable": "YES"
+    },
+    {
+      "column_name": "planGrantedBy",
+      "data_type": "int",
+      "is_nullable": "YES"
+    },
+    {
+      "column_name": "lastPaymentId",
+      "data_type": "varchar",
+      "is_nullable": "YES"
+    },
+    {
+      "column_name": "lastPaymentDate",
+      "data_type": "timestamp",
+      "is_nullable": "YES"
+    },
+    {
+      "column_name": "lastPaymentAmount",
+      "data_type": "decimal",
+      "is_nullable": "YES"
+    }
+  ],
+  "messages": [],
+  "stdout": "column_name\tdata_type\tis_nullable\nid\tint\tNO\nopenId\tvarchar\tNO\nname\ttext\tYES\nemail\tvarchar\tYES\nloginMethod\tvarchar\tYES\nrole\tenum\tNO\ncreatedAt\ttimestamp\tNO\nupdatedAt\ttimestamp\tNO\nlastSignedIn\ttimestamp\tNO\nphone\tvarchar\tYES\nphotoUrl\ttext\tYES\nspecialties\ttext\tYES\nbio\ttext\tYES\ncref\tvarchar\tYES\nsubscriptionPlan\tenum\tNO\nsubscriptionStatus\tenum\tNO\nsubscriptionExpiresAt\ttimestamp\tYES\nmaxClients\tint\tNO\npasswordHash\ttext\tYES\nemailVerified\ttinyint\tYES\ngoogleId\tvarchar\tYES\nproSource\tvarchar\tYES\nproExpiresAt\ttimestamp\tYES\ntrialRequestedAt\ttimestamp\tYES\nabacatepayCustomerId\tvarchar\tYES\nabacatepaySubscriptionId\tvarchar\tYES\nplanStartAt\ttimestamp\tYES\nplanExpiresAt\ttimestamp\tYES\nplanGrantedBy\tint\tYES\nlastPaymentId\tvarchar\tYES\nlastPaymentDate\ttimestamp\tYES\nlastPaymentAmount\tdecimal\tYES\n",
+  "stderr": "",
+  "execution_time_ms": 971
+}

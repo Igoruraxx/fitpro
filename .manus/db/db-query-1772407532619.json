@@ -1,0 +1,106 @@
+{
+  "query": "SELECT column_name FROM information_schema.columns WHERE table_name = 'users' ORDER BY ordinal_position;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 4PiQ8e52qW4Xjb6.root --database 5UbJ997E6SHYZid72bThxF --execute SELECT column_name FROM information_schema.columns WHERE table_name = 'users' ORDER BY ordinal_position;",
+  "rows": [
+    {
+      "column_name": "id"
+    },
+    {
+      "column_name": "openId"
+    },
+    {
+      "column_name": "name"
+    },
+    {
+      "column_name": "email"
+    },
+    {
+      "column_name": "loginMethod"
+    },
+    {
+      "column_name": "role"
+    },
+    {
+      "column_name": "createdAt"
+    },
+    {
+      "column_name": "updatedAt"
+    },
+    {
+      "column_name": "lastSignedIn"
+    },
+    {
+      "column_name": "phone"
+    },
+    {
+      "column_name": "photoUrl"
+    },
+    {
+      "column_name": "specialties"
+    },
+    {
+      "column_name": "bio"
+    },
+    {
+      "column_name": "cref"
+    },
+    {
+      "column_name": "subscriptionPlan"
+    },
+    {
+      "column_name": "subscriptionStatus"
+    },
+    {
+      "column_name": "subscriptionExpiresAt"
+    },
+    {
+      "column_name": "maxClients"
+    },
+    {
+      "column_name": "passwordHash"
+    },
+    {
+      "column_name": "emailVerified"
+    },
+    {
+      "column_name": "googleId"
+    },
+    {
+      "column_name": "proSource"
+    },
+    {
+      "column_name": "proExpiresAt"
+    },
+    {
+      "column_name": "trialRequestedAt"
+    },
+    {
+      "column_name": "abacatepayCustomerId"
+    },
+    {
+      "column_name": "abacatepaySubscriptionId"
+    },
+    {
+      "column_name": "planStartAt"
+    },
+    {
+      "column_name": "planExpiresAt"
+    },
+    {
+      "column_name": "planGrantedBy"
+    },
+    {
+      "column_name": "lastPaymentId"
+    },
+    {
+      "column_name": "lastPaymentDate"
+    },
+    {
+      "column_name": "lastPaymentAmount"
+    }
+  ],
+  "messages": [],
+  "stdout": "column_name\nid\nopenId\nname\nemail\nloginMethod\nrole\ncreatedAt\nupdatedAt\nlastSignedIn\nphone\nphotoUrl\nspecialties\nbio\ncref\nsubscriptionPlan\nsubscriptionStatus\nsubscriptionExpiresAt\nmaxClients\npasswordHash\nemailVerified\ngoogleId\nproSource\nproExpiresAt\ntrialRequestedAt\nabacatepayCustomerId\nabacatepaySubscriptionId\nplanStartAt\nplanExpiresAt\nplanGrantedBy\nlastPaymentId\nlastPaymentDate\nlastPaymentAmount\n",
+  "stderr": "",
+  "execution_time_ms": 348
+}

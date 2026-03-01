@@ -977,3 +977,9 @@
 - [ ] Integrar ao appRouter
 - [ ] Criar testes para procedures
 - [ ] Atualizar Admin.tsx para usar routers
+
+## Bug Crítico: Erro de Login (v77)
+- [x] Investigar end-to-end o erro "Failed query" no login
+- [x] Causa raiz: 8 colunas AbacatePay existiam no schema TypeScript mas não no banco Supabase
+- [x] Aplicar migration via Supabase MCP para adicionar colunas faltantes
+- [x] Login testado via curl: success: true, usuário autenticado
