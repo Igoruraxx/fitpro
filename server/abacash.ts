@@ -37,13 +37,9 @@ export interface AbacashWebhookPayload {
 export async function createAbacashSubscription(
   payload: AbacashSubscriptionPayload
 ): Promise<{ checkoutUrl: string; subscriptionId: string }> {
-  if (!env.abacashSkLive) {
-    throw new Error("ABACASH_SK_LIVE not configured");
-  }
-
   try {
-    // Mock mode for development/testing
-    if (process.env.NODE_ENV === "development" || env.abacashSkLive === "sk_test_mock") {
+    // Mock mode for development/testing - works even without API key
+    if (process.env.NODE_ENV === "development" || !env.abacashSkLive || env.abacashSkLive === "sk_test_mock") {
       console.log("[Abacash] Mock mode - returning test checkout URL");
       const mockSubscriptionId = `sub_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
       const mockCheckoutUrl = `https://checkout.abacash.test/pay/${mockSubscriptionId}`;
@@ -51,6 +47,11 @@ export async function createAbacashSubscription(
         checkoutUrl: mockCheckoutUrl,
         subscriptionId: mockSubscriptionId,
       };
+    }
+
+    // Production mode - requires API key
+    if (!env.abacashSkLive) {
+      throw new Error("ABACASH_SK_LIVE not configured for production");
     }
 
     const response = await fetch(`${ABACASH_API_URL}/subscriptions/create`, {
