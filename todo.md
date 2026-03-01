@@ -904,3 +904,16 @@
 - [x] Permitir recriar agendamentos sem erro quando pacote já tem sessões
 - [x] Remover validação restritiva que impedia recriar agendamentos
 - [x] Simplificar retorno para apenas informar quantas sessões foram criadas
+
+
+## Painel Admin de Personals (v71)
+- [x] Criar routers tRPC admin: listPersonals, convertToProCourtesy, cancelProSubscription, impersonatePersonal
+- [x] Criar componente AdminPersonalsTable com colunas: nome, clientes, plano, origem, expiração, status
+- [x] Implementar filtros: por plano (free/pro), por origem (pagamento/cortesia/trial)
+- [x] Implementar busca por nome de personal
+- [x] Ação: converter free→pro (cortesia)
+- [x] Ação: cancelar assinatura pro
+- [x] Ação: impersonar personal (admin vira personal temporariamente)
+- [x] Integrar ao painel admin existente (/admin)
+- [x] Refatorar Admin.tsx com novo painel completo
+- [x] Todos os 86 testes passando

@@ -4,6 +4,7 @@ import { systemRouter } from "./_core/systemRouter";
 import { publicProcedure, protectedProcedure, adminProcedure, router } from "./_core/trpc";
 import { authRouter } from "./routers/auth";
 import { paymentsRouter } from "./routers/payments";
+import { adminRouter } from "./routers/admin";
 import { z } from "zod";
 import {
   getClientsByTrainer, getClientById, createClient, updateClient, deleteClient, countClientsByTrainer,
@@ -79,6 +80,7 @@ function generateRecurringDates(
 export const appRouter = router({
   system: systemRouter,
   payments: paymentsRouter,
+  admin: adminRouter,
 
   // ==================== BIOIMPEDANCE ====================
   bioimpedance: router({
@@ -765,125 +767,7 @@ export const appRouter = router({
     }),
   }),
 
-  // ==================== ADMIN ====================
-  admin: router({
-    stats: adminProcedure.query(async () => {
-      return getAdminDashboardStats();
-    }),
-    trainers: adminProcedure.query(async () => {
-      return getAllTrainers();
-    }),
-    updateTrainer: adminProcedure.input(z.object({
-      id: z.number(),
-      subscriptionPlan: z.enum(["free", "basic", "pro", "premium"]).optional(),
-      subscriptionStatus: z.enum(["active", "inactive", "trial", "cancelled"]).optional(),
-      maxClients: z.number().optional(),
-    })).mutation(async ({ input }) => {
-      const { id, ...data } = input;
-      await updateUserProfile(id, data);
-      return { success: true };
-    }),
-
-    // Update trainer plan (free/pro)
-    updatePlan: adminProcedure.input(z.object({
-      userId: z.number(),
-      plan: z.enum(['free', 'pro']),
-    })).mutation(async ({ input }) => {
-      await updateUserPlan(input.userId, input.plan);
-      return { success: true };
-    }),
-
-    // Impersonate a trainer (admin only)
-    // Returns a new JWT with impersonatingUserId set
-    impersonate: adminProcedure.input(z.object({
-      targetUserId: z.number(),
-    })).mutation(async ({ input, ctx }) => {
-      const { SignJWT } = await import('jose');
-      const { ENV } = await import('./_core/env');
-      const { COOKIE_NAME, ONE_YEAR_MS } = await import('@shared/const');
-      const { getSessionCookieOptions } = await import('./_core/cookies');
-
-      const secretKey = new TextEncoder().encode(ENV.cookieSecret);
-      const issuedAt = Date.now();
-      const expiresInMs = ONE_YEAR_MS;
-      const expirationSeconds = Math.floor((issuedAt + expiresInMs) / 1000);
-
-      const token = await new SignJWT({
-        userId: ctx.user.id,
-        impersonatingUserId: input.targetUserId,
-      })
-        .setProtectedHeader({ alg: 'HS256', typ: 'JWT' })
-        .setExpirationTime(expirationSeconds)
-        .sign(secretKey);
-
-      const cookieOptions = getSessionCookieOptions(ctx.req);
-      ctx.res.cookie(COOKIE_NAME, token, { ...cookieOptions, maxAge: ONE_YEAR_MS });
-      return { success: true };
-    }),
-
-    // Stop impersonating — restore original admin session
-    stopImpersonating: protectedProcedure.mutation(async ({ ctx }) => {
-      if (!ctx.adminUser) {
-        return { success: false, message: 'Não está em modo de impersonação' };
-      }
-      const { SignJWT } = await import('jose');
-      const { ENV } = await import('./_core/env');
-      const { COOKIE_NAME, ONE_YEAR_MS } = await import('@shared/const');
-      const { getSessionCookieOptions } = await import('./_core/cookies');
-
-      const secretKey = new TextEncoder().encode(ENV.cookieSecret);
-      const issuedAt = Date.now();
-      const expiresInMs = ONE_YEAR_MS;
-      const expirationSeconds = Math.floor((issuedAt + expiresInMs) / 1000);
-
-      // Issue token for the real admin (no impersonating)
-      const token = await new SignJWT({ userId: ctx.adminUser.id })
-        .setProtectedHeader({ alg: 'HS256', typ: 'JWT' })
-        .setExpirationTime(expirationSeconds)
-        .sign(secretKey);
-
-      const cookieOptions = getSessionCookieOptions(ctx.req);
-      ctx.res.cookie(COOKIE_NAME, token, { ...cookieOptions, maxAge: ONE_YEAR_MS });
-      return { success: true };
-    }),
-
-    // Check impersonation status
-    impersonationStatus: protectedProcedure.query(async ({ ctx }) => {
-      return {
-        isImpersonating: !!ctx.adminUser,
-        adminUser: ctx.adminUser ? {
-          id: ctx.adminUser.id,
-          name: ctx.adminUser.name,
-          email: ctx.adminUser.email,
-        } : null,
-        targetUser: ctx.adminUser ? {
-          id: ctx.user!.id,
-          name: ctx.user!.name,
-          email: ctx.user!.email,
-        } : null,
-      };
-     }),
-
-    // Grant Pro as courtesy
-    grantCourtesy: adminProcedure.input(z.object({
-      userId: z.number(),
-      daysOfCourt: z.number().min(1).max(365),
-    })).mutation(async ({ input, ctx }) => {
-      if (!ctx.user) throw new Error('Nao autenticado');
-      
-      // Conceder Pro como cortesia
-      const now = new Date();
-      const expiresAt = new Date(now.getTime() + input.daysOfCourt * 24 * 60 * 60 * 1000);
-
-      await updateUserProfile(input.userId, {
-        subscriptionPlan: 'pro',
-        proSource: 'courtesy',
-        proExpiresAt: expiresAt,
-      } as any);
-
-      return { success: true, expiresAt, daysGranted: input.daysOfCourt };
-    }),
-  }),
+  // ==================== ADMIN (via adminRouter) ====================
   users: router({
     requestTrial: protectedProcedure.mutation(async ({ ctx }) => {
       if (!ctx.user) throw new Error('Não autenticado');

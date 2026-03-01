@@ -1,14 +1,15 @@
 import { useAuth } from "@/_core/hooks/useAuth";
-import { trpc } from "@/lib/trpc";
-import { useState } from "react";
+import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { trpc } from "@/lib/trpc";
+import { toast } from "sonner";
+import { useState } from "react";
+import {
+  Crown, Shield, Search, Filter, Loader2, MoreVertical, Eye, Trash2,
+  Users, Calendar, TrendingUp, AlertCircle, CheckCircle2,
+} from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -16,86 +17,62 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
-  Shield, Users, Calendar, Crown, Edit, ArrowLeft, Loader2,
-  Eye, UserCheck, AlertCircle, CheckCircle2, Zap, Lock, MoreVertical
-} from "lucide-react";
-import { toast } from "sonner";
-import { useLocation } from "wouter";
-import { format } from "date-fns";
-import { ptBR } from "date-fns/locale";
-
-const planLabels: Record<string, { label: string; color: string; icon: React.ReactNode }> = {
-  free:    { label: "Free",         color: "bg-gray-500/20 text-gray-400 border-gray-500/30",    icon: <Lock className="h-3 w-3" /> },
-  basic:   { label: "Básico",       color: "bg-blue-500/20 text-blue-400 border-blue-500/30",    icon: <Zap className="h-3 w-3" /> },
-  pro:     { label: "Pro",          color: "bg-orange-500/20 text-orange-400 border-orange-500/30", icon: <Crown className="h-3 w-3" /> },
-  premium: { label: "Premium",      color: "bg-yellow-500/20 text-yellow-400 border-yellow-500/30", icon: <Crown className="h-3 w-3" /> },
-};
-
-const statusColors: Record<string, string> = {
-  active:    "bg-green-500/20 text-green-400 border-green-500/30",
-  inactive:  "bg-red-500/20 text-red-400 border-red-500/30",
-  trial:     "bg-yellow-500/20 text-yellow-400 border-yellow-500/30",
-  cancelled: "bg-red-500/20 text-red-400 border-red-500/30",
-};
-
-const statusLabels: Record<string, string> = {
-  active: "Ativo", inactive: "Inativo", trial: "Trial", cancelled: "Cancelado",
-};
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 export default function Admin() {
   const { user } = useAuth();
   const [, setLocation] = useLocation();
-  const [editingTrainer, setEditingTrainer] = useState<any>(null);
-  const [editPlan, setEditPlan] = useState("");
-  const [editStatus, setEditStatus] = useState("");
-  const [editMaxClients, setEditMaxClients] = useState("");
-  const [searchQuery, setSearchQuery] = useState("");
-  const [courtesyTrainer, setCourtesyTrainer] = useState<any>(null);
-  const [courtesyDays, setCourtesyDays] = useState("30");
+  const [search, setSearch] = useState("");
   const [planFilter, setPlanFilter] = useState<"all" | "free" | "pro">("all");
+  const [originFilter, setOriginFilter] = useState<"all" | "payment" | "courtesy" | "trial">("all");
+  const [selectedPersonal, setSelectedPersonal] = useState<any>(null);
+  const [showActionDialog, setShowActionDialog] = useState<"convert" | "cancel" | null>(null);
+  const [courtesyDays, setCourtesyDays] = useState("365");
 
-  const utils = trpc.useUtils();
-
-  const { data: stats, isLoading: statsLoading } = trpc.admin.stats.useQuery(undefined, { retry: false });
-  const { data: trainers = [], refetch, isLoading: trainersLoading } = trpc.admin.trainers.useQuery(undefined, { retry: false });
-  const { data: impStatus } = trpc.admin.impersonationStatus.useQuery();
-
-  const updateMutation = trpc.admin.updateTrainer.useMutation({
-    onSuccess: () => { toast.success("Personal atualizado!"); refetch(); setEditingTrainer(null); },
-    onError: (e) => toast.error(e.message),
+  const personalsQuery = trpc.admin.listPersonals.useQuery({
+    search,
+    planFilter,
+    originFilter,
   });
 
-  const updatePlanMutation = trpc.admin.updatePlan.useMutation({
-    onSuccess: () => { toast.success("Plano atualizado!"); refetch(); },
-    onError: (e) => toast.error(e.message),
-  });
-
-  const impersonateMutation = trpc.admin.impersonate.useMutation({
-    onSuccess: () => {
-      toast.success("Modo de visualização ativado! Redirecionando...");
-      utils.invalidate();
-      setTimeout(() => setLocation("/"), 800);
-    },
-    onError: (e) => toast.error(e.message),
-  });
-
-  const stopImpersonatingMutation = trpc.admin.stopImpersonating.useMutation({
-    onSuccess: () => {
-      toast.success("Voltando ao painel admin...");
-      utils.invalidate();
-      setTimeout(() => setLocation("/admin"), 800);
-    },
-    onError: (e) => toast.error(e.message),
-  });
-
-  const grantCourtesyMutation = trpc.admin.grantCourtesy.useMutation({
+  const convertToProMutation = trpc.admin.convertToProCourtesy.useMutation({
     onSuccess: (data) => {
-      toast.success(`Cortesia concedida por ${data.daysGranted} dias!`);
-      refetch();
-      setCourtesyTrainer(null);
-      setCourtesyDays("30");
+      toast.success(data.message);
+      personalsQuery.refetch();
+      setShowActionDialog(null);
+      setSelectedPersonal(null);
     },
-    onError: (e) => toast.error(e.message),
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const cancelProMutation = trpc.admin.cancelProSubscription.useMutation({
+    onSuccess: (data) => {
+      toast.success(data.message);
+      personalsQuery.refetch();
+      setShowActionDialog(null);
+      setSelectedPersonal(null);
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const impersonateMutation = trpc.admin.impersonatePersonal.useMutation({
+    onSuccess: (data) => {
+      toast.success(data.message);
+      setTimeout(() => setLocation("/dashboard"), 800);
+    },
+    onError: (e: any) => toast.error(e.message),
   });
 
   if (!user || user.role !== "admin") {
@@ -103,394 +80,317 @@ export default function Admin() {
       <div className="flex flex-col items-center justify-center py-20 text-center">
         <Shield className="h-12 w-12 text-muted-foreground/30 mb-4" />
         <h3 className="text-lg font-medium text-muted-foreground">Acesso Restrito</h3>
-        <p className="text-sm text-muted-foreground/70 mt-1">Apenas administradores podem acessar esta página.</p>
-        <Button variant="outline" className="mt-4" onClick={() => setLocation("/")}>Voltar</Button>
+        <p className="text-sm text-muted-foreground mt-2">Apenas administradores podem acessar este painel</p>
       </div>
     );
   }
 
-  const openEdit = (trainer: any) => {
-    setEditingTrainer(trainer);
-    setEditPlan(trainer.subscriptionPlan);
-    setEditStatus(trainer.subscriptionStatus);
-    setEditMaxClients(String(trainer.maxClients));
+  const personals = personalsQuery.data || [];
+  const planColors: Record<string, string> = {
+    free: "bg-green-500/10 text-green-400 border-green-500/20",
+    pro: "bg-orange-500/10 text-orange-400 border-orange-500/20",
   };
 
-  const handleSave = () => {
-    if (!editingTrainer) return;
-    updateMutation.mutate({
-      id: editingTrainer.id,
-      subscriptionPlan: editPlan as any,
-      subscriptionStatus: editStatus as any,
-      maxClients: parseInt(editMaxClients) || 5,
-    });
+  const originLabels = {
+    payment: "Pagamento",
+    courtesy: "Cortesia",
+    trial: "Trial 7 dias",
   };
-
-  const filteredTrainers = trainers.filter((t: any) => {
-    const matchesSearch = !searchQuery ||
-      t.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      t.email?.toLowerCase().includes(searchQuery.toLowerCase());
-    
-    const matchesPlan = planFilter === "all" || t.subscriptionPlan === planFilter;
-    
-    return matchesSearch && matchesPlan;
-  });
-
-  const freeCount = trainers.filter((t: any) => t.subscriptionPlan === "free").length;
-  const proCount = trainers.filter((t: any) => ["pro", "premium"].includes(t.subscriptionPlan)).length;
 
   return (
-    <div className="space-y-4 p-4 md:p-0 pb-24">
-      {/* Impersonation banner */}
-      {impStatus?.isImpersonating && (
-        <div className="flex items-center justify-between gap-3 p-3 rounded-xl bg-orange-500/10 border border-orange-500/30 text-orange-400">
-          <div className="flex items-center gap-2 text-sm font-medium">
-            <Eye className="h-4 w-4" />
-            Visualizando como: <strong>{impStatus.targetUser?.name}</strong>
+    <div className="space-y-6">
+      {/* Header */}
+      <div>
+        <h1 className="text-3xl font-bold text-foreground flex items-center gap-2">
+          <Shield className="h-8 w-8 text-orange-400" />
+          Painel Administrativo
+        </h1>
+        <p className="text-muted-foreground mt-2">Gerenciar personals, planos e assinaturas</p>
+      </div>
+
+      {/* Filters */}
+      <Card className="p-4 border-border/50">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Buscar por nome..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="pl-10"
+            />
           </div>
+
+          <Select value={planFilter} onValueChange={(v: any) => setPlanFilter(v)}>
+            <SelectTrigger>
+              <SelectValue placeholder="Filtrar por plano" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todos os planos</SelectItem>
+              <SelectItem value="free">Free</SelectItem>
+              <SelectItem value="pro">Pro</SelectItem>
+            </SelectContent>
+          </Select>
+
+          <Select value={originFilter} onValueChange={(v: any) => setOriginFilter(v)}>
+            <SelectTrigger>
+              <SelectValue placeholder="Filtrar por origem" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todas as origens</SelectItem>
+              <SelectItem value="payment">Pagamento</SelectItem>
+              <SelectItem value="courtesy">Cortesia</SelectItem>
+              <SelectItem value="trial">Trial</SelectItem>
+            </SelectContent>
+          </Select>
+
           <Button
-            size="sm"
             variant="outline"
-            className="border-orange-500/40 text-orange-400 hover:bg-orange-500/20 h-7 text-xs"
-            onClick={() => stopImpersonatingMutation.mutate()}
-            disabled={stopImpersonatingMutation.isPending}
+            onClick={() => {
+              setSearch("");
+              setPlanFilter("all");
+              setOriginFilter("all");
+            }}
           >
-            {stopImpersonatingMutation.isPending ? <Loader2 className="h-3 w-3 animate-spin" /> : "Voltar ao Admin"}
+            <Filter className="h-4 w-4 mr-2" />
+            Limpar Filtros
           </Button>
         </div>
-      )}
-
-      {/* Header */}
-      <div className="flex items-center gap-3">
-        <Button variant="ghost" size="icon" onClick={() => setLocation("/")}>
-          <ArrowLeft className="h-5 w-5" />
-        </Button>
-        <div>
-          <h2 className="text-2xl font-bold flex items-center gap-2">
-            <Shield className="h-6 w-6 text-primary" /> Painel Admin
-          </h2>
-          <p className="text-sm text-muted-foreground">Gerencie personals e assinaturas</p>
-        </div>
-      </div>
-
-      {/* Stats */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <Card>
-          <CardContent className="p-4 text-center">
-            <Users className="h-5 w-5 text-primary mx-auto mb-1" />
-            <div className="text-2xl font-bold">{statsLoading ? "—" : stats?.totalTrainers ?? 0}</div>
-            <div className="text-xs text-muted-foreground">Personals</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4 text-center">
-            <Crown className="h-5 w-5 text-orange-400 mx-auto mb-1" />
-            <div className="text-2xl font-bold">{proCount}</div>
-            <div className="text-xs text-muted-foreground">Plano Pro</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4 text-center">
-            <Lock className="h-5 w-5 text-gray-400 mx-auto mb-1" />
-            <div className="text-2xl font-bold">{freeCount}</div>
-            <div className="text-xs text-muted-foreground">Plano Free</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4 text-center">
-            <Calendar className="h-5 w-5 text-blue-400 mx-auto mb-1" />
-            <div className="text-2xl font-bold">{statsLoading ? "—" : stats?.totalClients ?? 0}</div>
-            <div className="text-xs text-muted-foreground">Total Alunos</div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Planos Free vs Pro */}
-      <Card>
-        <CardHeader className="pb-2">
-          <CardTitle className="text-sm text-muted-foreground font-medium">Comparativo de Planos</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-2 gap-3">
-            <div className="p-3 rounded-xl border border-gray-500/20 bg-gray-500/5">
-              <div className="flex items-center gap-2 mb-2">
-                <Lock className="h-4 w-4 text-gray-400" />
-                <span className="font-semibold text-sm">Free</span>
-              </div>
-              <ul className="text-xs text-muted-foreground space-y-1">
-                <li className="flex items-center gap-1"><CheckCircle2 className="h-3 w-3 text-green-400" /> Até 5 alunos</li>
-                <li className="flex items-center gap-1"><CheckCircle2 className="h-3 w-3 text-green-400" /> Agenda básica</li>
-                <li className="flex items-center gap-1"><CheckCircle2 className="h-3 w-3 text-green-400" /> Financeiro básico</li>
-                <li className="flex items-center gap-1"><AlertCircle className="h-3 w-3 text-red-400" /> Sem gráficos</li>
-                <li className="flex items-center gap-1"><AlertCircle className="h-3 w-3 text-red-400" /> Sem relatórios</li>
-                <li className="flex items-center gap-1"><AlertCircle className="h-3 w-3 text-red-400" /> Sem evolução</li>
-              </ul>
-            </div>
-            <div className="p-3 rounded-xl border border-orange-500/30 bg-orange-500/5">
-              <div className="flex items-center gap-2 mb-2">
-                <Crown className="h-4 w-4 text-orange-400" />
-                <span className="font-semibold text-sm text-orange-400">Pro</span>
-              </div>
-              <ul className="text-xs text-muted-foreground space-y-1">
-                <li className="flex items-center gap-1"><CheckCircle2 className="h-3 w-3 text-green-400" /> Alunos ilimitados</li>
-                <li className="flex items-center gap-1"><CheckCircle2 className="h-3 w-3 text-green-400" /> Agenda completa</li>
-                <li className="flex items-center gap-1"><CheckCircle2 className="h-3 w-3 text-green-400" /> Financeiro completo</li>
-                <li className="flex items-center gap-1"><CheckCircle2 className="h-3 w-3 text-green-400" /> Gráficos e dashboards</li>
-                <li className="flex items-center gap-1"><CheckCircle2 className="h-3 w-3 text-green-400" /> Relatórios PDF</li>
-                <li className="flex items-center gap-1"><CheckCircle2 className="h-3 w-3 text-green-400" /> Aba Evolução</li>
-              </ul>
-            </div>
-          </div>
-        </CardContent>
       </Card>
 
-      {/* Search and Filter */}
-      <div className="flex gap-2 flex-col">
-        <div className="relative">
-          <Input
-            placeholder="Buscar personal..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-4 w-full"
-          />
-        </div>
-        <div className="flex gap-2 flex-wrap">
-          <Button
-            variant={planFilter === "all" ? "default" : "outline"}
-            size="sm"
-            onClick={() => setPlanFilter("all")}
-          >
-            Todos
-          </Button>
-          <Button
-            variant={planFilter === "free" ? "default" : "outline"}
-            size="sm"
-            onClick={() => setPlanFilter("free")}
-          >
-            Free
-          </Button>
-          <Button
-            variant={planFilter === "pro" ? "default" : "outline"}
-            size="sm"
-            onClick={() => setPlanFilter("pro")}
-          >
-            Pro
-          </Button>
-        </div>
-      </div>
-
-      {/* Trainers list */}
-      <Card>
-        <CardHeader className="pb-2">
-          <CardTitle className="text-base">Personals Cadastrados</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {trainersLoading ? (
-            <div className="flex justify-center py-8"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>
-          ) : filteredTrainers.length === 0 ? (
-            <p className="text-sm text-muted-foreground text-center py-8">Nenhum personal encontrado.</p>
-          ) : (
-            <div className="space-y-2">
-              {filteredTrainers.map((trainer: any) => {
-                const plan = planLabels[trainer.subscriptionPlan] ?? planLabels.free;
-                const isMe = trainer.id === user.id;
-                return (
-                  <div key={trainer.id} className={`flex items-center gap-3 p-3 rounded-xl border transition-colors ${isMe ? "border-primary/40 bg-primary/5" : "border-border bg-card/50 hover:bg-accent/30"}`}>
-                    <Avatar className="h-10 w-10 border border-border flex-shrink-0">
-                      {trainer.photoUrl && <AvatarImage src={trainer.photoUrl} />}
-                      <AvatarFallback className="bg-primary/20 text-primary text-sm font-bold">
-                        {trainer.name?.charAt(0).toUpperCase() || "U"}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <span className="font-semibold text-sm truncate">{trainer.name || "Sem nome"}</span>
-                        {isMe && <Badge variant="outline" className="text-[10px] px-1.5 py-0 border-primary/40 text-primary">Você</Badge>}
-                        <span className={`text-[10px] px-1.5 py-0.5 rounded-full border flex items-center gap-1 ${plan.color}`}>
-                          {plan.icon} {plan.label}
-                        </span>
-                        {trainer.subscriptionPlan === "pro" && (trainer as any).proSource === "trial" && (
-                          <Badge className="text-[10px] px-1.5 py-0 bg-yellow-500/20 text-yellow-400 border border-yellow-500/30">Trial</Badge>
-                        )}
+      {/* Personals Table */}
+      <Card className="border-border/50 overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead className="bg-muted/50 border-b border-border/50">
+              <tr>
+                <th className="px-6 py-3 text-left font-semibold text-foreground">Nome</th>
+                <th className="px-6 py-3 text-left font-semibold text-foreground">Clientes</th>
+                <th className="px-6 py-3 text-left font-semibold text-foreground">Plano</th>
+                <th className="px-6 py-3 text-left font-semibold text-foreground">Origem</th>
+                <th className="px-6 py-3 text-left font-semibold text-foreground">Expiração</th>
+                <th className="px-6 py-3 text-left font-semibold text-foreground">Status</th>
+                <th className="px-6 py-3 text-right font-semibold text-foreground">Ações</th>
+              </tr>
+            </thead>
+            <tbody>
+              {personalsQuery.isLoading ? (
+                <tr>
+                  <td colSpan={7} className="px-6 py-8 text-center">
+                    <Loader2 className="h-6 w-6 animate-spin mx-auto text-muted-foreground" />
+                  </td>
+                </tr>
+              ) : personals.length === 0 ? (
+                <tr>
+                  <td colSpan={7} className="px-6 py-8 text-center text-muted-foreground">
+                    Nenhum personal encontrado
+                  </td>
+                </tr>
+              ) : (
+                personals.map((personal) => (
+                  <tr key={personal.id} className="border-b border-border/50 hover:bg-muted/30 transition-colors">
+                    <td className="px-6 py-4">
+                      <div className="font-medium text-foreground">{personal.name}</div>
+                      <div className="text-xs text-muted-foreground">{personal.email}</div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-1 text-foreground">
+                        <Users className="h-4 w-4 text-muted-foreground" />
+                        {personal.clientCount}
                       </div>
-                      <div className="text-xs text-muted-foreground mt-0.5 truncate">{trainer.email || "—"}</div>
-                      <div className="flex items-center gap-3 text-[10px] text-muted-foreground/60 mt-0.5">
-                        <span>{trainer.activeClients ?? 0} alunos ativos</span>
-                        <span>Max: {trainer.maxClients}</span>
-                        <span>Desde {format(new Date(trainer.createdAt), "dd/MM/yy", { locale: ptBR })}</span>
-                        {trainer.subscriptionPlan === "pro" && trainer.proExpiresAt && (
-                          <span className="text-orange-400 font-medium">
-                            Expira: {format(new Date(trainer.proExpiresAt), "dd/MM/yy", { locale: ptBR })}
+                    </td>
+                    <td className="px-6 py-4">
+                      <span className={`px-3 py-1 rounded-full text-xs font-medium border ${planColors[personal.plan]}`}>
+                        {personal.plan === "pro" ? (
+                          <span className="flex items-center gap-1">
+                            <Crown className="h-3 w-3" />
+                            Pro
                           </span>
+                        ) : (
+                          "Free"
                         )}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4">
+                      {personal.plan === "pro" && personal.proSource ? (
+                        <span className="text-xs text-muted-foreground">
+                          {originLabels[personal.proSource as keyof typeof originLabels] || personal.proSource}
+                        </span>
+                      ) : (
+                        <span className="text-xs text-muted-foreground">—</span>
+                      )}
+                    </td>
+                    <td className="px-6 py-4">
+                      {personal.plan === "pro" && personal.expiresAt ? (
+                        <div className="text-xs">
+                          <div className="text-foreground">
+                            {new Date(personal.expiresAt).toLocaleDateString("pt-BR")}
+                          </div>
+                          <div className={personal.daysRemaining! <= 7 ? "text-red-400" : "text-muted-foreground"}>
+                            {personal.daysRemaining! > 0
+                              ? `${personal.daysRemaining} dias`
+                              : "Expirado"}
+                          </div>
+                        </div>
+                      ) : (
+                        <span className="text-xs text-muted-foreground">—</span>
+                      )}
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-2">
+                        {personal.status === "active" ? (
+                          <CheckCircle2 className="h-4 w-4 text-green-500" />
+                        ) : (
+                          <AlertCircle className="h-4 w-4 text-yellow-500" />
+                        )}
+                        <span className="text-xs text-muted-foreground capitalize">
+                          {personal.status || "—"}
+                        </span>
                       </div>
-                    </div>
-                    <div className="flex gap-1 flex-shrink-0 justify-end">
-                      {/* Desktop buttons - hidden on mobile */}
-                      {!isMe && (
-                        <>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className={`h-7 text-[10px] px-2 hidden sm:flex ${trainer.subscriptionPlan === "pro" ? "border-orange-500/40 text-orange-400 hover:bg-orange-500/10" : "border-gray-500/40 text-gray-400 hover:bg-gray-500/10"}`}
-                            onClick={() => updatePlanMutation.mutate({ userId: trainer.id, plan: trainer.subscriptionPlan === "pro" ? "free" : "pro" })}
-                            disabled={updatePlanMutation.isPending}
-                          >
-                            {updatePlanMutation.isPending ? <Loader2 className="h-3 w-3 animate-spin" /> : trainer.subscriptionPlan === "pro" ? "→ Free" : "→ Pro"}
+                    </td>
+                    <td className="px-6 py-4 text-right">
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                            <MoreVertical className="h-4 w-4" />
                           </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="h-7 text-[10px] px-2 border-green-500/40 text-green-400 hover:bg-green-500/10 hidden sm:flex"
-                            onClick={() => setCourtesyTrainer(trainer)}
-                          >
-                            <Crown className="h-3 w-3 mr-1" />Cortesia
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="h-7 text-[10px] px-2 border-blue-500/40 text-blue-400 hover:bg-blue-500/10 hidden sm:flex"
-                            onClick={() => impersonateMutation.mutate({ targetUserId: trainer.id })}
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-48">
+                          <DropdownMenuItem
+                            onClick={() => impersonateMutation.mutate({ personalId: personal.id })}
                             disabled={impersonateMutation.isPending}
                           >
-                            {impersonateMutation.isPending ? <Loader2 className="h-3 w-3 animate-spin" /> : <><Eye className="h-3 w-3 mr-1" />Ver</>}
-                          </Button>
-                        </>
-                      )}
-                      {/* Mobile menu - shown only on mobile */}
-                      {!isMe && (
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="sm" className="h-7 w-7 p-0 sm:hidden">
-                              <MoreVertical className="h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end" className="w-40">
-                            <DropdownMenuItem onClick={() => updatePlanMutation.mutate({ userId: trainer.id, plan: trainer.subscriptionPlan === "pro" ? "free" : "pro" })} disabled={updatePlanMutation.isPending}>
-                              {trainer.subscriptionPlan === "pro" ? "Downgrade para Free" : "Upgrade para Pro"}
+                            <Eye className="h-4 w-4 mr-2" />
+                            Impersonar
+                          </DropdownMenuItem>
+
+                          {personal.plan === "free" && (
+                            <DropdownMenuItem
+                              onClick={() => {
+                                setSelectedPersonal(personal);
+                                setShowActionDialog("convert");
+                              }}
+                            >
+                              <Crown className="h-4 w-4 mr-2" />
+                              Converter para Pro
                             </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => setCourtesyTrainer(trainer)}>
-                              <Crown className="h-3 w-3 mr-2" />Conceder Cortesia
+                          )}
+
+                          {personal.plan === "pro" && (
+                            <DropdownMenuItem
+                              onClick={() => {
+                                setSelectedPersonal(personal);
+                                setShowActionDialog("cancel");
+                              }}
+                              className="text-red-400"
+                            >
+                              <Trash2 className="h-4 w-4 mr-2" />
+                              Cancelar Pro
                             </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => impersonateMutation.mutate({ targetUserId: trainer.id })} disabled={impersonateMutation.isPending}>
-                              <Eye className="h-3 w-3 mr-2" />Visualizar como
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      )}
-                      {/* Edit - always visible */}
-                      <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={() => openEdit(trainer)}>
-                        <Edit className="h-3.5 w-3.5" />
-                      </Button>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </CardContent>
+                          )}
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
       </Card>
 
-      {/* Edit modal */}
-      <Dialog open={!!editingTrainer} onOpenChange={(v) => !v && setEditingTrainer(null)}>
-        <DialogContent className="sm:max-w-md">
+      {/* Convert to Pro Dialog */}
+      <Dialog open={showActionDialog === "convert"} onOpenChange={() => setShowActionDialog(null)}>
+        <DialogContent>
           <DialogHeader>
-            <DialogTitle>Editar Personal</DialogTitle>
+            <DialogTitle>Converter para Pro (Cortesia)</DialogTitle>
+            <DialogDescription>
+              Conceder acesso Pro como cortesia para {selectedPersonal?.name}
+            </DialogDescription>
           </DialogHeader>
-          {editingTrainer && (
-            <div className="space-y-4">
-              <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/30">
-                <Avatar className="h-10 w-10">
-                  <AvatarFallback className="bg-primary/20 text-primary">
-                    {editingTrainer.name?.charAt(0).toUpperCase() || "U"}
-                  </AvatarFallback>
-                </Avatar>
-                <div>
-                  <div className="font-semibold">{editingTrainer.name}</div>
-                  <div className="text-xs text-muted-foreground">{editingTrainer.email}</div>
-                </div>
-              </div>
-              <div>
-                <Label>Plano</Label>
-                <Select value={editPlan} onValueChange={setEditPlan}>
-                  <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="free">Free (até 5 alunos)</SelectItem>
-                    <SelectItem value="pro">Pro (ilimitado)</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label>Status da Assinatura</Label>
-                <Select value={editStatus} onValueChange={setEditStatus}>
-                  <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="active">Ativo</SelectItem>
-                    <SelectItem value="inactive">Inativo</SelectItem>
-                    <SelectItem value="trial">Trial</SelectItem>
-                    <SelectItem value="cancelled">Cancelado</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label>Máximo de Clientes</Label>
-                <Input className="mt-1" type="number" value={editMaxClients} onChange={(e) => setEditMaxClients(e.target.value)} />
-              </div>
-              <div className="flex gap-3 pt-2">
-                <Button variant="outline" className="flex-1" onClick={() => setEditingTrainer(null)}>Cancelar</Button>
-                <Button className="flex-1" onClick={handleSave} disabled={updateMutation.isPending}>
-                  {updateMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Salvar"}
-                </Button>
-              </div>
+
+          <div className="space-y-4">
+            <div>
+              <label className="text-sm font-medium text-foreground">Dias válidos</label>
+              <Input
+                type="number"
+                min="1"
+                max="365"
+                value={courtesyDays}
+                onChange={(e) => setCourtesyDays(e.target.value)}
+                className="mt-1"
+              />
+              <p className="text-xs text-muted-foreground mt-1">
+                Padrão: 365 dias (1 ano)
+              </p>
             </div>
-          )}
+
+            <div className="flex gap-3">
+              <Button
+                variant="outline"
+                onClick={() => setShowActionDialog(null)}
+                className="flex-1"
+              >
+                Cancelar
+              </Button>
+              <Button
+                onClick={() =>
+                  convertToProMutation.mutate({
+                    personalId: selectedPersonal.id,
+                    daysValid: parseInt(courtesyDays) || 365,
+                  })
+                }
+                disabled={convertToProMutation.isPending}
+                className="flex-1 bg-orange-500 hover:bg-orange-600"
+              >
+                {convertToProMutation.isPending ? (
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                ) : (
+                  <Crown className="h-4 w-4 mr-2" />
+                )}
+                Conceder
+              </Button>
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
 
-      {/* Courtesy modal */}
-      <Dialog open={!!courtesyTrainer} onOpenChange={(v) => !v && setCourtesyTrainer(null)}>
-        <DialogContent className="sm:max-w-md">
+      {/* Cancel Pro Dialog */}
+      <Dialog open={showActionDialog === "cancel"} onOpenChange={() => setShowActionDialog(null)}>
+        <DialogContent>
           <DialogHeader>
-            <DialogTitle>Conceder Pro como Cortesia</DialogTitle>
+            <DialogTitle className="text-red-400">Cancelar Assinatura Pro</DialogTitle>
+            <DialogDescription>
+              Você tem certeza que deseja cancelar a assinatura Pro de {selectedPersonal?.name}?
+            </DialogDescription>
           </DialogHeader>
-          {courtesyTrainer && (
-            <div className="space-y-4">
-              <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/30">
-                <Avatar className="h-10 w-10">
-                  <AvatarFallback className="bg-primary/20 text-primary">
-                    {courtesyTrainer.name?.charAt(0).toUpperCase() || "U"}
-                  </AvatarFallback>
-                </Avatar>
-                <div>
-                  <div className="font-semibold">{courtesyTrainer.name}</div>
-                  <div className="text-xs text-muted-foreground">{courtesyTrainer.email}</div>
-                </div>
-              </div>
-              <div>
-                <Label htmlFor="days">Dias de Cortesia</Label>
-                <Input
-                  id="days"
-                  type="number"
-                  min="1"
-                  max="365"
-                  value={courtesyDays}
-                  onChange={(e) => setCourtesyDays(e.target.value)}
-                  className="mt-1"
-                />
-                <p className="text-xs text-muted-foreground mt-1">Máximo 365 dias</p>
-              </div>
-              <div className="flex gap-3 pt-2">
-                <Button variant="outline" className="flex-1" onClick={() => setCourtesyTrainer(null)}>Cancelar</Button>
-                <Button
-                  className="flex-1"
-                  onClick={() => grantCourtesyMutation.mutate({ userId: courtesyTrainer.id, daysOfCourt: parseInt(courtesyDays) || 30 })}
-                  disabled={grantCourtesyMutation.isPending || !courtesyDays}
-                >
-                  {grantCourtesyMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Conceder"}
-                </Button>
-              </div>
-            </div>
-          )}
+
+          <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-3 text-sm text-red-400">
+            <AlertCircle className="h-4 w-4 inline mr-2" />
+            Esta ação não pode ser desfeita. O personal voltará ao plano Free.
+          </div>
+
+          <div className="flex gap-3">
+            <Button
+              variant="outline"
+              onClick={() => setShowActionDialog(null)}
+              className="flex-1"
+            >
+              Não, Manter
+            </Button>
+            <Button
+              onClick={() => cancelProMutation.mutate({ personalId: selectedPersonal.id })}
+              disabled={cancelProMutation.isPending}
+              className="flex-1 bg-red-500 hover:bg-red-600"
+            >
+              {cancelProMutation.isPending ? (
+                <Loader2 className="h-4 w-4 animate-spin mr-2" />
+              ) : (
+                <Trash2 className="h-4 w-4 mr-2" />
+              )}
+              Sim, Cancelar
+            </Button>
+          </div>
         </DialogContent>
       </Dialog>
     </div>

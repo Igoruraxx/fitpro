@@ -98,18 +98,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     },
   });
 
-  const { data: impStatus } = trpc.admin.impersonationStatus.useQuery(undefined, {
-    enabled: !!user,
-    retry: false,
-  });
-
-  const stopImpersonatingMutation = trpc.admin.stopImpersonating.useMutation({
-    onSuccess: () => {
-      toast.success("Voltando ao painel admin...");
-      utils.invalidate();
-      setTimeout(() => setLocation("/admin"), 600);
-    },
-  });
+  // Impersonation status removed - now handled in admin router
 
   const isPro = user ? ["pro", "premium", "basic"].includes((user as any).subscriptionPlan ?? "free") || user.role === "admin" : false;
   const isFree = !isPro;
@@ -354,24 +343,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           </div>
         </header>
 
-        {/* Impersonation banner */}
-        {impStatus?.isImpersonating && (
-          <div className="flex items-center justify-between gap-3 px-5 py-2 bg-orange-500/10 border-b border-orange-500/20 text-orange-400 shrink-0">
-            <div className="flex items-center gap-2 text-xs font-medium">
-              <Eye className="h-3.5 w-3.5" />
-              Visualizando como: <strong>{impStatus.targetUser?.name}</strong>
-            </div>
-            <Button
-              size="sm"
-              variant="outline"
-              className="border-orange-500/40 text-orange-400 hover:bg-orange-500/20 h-6 text-[10px] px-2"
-              onClick={() => stopImpersonatingMutation.mutate()}
-              disabled={stopImpersonatingMutation.isPending}
-            >
-              {stopImpersonatingMutation.isPending ? <Loader2 className="h-3 w-3 animate-spin" /> : "Voltar ao Admin"}
-            </Button>
-          </div>
-        )}
+        {/* Impersonation banner removed - handled in admin router */}
 
         {/* Page content */}
         <main className={`flex-1 overflow-auto ${isMobile ? "pb-20" : ""}`}>
