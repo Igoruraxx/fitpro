@@ -868,3 +868,10 @@
 - [x] Manter botões vistos em desktop (sm:)
 - [x] Garantir layout compacto em mobile
 - [x] Todos os 75 testes passando
+
+## Comparador de Fotos com Slider Arrastável (v68)
+- [x] Criar componente ImageComparator com slider tipo before/after
+- [x] Implementar arrastar com mouse/touch para revelar foto
+- [x] Integrar na página de Fotos
+- [x] Testar em mobile e desktop
+- [x] Todos os 75 testes passando

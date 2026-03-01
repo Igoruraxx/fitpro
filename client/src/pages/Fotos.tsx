@@ -2,6 +2,7 @@ import { trpc } from "@/lib/trpc";
 import { useState, useRef, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { ImageComparator } from "@/components/ImageComparator";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel,
   AlertDialogContent, AlertDialogDescription, AlertDialogFooter,
@@ -467,41 +468,30 @@ export default function Fotos() {
           </div>
 
           {compareDate1 && compareDate2 ? (
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <div className="flex items-center gap-2">
-                  <Badge variant="outline" className="text-xs">Antes</Badge>
-                  <span className="text-xs text-muted-foreground">{formatDate(compareDate1)}</span>
-                </div>
-                {comparePhotos1.length > 0 ? (
-                  <div className="aspect-[3/4] rounded-xl overflow-hidden border border-border">
-                    <img src={comparePhotos1[0].photoUrl} alt="Antes" className="w-full h-full object-cover" />
-                  </div>
-                ) : (
-                  <div className="aspect-[3/4] rounded-xl border border-dashed border-border flex items-center justify-center">
-                    <p className="text-xs text-muted-foreground text-center px-4">
-                      Sem foto de {PHOTO_TYPE_LABELS[compareType]} nesta data
-                    </p>
-                  </div>
-                )}
+            <div className="space-y-4">
+              <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                <span className="font-medium">{formatDate(compareDate1)}</span>
+                <span className="text-muted-foreground/50">→</span>
+                <span className="font-medium">{formatDate(compareDate2)}</span>
               </div>
-              <div className="space-y-2">
-                <div className="flex items-center gap-2">
-                  <Badge className="text-xs">Depois</Badge>
-                  <span className="text-xs text-muted-foreground">{formatDate(compareDate2)}</span>
+              {comparePhotos1.length > 0 && comparePhotos2.length > 0 ? (
+                <ImageComparator
+                  beforeImage={comparePhotos1[0].photoUrl}
+                  afterImage={comparePhotos2[0].photoUrl}
+                  beforeLabel="Antes"
+                  afterLabel="Depois"
+                />
+              ) : (
+                <div className="aspect-[3/4] rounded-xl border border-dashed border-border flex items-center justify-center">
+                  <p className="text-xs text-muted-foreground text-center px-4">
+                    {comparePhotos1.length === 0 && comparePhotos2.length === 0
+                      ? `Sem fotos de ${PHOTO_TYPE_LABELS[compareType]} nas datas selecionadas`
+                      : comparePhotos1.length === 0
+                      ? `Sem foto de ${PHOTO_TYPE_LABELS[compareType]} em ${formatDate(compareDate1)}`
+                      : `Sem foto de ${PHOTO_TYPE_LABELS[compareType]} em ${formatDate(compareDate2)}`}
+                  </p>
                 </div>
-                {comparePhotos2.length > 0 ? (
-                  <div className="aspect-[3/4] rounded-xl overflow-hidden border border-border">
-                    <img src={comparePhotos2[0].photoUrl} alt="Depois" className="w-full h-full object-cover" />
-                  </div>
-                ) : (
-                  <div className="aspect-[3/4] rounded-xl border border-dashed border-border flex items-center justify-center">
-                    <p className="text-xs text-muted-foreground text-center px-4">
-                      Sem foto de {PHOTO_TYPE_LABELS[compareType]} nesta data
-                    </p>
-                  </div>
-                )}
-              </div>
+              )}
             </div>
           ) : (
             <div className="flex flex-col items-center justify-center py-12 text-center">
