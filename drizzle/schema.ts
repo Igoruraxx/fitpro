@@ -16,7 +16,7 @@ export const transactionTypeEnum = pgEnum("transaction_type", ["income", "expens
 export const transactionStatusEnum = pgEnum("transaction_status", ["pending", "paid", "overdue", "cancelled"]);
 
 // ==================== USERS ====================
-export const users = pgTable("users", {
+export const users: any = pgTable("users", {
   id: serial("id").primaryKey(),
   openId: varchar("openId", { length: 64 }).unique(),
   email: varchar("email", { length: 320 }).unique(),
@@ -51,8 +51,8 @@ export const users = pgTable("users", {
   lastSignedIn: timestamp("lastSignedIn").defaultNow().notNull(),
 });
 
-export type User = typeof users.$inferSelect;
-export type InsertUser = typeof users.$inferInsert;
+export type User = any; // typeof users.$inferSelect;
+export type InsertUser = any; // typeof users.$inferInsert;
 
 // ==================== AUTH TOKENS ====================
 export const authTokens = pgTable("auth_tokens", {

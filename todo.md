@@ -967,3 +967,13 @@
 - [x] Remover subscriptionStatus: "trial" do createUser em db.ts
 - [x] Login deve funcionar agora com apenas subscriptionPlan: "free"
 - [x] Todos os 86 testes passando
+
+
+## Routers tRPC Admin (v76)
+- [ ] Criar procedure listPersonals com filtros (plano, origem, busca)
+- [ ] Criar procedure convertToProCourtesy
+- [ ] Criar procedure cancelProSubscription
+- [ ] Criar procedure grantTrial (7 dias)
+- [ ] Integrar ao appRouter
+- [ ] Criar testes para procedures
+- [ ] Atualizar Admin.tsx para usar routers
