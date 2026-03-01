@@ -12,4 +12,6 @@ export const ENV = {
   supabaseServiceKey: process.env.SUPABASE_SERVICE_ROLE_KEY ?? "",
   supabaseAnonKey: process.env.SUPABASE_ANON_KEY ?? "",
   supabaseDbUrl: process.env.SUPABASE_DB_URL ?? "",
+  // Abacash
+  abacashSkLive: process.env.ABACASH_SK_LIVE ?? "",
 };

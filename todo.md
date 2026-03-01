@@ -875,3 +875,25 @@
 - [x] Integrar na página de Fotos
 - [x] Testar em mobile e desktop
 - [x] Todos os 75 testes passando
+
+## Integração Abacash para Pagamentos (v69)
+- [ ] Configurar secret key Abacash
+- [ ] Criar helpers para API Abacash (criar subscription, webhook)
+- [ ] Definir preços dos planos: Mensal 24,90, Trimestral 69,72 (5%), Semestral 130,42 (10%), Anual 239,04 (20%)
+- [ ] Criar routers tRPC: createSubscription, cancelSubscription, getSubscriptionStatus
+- [ ] Implementar UI de seleção de planos com preços e descontos
+- [ ] Integrar fluxo de checkout (redirect para Abacash)
+- [ ] Implementar webhook para confirmar pagamento e ativar Pro
+- [ ] Testar fluxo completo de pagamento
+
+
+## Integração Abacash para Pagamentos (v69)
+- [x] Configurar secret ABACASH_SK_LIVE
+- [x] Criar helpers Abacash com planos (mensal 24,90, trimestral 70,97 com 5%, semestral 134,46 com 10%, anual 239,04 com 20%)
+- [x] Criar 11 testes para validação de preços e descontos
+- [x] Criar routers tRPC para pagamentos (getPlans, createCheckout, confirmPayment, getSubscriptionStatus, cancelSubscription)
+- [x] Criar componente PlanSelector com UI de seleção de planos
+- [x] Integrar modal de pagamento na página Upgrade
+- [x] Criar webhook handler para eventos Abacash (subscription.activated, subscription.cancelled, subscription.expired)
+- [x] Registrar rota POST /api/webhooks/abacash
+- [x] Todos os 86 testes passando
