@@ -897,3 +897,10 @@
 - [x] Criar webhook handler para eventos Abacash (subscription.activated, subscription.cancelled, subscription.expired)
 - [x] Registrar rota POST /api/webhooks/abacash
 - [x] Todos os 86 testes passando
+
+
+## Bug: Erro ao Criar Agendamentos para Pacotes (v70)
+- [x] Investigar erro: "Todas as 6 sessoes do pacote ja foram criadas"
+- [x] Permitir recriar agendamentos sem erro quando pacote já tem sessões
+- [x] Remover validação restritiva que impedia recriar agendamentos
+- [x] Simplificar retorno para apenas informar quantas sessões foram criadas

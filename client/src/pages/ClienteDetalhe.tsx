@@ -139,10 +139,7 @@ export default function ClienteDetalhe() {
   const appointmentsQuery = trpc.appointments.listByClient.useQuery({ clientId });
   const generateRemainingMutation = trpc.clients.generateRemainingAppointments.useMutation({
     onSuccess: async (data) => {
-      const msg = data.created === data.packageLimit
-        ? `${data.created} sessões agendadas! Todas as ${data.packageLimit} sessões do pacote foram criadas.`
-        : `${data.created} sessões agendadas! (${data.totalExisting + data.created}/${data.packageLimit})`;
-      toast.success(msg);
+      toast.success(data.message);
       await utils.appointments.listByClient.invalidate({ clientId });
       await utils.appointments.pendingByClient.invalidate({ clientId });
       await utils.clients.getById.invalidate({ id: clientId });
