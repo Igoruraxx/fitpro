@@ -167,14 +167,14 @@ export default function Login() {
             </p>
           </div>
 
-          {/* Google OAuth Placeholder */}
+          {/* OTP Login Option */}
           <div className="mt-6 space-y-3">
             <div className="relative">
               <div className="absolute inset-0 flex items-center">
                 <div className="w-full border-t border-muted"></div>
               </div>
               <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-card px-2 text-muted-foreground">Ou continue com</span>
+                <span className="bg-card px-2 text-muted-foreground">Ou</span>
               </div>
             </div>
 
@@ -182,10 +182,9 @@ export default function Login() {
               type="button"
               variant="outline"
               className="w-full"
-              disabled
+              onClick={() => window.location.href = "/login-otp"}
             >
-              <span className="mr-2">🔵</span>
-              Google (em breve)
+              📧 Entrar com código por e-mail
             </Button>
           </div>
         </CardContent>

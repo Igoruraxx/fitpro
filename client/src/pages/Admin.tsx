@@ -67,15 +67,20 @@ export default function Admin() {
     onError: (e: any) => toast.error(e.message),
   });
 
+  const utils = trpc.useUtils();
   const impersonateMutation = trpc.admin.impersonatePersonal.useMutation({
     onSuccess: (data) => {
       toast.success(data.message);
+      utils.auth.me.invalidate();
       setTimeout(() => setLocation("/dashboard"), 800);
     },
     onError: (e: any) => toast.error(e.message),
   });
 
-  if (!user || user.role !== "admin") {
+  const isImpersonating = !!(user as any)?.isImpersonating;
+  const isAdmin = user?.role === "admin" || isImpersonating;
+
+  if (!user || !isAdmin) {
     return (
       <div className="flex flex-col items-center justify-center py-20 text-center">
         <Shield className="h-12 w-12 text-muted-foreground/30 mb-4" />

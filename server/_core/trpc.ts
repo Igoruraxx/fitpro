@@ -31,7 +31,11 @@ export const adminProcedure = t.procedure.use(
   t.middleware(async opts => {
     const { ctx, next } = opts;
 
-    if (!ctx.user || ctx.user.role !== 'admin') {
+    // When impersonating, ctx.adminUser is the real admin and ctx.user is the impersonated personal
+    // Allow access if either the direct user is admin OR the adminUser (impersonating) is admin
+    const isAdmin = ctx.adminUser?.role === 'admin' || ctx.user?.role === 'admin';
+
+    if (!ctx.user || !isAdmin) {
       throw new TRPCError({ code: "FORBIDDEN", message: NOT_ADMIN_ERR_MSG });
     }
 
@@ -39,6 +43,7 @@ export const adminProcedure = t.procedure.use(
       ctx: {
         ...ctx,
         user: ctx.user,
+        adminUser: ctx.adminUser,
       },
     });
   }),

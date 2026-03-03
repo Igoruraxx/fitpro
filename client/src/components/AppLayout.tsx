@@ -4,6 +4,7 @@ import {
   LayoutDashboard, Calendar, Users, TrendingUp, DollarSign, User,
   LogOut, Shield, Loader2, Image, Activity, BarChart3,
   ChevronRight, Settings, Menu, X, Eye, Crown, Lock, CheckCircle2,
+  ArrowLeft,
 } from "lucide-react";
 import { useLocation } from "wouter";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
@@ -98,9 +99,19 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     },
   });
 
-  // Impersonation status removed - now handled in admin router
+  // Impersonation state
+  const isImpersonating = !!(user as any)?.isImpersonating;
+  const adminUser = (user as any)?.adminUser;
+  const stopImpersonatingMutation = trpc.auth.stopImpersonating.useMutation({
+    onSuccess: (data) => {
+      toast.success(data.message);
+      utils.auth.me.invalidate();
+      setTimeout(() => setLocation("/admin"), 500);
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
 
-  const isPro = user ? ["pro", "premium", "basic"].includes((user as any).subscriptionPlan ?? "free") || user.role === "admin" : false;
+  const isPro = user ? ["pro", "premium", "basic"].includes((user as any).subscriptionPlan ?? "free") || user.role === "admin" || isImpersonating : false;
   const isFree = !isPro;
 
   // Check if trial has expired
@@ -217,14 +228,26 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             </div>
           </div>
         )}
-        {user.role === "admin" && (
-          <button
-            onClick={() => setLocation("/admin")}
-            className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-all mb-1"
-          >
-            <Shield style={{ width: 16, height: 16 }} className="shrink-0" />
-            <span>Administração</span>
-          </button>
+        {(user.role === "admin" || isImpersonating) && (
+          <>
+            {isImpersonating && (
+              <button
+                onClick={() => stopImpersonatingMutation.mutate()}
+                disabled={stopImpersonatingMutation.isPending}
+                className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-orange-400 hover:bg-orange-500/10 transition-all mb-1"
+              >
+                <ArrowLeft style={{ width: 16, height: 16 }} className="shrink-0" />
+                <span>Voltar ao Admin</span>
+              </button>
+            )}
+            <button
+              onClick={() => setLocation("/admin")}
+              className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-all mb-1"
+            >
+              <Shield style={{ width: 16, height: 16 }} className="shrink-0" />
+              <span>Administração</span>
+            </button>
+          </>
         )}
         <div className="flex items-center gap-3 px-3 py-2">
           <Avatar className="h-8 w-8 shrink-0">
@@ -324,9 +347,19 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                   <Settings className="mr-2 h-4 w-4" />
                   Configurações
                 </DropdownMenuItem>
-                {user.role === "admin" && (
+                {(user.role === "admin" || isImpersonating) && (
                   <>
                     <DropdownMenuSeparator />
+                    {isImpersonating && (
+                      <DropdownMenuItem
+                        onClick={() => stopImpersonatingMutation.mutate()}
+                        disabled={stopImpersonatingMutation.isPending}
+                        className="text-orange-400 focus:text-orange-400"
+                      >
+                        <ArrowLeft className="mr-2 h-4 w-4" />
+                        Voltar ao Admin
+                      </DropdownMenuItem>
+                    )}
                     <DropdownMenuItem onClick={() => setLocation("/admin")}>
                       <Shield className="mr-2 h-4 w-4" />
                       Administração
@@ -343,7 +376,25 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           </div>
         </header>
 
-        {/* Impersonation banner removed - handled in admin router */}
+        {/* Impersonation banner */}
+        {isImpersonating && (
+          <div className="bg-orange-500/15 border-b border-orange-500/30 px-4 py-2 flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2 text-sm text-orange-400 min-w-0">
+              <Eye className="h-4 w-4 shrink-0" />
+              <span className="truncate">
+                <span className="font-medium">Impersonando:</span>{" "}
+                {user.name || user.email}
+              </span>
+            </div>
+            <button
+              onClick={() => stopImpersonatingMutation.mutate()}
+              disabled={stopImpersonatingMutation.isPending}
+              className="text-xs font-medium text-orange-400 hover:text-orange-300 bg-orange-500/20 hover:bg-orange-500/30 px-3 py-1 rounded-md transition-colors whitespace-nowrap"
+            >
+              {stopImpersonatingMutation.isPending ? "Voltando..." : "Parar"}
+            </button>
+          </div>
+        )}
 
         {/* Page content */}
         <main className={`flex-1 overflow-auto ${isMobile ? "pb-20" : ""}`}>

@@ -983,3 +983,24 @@
 - [x] Causa raiz: 8 colunas AbacatePay existiam no schema TypeScript mas não no banco Supabase
 - [x] Aplicar migration via Supabase MCP para adicionar colunas faltantes
 - [x] Login testado via curl: success: true, usuário autenticado
+
+
+## Impersonacao de Personals (v5)
+- [x] Endpoint admin.impersonatePersonal (gera JWT com impersonatingUserId)
+- [x] Endpoint auth.stopImpersonating (volta para admin)
+- [x] Banner de impersonacao no AppLayout
+- [x] Botao "Administracao" visivel durante impersonacao
+- [x] Botao "Parar Impersonacao" visivel durante impersonacao
+- [x] Validacao de acesso admin em Admin.tsx (permite impersonando)
+- [x] Invalidacao de auth.me apos impersonar
+
+## Cadastro por OTP (v6)
+- [x] Endpoint auth.sendOtp (envia codigo de 6 digitos por e-mail)
+- [x] Endpoint auth.verifyOtp (verifica codigo e faz login/cadastro)
+- [x] Template de e-mail OTP (sendOtpEmail)
+- [x] Pagina LoginOtp.tsx com fluxo de 3 passos (email -> codigo -> nome)
+- [x] Auto-advance entre campos de codigo OTP
+- [x] Suporte a paste de codigo (Ctrl+V)
+- [x] Resend com countdown de 60 segundos
+- [x] Integracao no Login.tsx (botao "Entrar com codigo por e-mail")
+- [x] Testes vitest para OTP (9 testes passando)

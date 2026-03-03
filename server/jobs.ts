@@ -38,7 +38,7 @@ async function runTrialExpirationJob() {
         and(
           eq(users.subscriptionPlan, "pro"),
           eq(users.proSource, "trial"),
-          sql`${users.proExpiresAt} <= ${today.toISOString().split("T")[0]}::date`
+          sql`${users.proExpiresAt} <= NOW()`
         )
       );
 
