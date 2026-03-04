@@ -108,6 +108,16 @@ export const authRouter = router({
 
       // Auto-confirm email (no email verification flow)
       await updateUserEmailVerified(user.id);
+      
+      // Verify that email was marked as verified
+      const verifiedUser = await getUserById(user.id);
+      if (!verifiedUser?.emailVerified) {
+        console.warn(`[Auth] Email verification failed for user ${user.id}`);
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Erro ao confirmar e-mail. Tente novamente.",
+        });
+      }
 
       // Send welcome email (fire-and-forget, don't block registration)
       sendWelcomeEmail(input.email, input.name).catch(() => {});
@@ -148,8 +158,17 @@ export const authRouter = router({
         });
       }
 
+      // Reload user from database to get latest role and data
+      const freshUser = await getUserById(user.id);
+      if (!freshUser) {
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Erro ao carregar dados do usuário",
+        });
+      }
+
       // Create JWT session token
-      const sessionToken = await createSessionToken(user.id);
+      const sessionToken = await createSessionToken(freshUser.id);
 
       // Set session cookie
       const cookieOptions = getSessionCookieOptions(ctx.req);
@@ -161,10 +180,10 @@ export const authRouter = router({
       return {
         success: true,
         user: {
-          id: user.id,
-          email: user.email,
-          name: user.name,
-          role: user.role,
+          id: freshUser.id,
+          email: freshUser.email,
+          name: freshUser.name,
+          role: freshUser.role,
         },
       };
     }),

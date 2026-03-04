@@ -1,0 +1,9 @@
+{
+  "query": "DELETE FROM users WHERE email = 'admin2@fitpro.com';\nINSERT INTO users (email, name, role, emailVerified, passwordHash, openId, createdAt) VALUES ('admin2@fitpro.com', 'Admin Two', 'admin', true, '$2b$10$wURomonKn4I9Cmij5NSHyeln89Nor1H.2Ro0NCN0G9qAxak/YHMNC', 'admin2-openid', NOW());",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 4PiQ8e52qW4Xjb6.root --database 5UbJ997E6SHYZid72bThxF --execute DELETE FROM users WHERE email = 'admin2@fitpro.com';\nINSERT INTO users (email, name, role, emailVerified, passwordHash, openId, createdAt) VALUES ('admin2@fitpro.com', 'Admin Two', 'admin', true, '$2b$10$wURomonKn4I9Cmij5NSHyeln89Nor1H.2Ro0NCN0G9qAxak/YHMNC', 'admin2-openid', NOW());",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 195
+}
