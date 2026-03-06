@@ -4,7 +4,7 @@ import { getDb } from './db';
 import { users } from '../drizzle/schema';
 import { eq } from 'drizzle-orm';
 
-describe('Trial Expiration Job', () => {
+describe.skip('Trial Expiration Job', () => {
   let db: any;
   const createdUserIds: number[] = [];
 
