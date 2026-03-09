@@ -1,5 +1,14 @@
 import "dotenv/config";
+import { validateEnv } from "./env";
 import express from "express";
+
+// Validate required environment variables before starting
+try {
+  validateEnv();
+} catch (err) {
+  console.error("[Fatal] Initializing server:", (err as Error).message);
+  process.exit(1);
+}
 import { createServer } from "http";
 import net from "net";
 import { createExpressMiddleware } from "@trpc/server/adapters/express";

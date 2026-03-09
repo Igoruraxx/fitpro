@@ -25,3 +25,23 @@ export const ENV = {
   // App
   appUrl: process.env.APP_URL ?? "http://localhost:3000",
 };
+
+export function validateEnv() {
+  const isProd = process.env.NODE_ENV === "production";
+  const required = [
+    "DATABASE_URL",
+    "JWT_SECRET",
+    "RESEND_API_KEY",
+  ];
+
+  const missing = required.filter(key => !process.env[key]);
+
+  if (missing.length > 0) {
+    const msg = `Missing required environment variables: ${missing.join(", ")}`;
+    if (isProd) {
+      throw new Error(msg);
+    } else {
+      console.warn(`[Env] WARNING: ${msg}`);
+    }
+  }
+}
