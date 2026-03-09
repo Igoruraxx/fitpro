@@ -46,6 +46,14 @@ const trpcClient = trpc.createClient({
         return globalThis.fetch(input, {
           ...(init ?? {}),
           credentials: "include",
+        }).then(response => {
+          const contentType = response.headers.get("content-type") ?? "";
+          if (!response.ok && !contentType.includes("application/json")) {
+            throw new Error(
+              "Erro interno do servidor. Tente novamente mais tarde."
+            );
+          }
+          return response;
         });
       },
     }),

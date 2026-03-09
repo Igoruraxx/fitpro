@@ -1,5 +1,6 @@
 import "dotenv/config";
 import express from "express";
+import type { Request, Response, NextFunction } from "express";
 import { createExpressMiddleware } from "@trpc/server/adapters/express";
 import { registerOAuthRoutes } from "../server/_core/oauth";
 import { appRouter } from "../server/routers";
@@ -33,6 +34,17 @@ app.use(
     createContext,
   })
 );
+
+// Global error handler – must be after all routes.
+// Ensures unhandled Express errors return JSON instead of an HTML/plain-text
+// Vercel error page that would cause "Unexpected token" JSON parse failures
+// on the client.
+app.use((err: unknown, _req: Request, res: Response, _next: NextFunction) => {
+  console.error("[Server Error]", err);
+  res.status(500).json({
+    message: "Erro interno do servidor. Tente novamente mais tarde.",
+  });
+});
 
 export default app;
 module.exports = app;
