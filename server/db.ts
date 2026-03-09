@@ -56,17 +56,20 @@ async function runMigrations(db: ReturnType<typeof drizzle>) {
 
 export async function getDb() {
   if (!_db) {
-    // Prefer SUPABASE_DB_URL (PostgreSQL), fall back to DATABASE_URL (MySQL)
-    const connStr = ENV.supabaseDbUrl || process.env.DATABASE_URL;
+    // Prefer DATABASE_URL for standard PostgreSQL connection
+    const connStr = process.env.DATABASE_URL || ENV.supabaseDbUrl;
 
     if (!connStr) {
-      console.warn("[Database] No connection string available");
+      console.warn("[Database] No connection string available. Set DATABASE_URL.");
       return null;
     }
     try {
-      const client = postgres(connStr, { max: 5, ssl: 'require' });
+      // Standard PostgreSQL connection. Use ssl: 'require' for most cloud providers.
+      // But we can make it more flexible based on env.
+      const ssl = process.env.DB_SSL === 'false' ? false : 'require';
+      const client = postgres(connStr, { max: 10, ssl });
       _db = drizzle(client);
-      console.log("[Database] Connected to", ENV.supabaseDbUrl ? "Supabase PostgreSQL" : "MySQL");
+      console.log("[Database] Connected to PostgreSQL");
       await runMigrations(_db);
     } catch (error) {
       console.warn("[Database] Failed to connect:", error);

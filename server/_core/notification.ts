@@ -1,5 +1,7 @@
 import { TRPCError } from "@trpc/server";
 import { ENV } from "./env";
+import { sendEmail } from "../email";
+import { getUserById, getUserByOpenId } from "../db";
 
 export type NotificationPayload = {
   title: string;
@@ -59,56 +61,76 @@ const validatePayload = (input: NotificationPayload): NotificationPayload => {
 
 /**
  * Dispatches a project-owner notification through the Manus Notification Service.
- * Returns `true` if the request was accepted, `false` when the upstream service
- * cannot be reached (callers can fall back to email/slack). Validation errors
- * bubble up as TRPC errors so callers can fix the payload.
+ * If Manus service is unavailable, it falls back to sending an email via Resend
+ * to the owner defined in ENV.ownerOpenId (if it's a numeric ID).
+ *
+ * Returns `true` if the notification was delivered (Manus or Email), `false` otherwise.
  */
 export async function notifyOwner(
   payload: NotificationPayload
 ): Promise<boolean> {
   const { title, content } = validatePayload(payload);
 
-  if (!ENV.forgeApiUrl) {
-    throw new TRPCError({
-      code: "INTERNAL_SERVER_ERROR",
-      message: "Notification service URL is not configured.",
-    });
-  }
+  // 1. Try Manus Notification Service first
+  if (ENV.forgeApiUrl && ENV.forgeApiKey) {
+    const endpoint = buildEndpointUrl(ENV.forgeApiUrl);
+    try {
+      const response = await fetch(endpoint, {
+        method: "POST",
+        headers: {
+          accept: "application/json",
+          authorization: `Bearer ${ENV.forgeApiKey}`,
+          "content-type": "application/json",
+          "connect-protocol-version": "1",
+        },
+        body: JSON.stringify({ title, content }),
+      });
 
-  if (!ENV.forgeApiKey) {
-    throw new TRPCError({
-      code: "INTERNAL_SERVER_ERROR",
-      message: "Notification service API key is not configured.",
-    });
-  }
+      if (response.ok) {
+        return true;
+      }
 
-  const endpoint = buildEndpointUrl(ENV.forgeApiUrl);
-
-  try {
-    const response = await fetch(endpoint, {
-      method: "POST",
-      headers: {
-        accept: "application/json",
-        authorization: `Bearer ${ENV.forgeApiKey}`,
-        "content-type": "application/json",
-        "connect-protocol-version": "1",
-      },
-      body: JSON.stringify({ title, content }),
-    });
-
-    if (!response.ok) {
       const detail = await response.text().catch(() => "");
       console.warn(
-        `[Notification] Failed to notify owner (${response.status} ${response.statusText})${
-          detail ? `: ${detail}` : ""
-        }`
+        `[Notification] Manus service failed (${response.status})${detail ? `: ${detail}` : ""}`
       );
-      return false;
+    } catch (error) {
+      console.warn("[Notification] Error calling Manus service:", error);
+    }
+  }
+
+  // 2. Fallback to Email if Manus fails or is not configured
+  // We need the owner's email. We'll try to get it from the database using ownerOpenId.
+  try {
+    let owner = null;
+    const ownerId = parseInt(ENV.ownerOpenId);
+
+    if (!isNaN(ownerId)) {
+      owner = await getUserById(ownerId);
+    } else if (ENV.ownerOpenId) {
+      owner = await getUserByOpenId(ENV.ownerOpenId);
     }
 
-    return true;
-  } catch (error) {
-    console.warn("[Notification] Error calling notification service:", error);
-    return false;
+    if (owner && owner.email) {
+      console.log(`[Notification] Falling back to email for owner: ${owner.email}`);
+      return await sendEmail({
+        to: owner.email,
+        subject: `[FITPRO] ${title}`,
+        html: `
+            <div style="font-family: sans-serif; padding: 20px;">
+              <h2>${title}</h2>
+              <div style="white-space: pre-wrap; margin-top: 10px; color: #333;">${content}</div>
+              <hr style="margin-top: 20px; border: 0; border-top: 1px solid #eee;" />
+              <p style="font-size: 12px; color: #999;">Esta é uma notificação automática do sistema FITPRO.</p>
+            </div>
+          `,
+        text: `${title}\n\n${content}`,
+      });
+    }
+  } catch (err) {
+    console.error("[Notification] Fallback email failed:", err);
   }
+
+  console.warn("[Notification] All notification methods failed.");
+  return false;
 }
