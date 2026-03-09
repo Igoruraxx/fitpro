@@ -321,8 +321,8 @@ export const authRouter = router({
       // Generate 6-digit OTP code
       const code = String(Math.floor(100000 + Math.random() * 900000));
 
-      // Store OTP as auth token (type = 'otp', expires in 10 minutes)
-      const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 min
+      // Store OTP as auth token (type = 'otp', expires in 20 minutes)
+      const expiresAt = new Date(Date.now() + 20 * 60 * 1000); // 20 min
 
       // Check if user exists to personalize email
       const existingUser = await getUserByEmail(input.email);
@@ -380,12 +380,20 @@ export const authRouter = router({
       // Send OTP email
       const sent = await sendOtpEmail(input.email, code, existingUser?.name ?? undefined);
 
+      if (!sent && process.env.NODE_ENV === "production") {
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Falha ao enviar e-mail. Verifique a configuração da chave de API (RESEND_API_KEY).",
+        });
+      }
+
       return {
         success: true,
         isNewUser: !existingUser,
+          expiresIn: 20, // minutes
         message: sent
           ? "Código enviado para seu e-mail"
-          : "Código gerado (verifique o console do servidor)",
+          : "Código gerado (modo desenvolvimento: verifique o console)",
       };
     }),
 

@@ -67,13 +67,24 @@ export async function getDb() {
       // Standard PostgreSQL connection. Use ssl: 'require' for most cloud providers.
       // But we can make it more flexible based on env.
       const ssl = process.env.DB_SSL === 'false' ? false : 'require';
-      const client = postgres(connStr, { max: 10, ssl });
+      const client = postgres(connStr, {
+        max: 10,
+        ssl,
+        connect_timeout: 10, // 10 seconds timeout
+      });
       _db = drizzle(client);
       console.log("[Database] Connected to PostgreSQL");
+
+      // Basic connectivity check
+      await _db.execute(sql`SELECT 1`);
+
       await runMigrations(_db);
     } catch (error) {
-      console.warn("[Database] Failed to connect:", error);
+      console.error("[Database] Critical connection failure:", error);
       _db = null;
+      if (process.env.NODE_ENV === "production") {
+        throw error; // Fail fast in production
+      }
     }
   }
   return _db;
@@ -81,8 +92,12 @@ export async function getDb() {
 
 // ==================== USERS ====================
 
+/** @deprecated using email login now */
 export async function upsertUser(user: InsertUser): Promise<void> {
-  if (!user.openId) throw new Error("User openId is required for upsert");
+  if (!user.openId) {
+    console.warn("[Database] upsertUser called without openId, skipping.");
+    return;
+  }
   const db = await getDb();
   if (!db) return;
 

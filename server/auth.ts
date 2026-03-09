@@ -22,11 +22,11 @@ export function generateVerificationToken(): string {
 export function getTokenExpiration(type: "email_confirmation" | "password_reset"): Date {
   const now = new Date();
   if (type === "email_confirmation") {
-    // 24 hours
-    return new Date(now.getTime() + 24 * 60 * 60 * 1000);
+    // 48 hours for email confirmation
+    return new Date(now.getTime() + 48 * 60 * 60 * 1000);
   } else {
-    // 1 hour
-    return new Date(now.getTime() + 60 * 60 * 1000);
+    // 4 hours for password reset
+    return new Date(now.getTime() + 4 * 60 * 60 * 1000);
   }
 }
 
