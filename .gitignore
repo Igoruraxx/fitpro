@@ -110,5 +110,6 @@ temp/
 .webdev/
 .vercel
 
-api/_built.cjs
+api/_built.js
 dist-test/
+
