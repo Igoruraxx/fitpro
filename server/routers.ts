@@ -3,7 +3,6 @@ import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
 import { publicProcedure, protectedProcedure, adminProcedure, router } from "./_core/trpc";
 import { authRouter } from "./routers/auth";
-import { paymentsRouter } from "./routers/payments";
 import { adminRouter } from "./routers/admin";
 import { z } from "zod";
 import {
@@ -79,7 +78,6 @@ function generateRecurringDates(
 
 export const appRouter = router({
   system: systemRouter,
-  payments: paymentsRouter,
   admin: adminRouter,
 
   // ==================== BIOIMPEDANCE ====================

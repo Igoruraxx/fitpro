@@ -12,10 +12,6 @@ export const ENV = {
   supabaseServiceKey: process.env.SUPABASE_SERVICE_ROLE_KEY ?? "",
   supabaseAnonKey: process.env.SUPABASE_ANON_KEY ?? "",
   supabaseDbUrl: process.env.SUPABASE_DB_URL ?? "",
-  // Abacash
-  abacashSkLive: process.env.ABACASH_SK_LIVE ?? "",
-  // AbacatePay
-  abacatepaySkLive: process.env.ABACATEPAY_SK_LIVE ?? "",
   // S3 (for independent storage)
   s3AccessKeyId: process.env.S3_ACCESS_KEY_ID ?? "",
   s3SecretAccessKey: process.env.S3_SECRET_ACCESS_KEY ?? "",

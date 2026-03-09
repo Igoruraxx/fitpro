@@ -14,7 +14,6 @@
 
 ## Sistema de Assinaturas
 - [x] Planos: Free (até 5 alunos), Pro (ilimitados)
-- [ ] Integração Stripe para pagamentos (placeholder - em breve)
 - [x] Controle de limites por plano
 - [x] Página /upgrade com comparativo Free vs Pro
 
@@ -97,7 +96,7 @@
 ### Fotos de Progresso (melhorias)
 - [x] Upload real de fotos para storage S3
 - [x] Galeria em grid com cards (aspect ratio 3:4)
-- [x] Hover overlay com nome do aluno, tipo e data
+- [x] Hover overlay with nome do aluno, tipo e data
 - [x] Filtro por aluno na galeria
 - [x] Área de upload com drag-style
 - [x] Exclusão de fotos com confirmação
@@ -316,7 +315,7 @@
 ## Bug: Alinhamento botões plano + erro enum consulting (v18)
 - [x] Corrigir alinhamento: botões de plano com ícone centralizado acima do texto
 - [x] Corrigir enum plan_type no banco: adicionar valor "consulting"
-- [x] Testar update de cliente com planType=consulting
+- [x] Testar update de cliente with planType=consulting
 - [x] Validação de dia 31 em meses menores (clampDay) implementada em generateMonthlyCharges
 - [x] Notificações automáticas ao gerar cobranças e dar baixa (notifyOwner)
 - [x] Testes vitest atualizados: 71 testes passando (100%)
@@ -336,7 +335,6 @@
 
 ## Pendentes Conhecidos
 - [ ] Configurar envio de e-mail (Nodemailer/Resend/SendGrid) para notificações externas
-- [ ] Integração Stripe para pagamentos de assinatura
 - [ ] Testar fluxo completo de Consultoria no browser
 
 ## Bug: Data inválida nas queries de transactions (v21)
@@ -490,7 +488,7 @@
 ## Reorganização e Apagar Exames por Data (v20)
 - [x] Reorganizar layout do Bioimpedancia
 - [x] Colocar botão "Apagar Exames por Data" abaixo da seleção de aluno
-- [x] Modal com seletor de data para apagar por data
+- [x] Modal with seletor de data para apagar por data
 - [x] AlertDialog de confirmação dupla
 - [x] Lógica de deleção de exames anteriores à data
 
@@ -503,7 +501,7 @@
 - [x] Modificar Fotos.tsx para listar datas específicas com fotos
 - [x] Modificar Bioimpedancia.tsx para listar datas específicas com exames
 - [x] Mostrar contagem de fotos/exames por data
-- [x] Apagar apenas fotos/exames da data selecionada (não anteriores)
+- [x] Apagar apenas fotos/exames da data selecionada (not anteriores)
 - [x] Atualizar mensagens de confirmação
 
 ## Correção Bioimpedância (v23)
@@ -567,7 +565,7 @@
 
 
 ## Correção de Erros de Query (v32)
-- [x] Sincronizar schema Drizzle com colunas packageSessionsTotal e packageSessionsCompleted
+- [x] Sincronizar schema Drizzle com colunas packageSessionsTotal and packageSessionsCompleted
 - [x] Verificar se as colunas estão sendo reconhecidas nas queries
 - [x] Limpar cache e reinstalar dependências
 - [x] Reiniciar servidor
@@ -795,7 +793,7 @@
 ## PWA e Mobile-First (v57)
 - [x] Configurar manifest.json com ícones e metadados
 - [x] Implementar service worker para offline
-- [x] Adicionar meta tags viewport e PWA
+- [x] Adicionar meta tags viewport and PWA
 - [x] Auditar layout mobile em todas as páginas
 - [x] Otimizar layout Admin para mobile (botões hidden)
 - [x] Otimizar espaçamento para mobile
@@ -876,28 +874,6 @@
 - [x] Testar em mobile e desktop
 - [x] Todos os 75 testes passando
 
-## Integração Abacash para Pagamentos (v69)
-- [ ] Configurar secret key Abacash
-- [ ] Criar helpers para API Abacash (criar subscription, webhook)
-- [ ] Definir preços dos planos: Mensal 24,90, Trimestral 69,72 (5%), Semestral 130,42 (10%), Anual 239,04 (20%)
-- [ ] Criar routers tRPC: createSubscription, cancelSubscription, getSubscriptionStatus
-- [ ] Implementar UI de seleção de planos com preços e descontos
-- [ ] Integrar fluxo de checkout (redirect para Abacash)
-- [ ] Implementar webhook para confirmar pagamento e ativar Pro
-- [ ] Testar fluxo completo de pagamento
-
-
-## Integração Abacash para Pagamentos (v69)
-- [x] Configurar secret ABACASH_SK_LIVE
-- [x] Criar helpers Abacash com planos (mensal 24,90, trimestral 70,97 com 5%, semestral 134,46 com 10%, anual 239,04 com 20%)
-- [x] Criar 11 testes para validação de preços e descontos
-- [x] Criar routers tRPC para pagamentos (getPlans, createCheckout, confirmPayment, getSubscriptionStatus, cancelSubscription)
-- [x] Criar componente PlanSelector com UI de seleção de planos
-- [x] Integrar modal de pagamento na página Upgrade
-- [x] Criar webhook handler para eventos Abacash (subscription.activated, subscription.cancelled, subscription.expired)
-- [x] Registrar rota POST /api/webhooks/abacash
-- [x] Todos os 86 testes passando
-
 
 ## Bug: Erro ao Criar Agendamentos para Pacotes (v70)
 - [x] Investigar erro: "Todas as 6 sessoes do pacote ja foram criadas"
@@ -924,33 +900,6 @@
 - [x] Verificar router createCheckout
 - [x] Adicionar modo mock para testes (development mode)
 - [x] Todos os 86 testes passando
-
-
-## Refatoração Painel Admin com AbacatePay (v73)
-- [ ] Atualizar schema: plan_type, plan_origin, abacatepay_customer_id, plan_expires_at, plan_granted_by
-- [ ] Criar helpers AbacatePay (checkout, status, webhook verification)
-- [ ] Criar routers tRPC: listPersonals avançado, updatePlanManual, getPaymentHistory
-- [ ] Implementar webhook handler /api/webhooks/abacatepay
-- [ ] Criar tabela com colunas: nome, email, clientes, plano, origem, expiração, ações
-- [ ] Implementar filtros: plano, origem, busca, ordenação
-- [ ] Badges com cores: verde (FREE), azul (PRO-Pagamento), roxo (PRO-Cortesia), laranja (PRO-Trial)
-- [ ] Ações: ver detalhes, editar plano, cancelar trial, histórico de pagamentos
-- [ ] Cron job para expiração automática de trials
-- [ ] Logging de mudanças de plano
-- [ ] Testes e validação
-
-
-## Refatoração Painel Admin com AbacatePay (v73)
-- [x] Atualizar schema com campos abacatepay_customer_id, abacatepay_subscription_id, plan_start_at, plan_expires_at
-- [x] Criar skill reutilizável abacatepay-saas-integration com documentação completa
-- [x] Implementar helper AbacatePay (checkout, webhook verification, status queries)
-- [x] Integrar webhook handler AbacatePay no servidor (/api/webhooks/abacatepay)
-- [x] Criar componente PersonalsTable com filtros, busca, badges coloridas
-- [x] Criar página AdminAbacatepay com ações (cortesia, cancelar, trial)
-- [ ] Criar routers tRPC admin avançados (listPersonals, convertToProCourtesy, etc)
-- [ ] Implementar cron job para expiração automática de trials
-- [ ] Criar testes para webhooks e routers admin
-- [ ] Integrar logging de mudanças de plano
 
 
 ## Cron Job: Downgrade de Trials Expirados (v74)
@@ -980,8 +929,6 @@
 
 ## Bug Crítico: Erro de Login (v77)
 - [x] Investigar end-to-end o erro "Failed query" no login
-- [x] Causa raiz: 8 colunas AbacatePay existiam no schema TypeScript mas não no banco Supabase
-- [x] Aplicar migration via Supabase MCP para adicionar colunas faltantes
 - [x] Login testado via curl: success: true, usuário autenticado
 
 
