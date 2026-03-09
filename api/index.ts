@@ -35,3 +35,4 @@ app.use(
 );
 
 export default app;
+module.exports = app;
