@@ -35,7 +35,7 @@ abacatepayWebhookRouter.post('/abacatepay', async (req, res) => {
   try {
     // Verify webhook signature
     const signature = req.headers['x-abacatepay-signature'] as string;
-    const payload = JSON.stringify(req.body);
+    const payload = (req as any).rawBody?.toString('utf-8') || JSON.stringify(req.body);
 
     if (!verifyAbacatepayWebhookSignature(payload, signature)) {
       console.warn('[AbacatePay Webhook] Invalid signature');
