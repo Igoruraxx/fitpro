@@ -57,7 +57,13 @@ async function runMigrations(db: ReturnType<typeof drizzle>) {
 export async function getDb() {
   if (!_db) {
     // Prefer DATABASE_URL for standard PostgreSQL connection
-    const connStr = process.env.DATABASE_URL || ENV.supabaseDbUrl;
+    let connStr = process.env.DATABASE_URL || ENV.supabaseDbUrl;
+
+    // Auto-patch Supabase connection strings for Vercel IPv4 compatibility
+    if (connStr && connStr.includes("supabase.com") && connStr.includes(":5432")) {
+      console.log("[Database] Patching Supabase URL for IPv4 compatibility (pooler port 6543)");
+      connStr = connStr.replace(":5432", ":6543");
+    }
 
     if (!connStr) {
       console.warn("[Database] No connection string available. Set DATABASE_URL.");
@@ -70,7 +76,7 @@ export async function getDb() {
       const client = postgres(connStr, {
         max: 10,
         ssl,
-        connect_timeout: 10, // 10 seconds timeout
+        connect_timeout: 5, // 10 seconds timeout
       });
       _db = drizzle(client);
       console.log("[Database] Connected to PostgreSQL");
@@ -81,6 +87,9 @@ export async function getDb() {
       await runMigrations(_db);
     } catch (error) {
       console.error("[Database] Critical connection failure:", error);
+      if (error && error.message && error.message.includes("timeout") && connStr.includes("supabase.com") && !connStr.includes("6543")) {
+        console.error("HINT: Supabase removed IPv4 support for direct connections (port 5432). Please use the Transaction Pooler URL (port 6543) in your DATABASE_URL for Vercel deployments.");
+      }
       _db = null;
       if (process.env.NODE_ENV === "production") {
         throw error; // Fail fast in production
