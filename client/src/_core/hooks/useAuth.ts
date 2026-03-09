@@ -64,7 +64,7 @@ export function useAuth(options?: UseAuthOptions) {
 
     const currentPath = window.location.pathname;
     // Don't redirect if already on an auth page
-    const authPaths = ["/login", "/register", "/forgot-password", "/reset-password", "/confirm-email", "/login-otp"];
+    const authPaths = ["/login", "/register", "/forgot-password", "/reset-password", "/confirm-email"];
     if (authPaths.includes(currentPath)) return;
 
     window.location.href = redirectPath;
