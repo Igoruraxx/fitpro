@@ -35,6 +35,8 @@ export const adminRouter = router({
         search: z.string().optional(),
         planFilter: z.enum(["all", "free", "pro"]).optional(),
         originFilter: z.enum(["all", "payment", "courtesy", "trial"]).optional(),
+        sortBy: z.enum(["name", "clients", "created", "expires"]).optional(),
+        sortOrder: z.enum(["asc", "desc"]).optional(),
       })
     )
     .query(async ({ input }) => {
@@ -107,9 +109,72 @@ export const adminRouter = router({
         })
       );
 
-      return personalsWithClients.sort((a, b) =>
-        (a.name || "").localeCompare(b.name || "")
-      );
+      const { sortBy = "name", sortOrder = "asc" } = input;
+
+      return personalsWithClients.sort((a, b) => {
+        let comparison = 0;
+        if (sortBy === "name") {
+          comparison = (a.name || "").localeCompare(b.name || "");
+        } else if (sortBy === "clients") {
+          comparison = a.clientCount - b.clientCount;
+        } else if (sortBy === "created") {
+          comparison =
+            new Date(a.createdAt || 0).getTime() -
+            new Date(b.createdAt || 0).getTime();
+        } else if (sortBy === "expires") {
+          comparison =
+            new Date(a.expiresAt || 0).getTime() -
+            new Date(b.expiresAt || 0).getTime();
+        }
+
+        return sortOrder === "asc" ? comparison : -comparison;
+      });
+    }),
+
+  /**
+   * Grant a 7-day trial to a personal
+   */
+  grantTrial: adminProcedure
+    .input(z.object({ personalId: z.number() }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db)
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "DB unavailable",
+        });
+
+      const [personal] = await db
+        .select()
+        .from(users)
+        .where(eq(users.id, input.personalId))
+        .limit(1);
+
+      if (!personal)
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Personal não encontrado",
+        });
+
+      const expiresAt = new Date();
+      expiresAt.setDate(expiresAt.getDate() + 7);
+
+      await db
+        .update(users)
+        .set({
+          subscriptionPlan: "pro",
+          subscriptionStatus: "active",
+          proSource: "trial",
+          proExpiresAt: expiresAt,
+          trialRequestedAt: new Date(),
+          updatedAt: new Date(),
+        })
+        .where(eq(users.id, input.personalId));
+
+      return {
+        success: true,
+        message: `Trial de 7 dias concedido para ${personal.name}`,
+      };
     }),
 
   /**

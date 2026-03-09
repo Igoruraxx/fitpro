@@ -1,26 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { PersonalsTable } from '@/components/PersonalsTable';
-import { Button } from '@/components/ui/button';
 import DashboardLayout from '@/components/DashboardLayout';
-
-interface Personal {
-  id: number;
-  name: string;
-  email: string;
-  phone?: string;
-  createdAt: Date;
-  subscriptionPlan: 'free' | 'pro';
-  proSource?: 'payment' | 'courtesy' | 'trial' | null;
-  proExpiresAt?: Date | null;
-  lastPaymentDate?: Date | null;
-  lastPaymentAmount?: string | null;
-  lastPaymentId?: string | null;
-  clientCount: number;
-}
+import { trpc } from '@/lib/trpc';
+import { toast } from 'sonner';
 
 export const AdminAbacatepayPage: React.FC = () => {
-  const [personals, setPersonals] = useState<Personal[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
   const [filters, setFilters] = useState<any>({
     planFilter: 'all',
     originFilter: 'all',
@@ -29,37 +13,60 @@ export const AdminAbacatepayPage: React.FC = () => {
     sortOrder: 'asc',
   });
 
-  // TODO: Replace with actual tRPC call
-  // const { data, isLoading } = trpc.admin.listPersonals.useQuery(filters);
+  const { data: personalsData, isLoading, refetch } = trpc.admin.listPersonals.useQuery(filters);
+
+  const convertToCourtesyMutation = trpc.admin.convertToProCourtesy.useMutation({
+    onSuccess: (data) => {
+      toast.success(data.message);
+      refetch();
+    },
+    onError: (error) => {
+      toast.error('Erro ao converter para cortesia: ' + error.message);
+    },
+  });
+
+  const cancelSubscriptionMutation = trpc.admin.cancelProSubscription.useMutation({
+    onSuccess: (data) => {
+      toast.success(data.message);
+      refetch();
+    },
+    onError: (error) => {
+      toast.error('Erro ao cancelar assinatura: ' + error.message);
+    },
+  });
+
+  const grantTrialMutation = trpc.admin.grantTrial.useMutation({
+    onSuccess: (data) => {
+      toast.success(data.message);
+      refetch();
+    },
+    onError: (error) => {
+      toast.error('Erro ao conceder trial: ' + error.message);
+    },
+  });
 
   const handleConvertToCourtesy = async (personalId: number) => {
-    try {
-      // TODO: Call tRPC mutation
-      console.log('Converting personal to courtesy:', personalId);
-    } catch (error) {
-      console.error('Error converting personal:', error);
-    }
+    convertToCourtesyMutation.mutate({ personalId });
   };
 
   const handleCancelSubscription = async (personalId: number) => {
     if (!confirm('Tem certeza que deseja cancelar a assinatura?')) return;
-
-    try {
-      // TODO: Call tRPC mutation
-      console.log('Cancelling subscription:', personalId);
-    } catch (error) {
-      console.error('Error cancelling subscription:', error);
-    }
+    cancelSubscriptionMutation.mutate({ personalId });
   };
 
   const handleGrantTrial = async (personalId: number) => {
-    try {
-      // TODO: Call tRPC mutation
-      console.log('Granting trial:', personalId);
-    } catch (error) {
-      console.error('Error granting trial:', error);
-    }
+    grantTrialMutation.mutate({ personalId });
   };
+
+  const personals = useMemo(() => {
+    if (!personalsData) return [];
+    return personalsData.map((p: any) => ({
+      ...p,
+      subscriptionPlan: p.plan,
+      createdAt: p.createdAt ? new Date(p.createdAt) : new Date(),
+      proExpiresAt: p.expiresAt ? new Date(p.expiresAt) : null,
+    }));
+  }, [personalsData]);
 
   return (
     <DashboardLayout>
