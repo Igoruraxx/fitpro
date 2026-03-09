@@ -86,30 +86,33 @@ O FitPro está **pronto para exportação** para Antigravity com todas as funcio
 
 - **Frontend:** React 19 + Tailwind 4 + Vite
 - **Backend:** Express 4 + tRPC 11
-- **Database:** PostgreSQL (Supabase)
-- **Auth:** JWT próprio (não Manus OAuth)
-- **Storage:** S3 (Manus built-in)
+- **Database:** PostgreSQL (Independente)
+- **Auth:** JWT próprio (Independente)
+- **Storage:** S3 (Independente/AWS SDK)
 - **Email:** Resend
 - **Testing:** Vitest
 
-### 📝 Instruções de Exportação
+### 📝 Instruções de Configuração Autônoma
 
 #### 1. Preparar Banco de Dados
 ```bash
-# Verificar schema
+# Definir DATABASE_URL (PostgreSQL)
+# Aplicar migrations
 pnpm drizzle-kit generate
-
-# Aplicar migrations (se houver)
 pnpm drizzle-kit migrate
 ```
 
 #### 2. Variáveis de Ambiente
-Configurar no Antigravity:
-- `DATABASE_URL` - Conexão PostgreSQL
+Configurar no ambiente:
+- `DATABASE_URL` - Conexão PostgreSQL (ex: Supabase, Neon, RDS)
 - `JWT_SECRET` - Chave para assinar JWTs
-- `RESEND_API_KEY` - API key do Resend
-- `VITE_APP_TITLE` - "FITPRO"
-- `VITE_APP_LOGO` - URL do logo
+- `RESEND_API_KEY` - API key do Resend para e-mails
+- `APP_URL` - URL base do aplicativo (ex: https://meufitpro.com)
+- `S3_ACCESS_KEY_ID` - AWS Access Key
+- `S3_SECRET_ACCESS_KEY` - AWS Secret Key
+- `S3_BUCKET` - Nome do bucket S3
+- `S3_REGION` - Região do bucket (ex: us-east-1)
+- `S3_ENDPOINT` - Endpoint customizado (opcional, para Cloudflare R2, DigitalOcean, etc)
 
 #### 3. Build
 ```bash

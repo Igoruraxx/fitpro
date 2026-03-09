@@ -16,4 +16,12 @@ export const ENV = {
   abacashSkLive: process.env.ABACASH_SK_LIVE ?? "",
   // AbacatePay
   abacatepaySkLive: process.env.ABACATEPAY_SK_LIVE ?? "",
+  // S3 (for independent storage)
+  s3AccessKeyId: process.env.S3_ACCESS_KEY_ID ?? "",
+  s3SecretAccessKey: process.env.S3_SECRET_ACCESS_KEY ?? "",
+  s3Region: process.env.S3_REGION ?? "us-east-1",
+  s3Bucket: process.env.S3_BUCKET ?? "",
+  s3Endpoint: process.env.S3_ENDPOINT ?? "",
+  // App
+  appUrl: process.env.APP_URL ?? "http://localhost:3000",
 };

@@ -2,16 +2,40 @@
 // Uses the Biz-provided storage proxy (Authorization: Bearer <token>)
 
 import { ENV } from './_core/env';
+import { S3Client, PutObjectCommand, GetObjectCommand } from "@aws-sdk/client-s3";
+import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 
 type StorageConfig = { baseUrl: string; apiKey: string };
+
+// Initialize S3 client only if credentials are provided
+let _s3Client: S3Client | null = null;
+function getS3Client() {
+  if (_s3Client) return _s3Client;
+  if (!ENV.s3AccessKeyId || !ENV.s3SecretAccessKey || !ENV.s3Bucket) return null;
+
+  _s3Client = new S3Client({
+    region: ENV.s3Region,
+    credentials: {
+      accessKeyId: ENV.s3AccessKeyId,
+      secretAccessKey: ENV.s3SecretAccessKey,
+    },
+    endpoint: ENV.s3Endpoint || undefined,
+    forcePathStyle: !!ENV.s3Endpoint,
+  });
+  return _s3Client;
+}
 
 function getStorageConfig(): StorageConfig {
   const baseUrl = ENV.forgeApiUrl;
   const apiKey = ENV.forgeApiKey;
 
   if (!baseUrl || !apiKey) {
+    // If we have S3, don't throw yet
+    if (getS3Client()) {
+      return { baseUrl: "", apiKey: "" };
+    }
     throw new Error(
-      "Storage proxy credentials missing: set BUILT_IN_FORGE_API_URL and BUILT_IN_FORGE_API_KEY"
+      "Storage credentials missing: set S3_ACCESS_KEY_ID or BUILT_IN_FORGE_API_URL"
     );
   }
 
@@ -72,8 +96,29 @@ export async function storagePut(
   data: Buffer | Uint8Array | string,
   contentType = "application/octet-stream"
 ): Promise<{ key: string; url: string }> {
-  const { baseUrl, apiKey } = getStorageConfig();
+  const s3 = getS3Client();
   const key = normalizeKey(relKey);
+
+  if (s3) {
+    const body = typeof data === "string" ? Buffer.from(data) : data;
+    await s3.send(new PutObjectCommand({
+      Bucket: ENV.s3Bucket,
+      Key: key,
+      Body: body,
+      ContentType: contentType,
+    }));
+
+    // For S3, we return a signed URL or public URL
+    // Here we use a signed URL valid for 24h as a generic solution
+    const url = await getSignedUrl(s3, new GetObjectCommand({
+      Bucket: ENV.s3Bucket,
+      Key: key,
+    }), { expiresIn: 86400 * 7 }); // 7 days
+
+    return { key, url };
+  }
+
+  const { baseUrl, apiKey } = getStorageConfig();
   const uploadUrl = buildUploadUrl(baseUrl, key);
   const formData = toFormData(data, contentType, key.split("/").pop() ?? key);
   const response = await fetch(uploadUrl, {
@@ -93,8 +138,18 @@ export async function storagePut(
 }
 
 export async function storageGet(relKey: string): Promise<{ key: string; url: string; }> {
-  const { baseUrl, apiKey } = getStorageConfig();
+  const s3 = getS3Client();
   const key = normalizeKey(relKey);
+
+  if (s3) {
+    const url = await getSignedUrl(s3, new GetObjectCommand({
+      Bucket: ENV.s3Bucket,
+      Key: key,
+    }), { expiresIn: 86400 * 7 });
+    return { key, url };
+  }
+
+  const { baseUrl, apiKey } = getStorageConfig();
   return {
     key,
     url: await buildDownloadUrl(baseUrl, key, apiKey),

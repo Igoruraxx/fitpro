@@ -249,9 +249,9 @@ export const authRouter = router({
       );
 
       // Send password reset email
-      // The frontend origin is not available here, so we use a relative path
-      // The client will pass origin if needed; for now use a known pattern
-      const resetUrl = `${ENV.isProduction ? "https" : "http"}://fitpro.manus.space/reset-password?token=${resetToken}`;
+      // Use ENV.appUrl for reset link
+      const baseUrl = ENV.appUrl.replace(/\/+$/, "");
+      const resetUrl = `${baseUrl}/reset-password?token=${resetToken}`;
       sendPasswordResetEmail(user.email!, user.name ?? "Personal Trainer", resetUrl).catch(() => {});
 
       return {
