@@ -11,7 +11,7 @@ import { verifyAbacashWebhookSignature } from "../abacash";
 export async function handleAbacashWebhook(req: Request, res: Response) {
   try {
     const signature = req.headers["x-abacash-signature"] as string;
-    const body = JSON.stringify(req.body);
+    const body = (req as any).rawBody?.toString("utf-8") || JSON.stringify(req.body);
 
     // Verify webhook signature
     if (!verifyAbacashWebhookSignature(body, signature)) {
