@@ -23,7 +23,6 @@ import Register from "./pages/Register";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
 import ConfirmEmail from "./pages/ConfirmEmail";
-import LoginOtp from "./pages/LoginOtp";
 
 function Router() {
   return (
@@ -34,7 +33,6 @@ function Router() {
       <Route path="/forgot-password" component={ForgotPassword} />
       <Route path="/reset-password" component={ResetPassword} />
       <Route path="/confirm-email" component={ConfirmEmail} />
-      <Route path="/login-otp" component={LoginOtp} />
 
       {/* App Routes - With AppLayout */}
       <Route>

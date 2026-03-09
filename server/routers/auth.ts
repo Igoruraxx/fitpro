@@ -22,8 +22,7 @@ import {
 import { getSessionCookieOptions } from "../_core/cookies";
 import { COOKIE_NAME, ONE_YEAR_MS } from "@shared/const";
 import { ENV } from "../_core/env";
-import { sendWelcomeEmail, sendPasswordResetEmail } from "../email";
-import { sendOtpEmail } from "../email-otp";
+import { sendWelcomeEmail, sendPasswordResetEmail, sendEmailConfirmationEmail } from "../email";
 
 function getSessionSecret() {
   return new TextEncoder().encode(ENV.cookieSecret);
@@ -99,32 +98,21 @@ export const authRouter = router({
       const passwordHash = await hashPassword(input.password);
       const user = await createUser(input.email, passwordHash, input.name);
 
-      // Create email confirmation token (stored for future email sending)
-      await createAuthToken(
+      // Create email confirmation token
+      const confirmToken = await createAuthToken(
         user.id,
         "email_confirmation",
         getTokenExpiration("email_confirmation")
       );
 
-      // Auto-confirm email (no email verification flow)
-      await updateUserEmailVerified(user.id);
-      
-      // Verify that email was marked as verified
-      const verifiedUser = await getUserById(user.id);
-      if (!verifiedUser?.emailVerified) {
-        console.warn(`[Auth] Email verification failed for user ${user.id}`);
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: "Erro ao confirmar e-mail. Tente novamente.",
-        });
-      }
-
-      // Send welcome email (fire-and-forget, don't block registration)
-      sendWelcomeEmail(input.email, input.name).catch(() => {});
+      // Send confirmation email via Resend
+      const baseUrl = ENV.appUrl.replace(/\/+$/, "");
+      const confirmUrl = `${baseUrl}/confirm-email?token=${confirmToken}`;
+      sendEmailConfirmationEmail(input.email, input.name, confirmUrl).catch(() => {});
 
       return {
         success: true,
-        message: "Cadastro realizado com sucesso! Você já pode fazer login.",
+        message: "Cadastro realizado! Verifique seu e-mail para confirmar a conta e fazer login.",
         userId: user.id,
       };
     }),
@@ -219,8 +207,16 @@ export const authRouter = router({
       // Mark email as verified
       await updateUserEmailVerified(authToken.userId);
 
+      // Get user info for welcome email
+      const confirmedUser = await getUserById(authToken.userId);
+
       // Delete token
       await deleteAuthToken(input.token);
+
+      // Send welcome email after successful confirmation (fire-and-forget)
+      if (confirmedUser) {
+        sendWelcomeEmail(confirmedUser.email!, confirmedUser.name ?? "Personal Trainer").catch(() => {});
+      }
 
       return {
         success: true,
@@ -307,175 +303,6 @@ export const authRouter = router({
       return {
         success: true,
         message: "Senha redefinida com sucesso! Você já pode fazer login com a nova senha.",
-      };
-    }),
-
-  // ==================== OTP AUTH ====================
-  sendOtp: publicProcedure
-    .input(z.object({ email: z.string().email("E-mail inválido") }))
-    .mutation(async ({ input }) => {
-      if (!isValidEmail(input.email)) {
-        throw new TRPCError({ code: "BAD_REQUEST", message: "E-mail inválido" });
-      }
-
-      // Generate 6-digit OTP code
-      const code = String(Math.floor(100000 + Math.random() * 900000));
-
-      // Store OTP as auth token (type = 'otp', expires in 20 minutes)
-      const expiresAt = new Date(Date.now() + 20 * 60 * 1000); // 20 min
-
-      // Check if user exists to personalize email
-      const existingUser = await getUserByEmail(input.email);
-
-      // Delete any existing OTP tokens for this email/user
-      if (existingUser) {
-        const { getDb } = await import("../db");
-        const db = await getDb();
-        if (db) {
-          const { authTokens: authTokensTable } = await import("../../drizzle/schema");
-          const { eq, and } = await import("drizzle-orm");
-          await db.delete(authTokensTable).where(
-            and(
-              eq(authTokensTable.userId, existingUser.id),
-              eq(authTokensTable.type, "otp")
-            )
-          );
-        }
-      }
-
-      // For new users, create a temporary user record or store OTP differently
-      // We'll use a special approach: store OTP with email as the token prefix
-      if (existingUser) {
-        // Store OTP for existing user
-        const { getDb } = await import("../db");
-        const db = await getDb();
-        if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "DB unavailable" });
-
-        const { authTokens: authTokensTable } = await import("../../drizzle/schema");
-        await db.insert(authTokensTable).values({
-          userId: existingUser.id,
-          token: `otp:${input.email}:${code}`,
-          type: "otp",
-          expiresAt,
-        });
-      } else {
-        // For new users, create a placeholder user (unverified) to store the OTP
-        const { hashPassword: hp } = await import("../auth");
-        const tempHash = await hp(code + Date.now()); // random hash, will be replaced
-        const newUser = await createUser(input.email, tempHash, undefined);
-
-        const { getDb } = await import("../db");
-        const db = await getDb();
-        if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "DB unavailable" });
-
-        const { authTokens: authTokensTable } = await import("../../drizzle/schema");
-        await db.insert(authTokensTable).values({
-          userId: newUser.id,
-          token: `otp:${input.email}:${code}`,
-          type: "otp",
-          expiresAt,
-        });
-      }
-
-      // Send OTP email
-      const sent = await sendOtpEmail(input.email, code, existingUser?.name ?? undefined);
-
-      if (!sent && process.env.NODE_ENV === "production") {
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: "Falha ao enviar e-mail. Verifique a configuração da chave de API (RESEND_API_KEY).",
-        });
-      }
-
-      return {
-        success: true,
-        isNewUser: !existingUser,
-          expiresIn: 20, // minutes
-        message: sent
-          ? "Código enviado para seu e-mail"
-          : "Código gerado (modo desenvolvimento: verifique o console)",
-      };
-    }),
-
-  verifyOtp: publicProcedure
-    .input(z.object({
-      email: z.string().email("E-mail inválido"),
-      code: z.string().length(6, "Código deve ter 6 dígitos"),
-      name: z.string().optional(), // Required for new users
-    }))
-    .mutation(async ({ input, ctx }) => {
-      const { getDb } = await import("../db");
-      const db = await getDb();
-      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "DB unavailable" });
-
-      const { authTokens: authTokensTable } = await import("../../drizzle/schema");
-      const { eq } = await import("drizzle-orm");
-
-      // Find the OTP token
-      const tokenKey = `otp:${input.email}:${input.code}`;
-      const [otpRecord] = await db.select().from(authTokensTable)
-        .where(eq(authTokensTable.token, tokenKey))
-        .limit(1);
-
-      if (!otpRecord) {
-        throw new TRPCError({ code: "BAD_REQUEST", message: "Código inválido" });
-      }
-
-      // Check expiration
-      if (new Date() > otpRecord.expiresAt) {
-        await db.delete(authTokensTable).where(eq(authTokensTable.token, tokenKey));
-        throw new TRPCError({ code: "BAD_REQUEST", message: "Código expirado. Solicite um novo." });
-      }
-
-      // Get the user
-      const user = await getUserById(otpRecord.userId);
-      if (!user) {
-        throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Usuário não encontrado" });
-      }
-
-      // Mark email as verified
-      await updateUserEmailVerified(user.id);
-
-      // If new user and name provided, update the name
-      const isNewUser = !user.name;
-      if (isNewUser && input.name) {
-        const { users: usersTable } = await import("../../drizzle/schema");
-        await db.update(usersTable).set({
-          name: input.name,
-          updatedAt: new Date(),
-        }).where(eq(usersTable.id, user.id));
-
-        // Send welcome email
-        sendWelcomeEmail(input.email, input.name).catch(() => {});
-      }
-
-      // Delete all OTP tokens for this user
-      const { and } = await import("drizzle-orm");
-      await db.delete(authTokensTable).where(
-        and(
-          eq(authTokensTable.userId, user.id),
-          eq(authTokensTable.type, "otp")
-        )
-      );
-
-      // Create session JWT
-      const sessionToken = await createSessionToken(user.id);
-      const cookieOptions = getSessionCookieOptions(ctx.req);
-      ctx.res.cookie(COOKIE_NAME, sessionToken, {
-        ...cookieOptions,
-        maxAge: ONE_YEAR_MS,
-      });
-
-      return {
-        success: true,
-        isNewUser,
-        needsName: isNewUser && !input.name,
-        user: {
-          id: user.id,
-          email: user.email,
-          name: input.name || user.name,
-          role: user.role,
-        },
       };
     }),
 
