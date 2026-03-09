@@ -31,7 +31,6 @@ export function validateEnv() {
   const required = [
     "DATABASE_URL",
     "JWT_SECRET",
-    "RESEND_API_KEY",
   ];
 
   const missing = required.filter(key => !process.env[key]);

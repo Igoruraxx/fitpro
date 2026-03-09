@@ -96,6 +96,42 @@ export async function sendWelcomeEmail(to: string, name: string): Promise<boolea
   });
 }
 
+export async function sendEmailConfirmationEmail(to: string, name: string, confirmUrl: string): Promise<boolean> {
+  return sendEmail({
+    to,
+    subject: "Confirme seu e-mail — FITPRO",
+    html: `
+      <div style="font-family: Inter, Arial, sans-serif; max-width: 520px; margin: 0 auto; padding: 32px 24px; background: #ffffff; border-radius: 12px;">
+        <div style="text-align: center; margin-bottom: 32px;">
+          <div style="display: inline-flex; align-items: center; justify-content: center; width: 56px; height: 56px; background: #3B82F6; border-radius: 14px; font-size: 28px; line-height: 56px;">💪</div>
+          <h1 style="margin: 16px 0 4px; font-size: 22px; font-weight: 700; color: #0f172a;">FITPRO</h1>
+          <p style="margin: 0; color: #64748b; font-size: 13px;">Agenda para Personal Trainers</p>
+        </div>
+
+        <h2 style="font-size: 18px; font-weight: 600; color: #0f172a; margin-bottom: 8px;">Olá, ${name}! 👋</h2>
+        <p style="color: #475569; font-size: 15px; line-height: 1.6; margin-bottom: 24px;">
+          Obrigado por se cadastrar no <strong>FITPRO</strong>! Para ativar sua conta, confirme seu endereço de e-mail clicando no botão abaixo.
+        </p>
+
+        <div style="text-align: center; margin-bottom: 24px;">
+          <a href="${confirmUrl}" style="display: inline-block; background: #3B82F6; color: #ffffff; text-decoration: none; padding: 14px 32px; border-radius: 10px; font-weight: 600; font-size: 15px;">
+            Confirmar e-mail
+          </a>
+        </div>
+
+        <p style="color: #94a3b8; font-size: 13px; text-align: center;">
+          Este link expira em <strong>48 horas</strong>. Se você não criou uma conta, ignore este e-mail com segurança.
+        </p>
+
+        <p style="color: #94a3b8; font-size: 12px; text-align: center; margin-top: 32px; border-top: 1px solid #f1f5f9; padding-top: 16px;">
+          © ${new Date().getFullYear()} FITPRO · Todos os direitos reservados
+        </p>
+      </div>
+    `,
+    text: `Olá, ${name}! Confirme seu e-mail no FITPRO clicando no link: ${confirmUrl}\n\nEste link expira em 48 horas.`,
+  });
+}
+
 export async function sendPasswordResetEmail(to: string, name: string, resetUrl: string): Promise<boolean> {
   return sendEmail({
     to,
