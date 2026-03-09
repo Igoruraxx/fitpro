@@ -38,20 +38,12 @@ Armazena dados dos personals (treinadores) e administradores.
 | `specialties` | text | ✅ | - | Especialidades (JSON ou texto) |
 | `bio` | text | ✅ | - | Biografia |
 | `cref` | varchar(20) | ✅ | - | Número CREF (Conselho Regional) |
-| `subscriptionPlan` | subscription_plan enum | ❌ | 'free' | Plano: 'free' \| 'basic' \| 'pro' \| 'premium' |
+| `subscriptionPlan` | subscription_plan enum | ❌ | 'free' | Plano: 'free' \| 'pro' |
 | `subscriptionStatus` | subscription_status enum | ❌ | 'trial' | Status: 'active' \| 'inactive' \| 'trial' \| 'cancelled' |
-| `subscriptionExpiresAt` | timestamp | ✅ | - | Data de expiração da assinatura |
-| `proSource` | varchar(20) | ✅ | - | Origem do PRO: 'payment' \| 'courtesy' \| 'trial' |
-| `proExpiresAt` | timestamp | ✅ | - | Data de expiração do PRO (AbacatePay) |
+| `proSource` | varchar(20) | ✅ | - | Origem do PRO: 'courtesy' \| 'trial' |
+| `proExpiresAt` | timestamp | ✅ | - | Data de expiração do PRO |
 | `trialRequestedAt` | timestamp | ✅ | - | Data quando trial foi solicitado |
-| `abacatepayCustomerId` | varchar(255) | ✅ | - | ID do cliente no AbacatePay (único) |
-| `abacatepaySubscriptionId` | varchar(255) | ✅ | - | ID da assinatura no AbacatePay (único) |
 | `planStartAt` | timestamp | ✅ | - | Data de início do plano PRO |
-| `planExpiresAt` | timestamp | ✅ | - | Data de expiração do plano PRO |
-| `planGrantedBy` | integer | ✅ | - | ID do admin que concedeu o plano (FK → users.id) |
-| `lastPaymentId` | varchar(255) | ✅ | - | ID do último pagamento |
-| `lastPaymentDate` | timestamp | ✅ | - | Data do último pagamento |
-| `lastPaymentAmount` | numeric(10, 2) | ✅ | - | Valor do último pagamento |
 | `maxClients` | integer | ❌ | 5 | Limite de clientes (5 para FREE, ilimitado para PRO) |
 | `createdAt` | timestamp | ❌ | now() | Data de criação |
 | `updatedAt` | timestamp | ❌ | now() | Data da última atualização |
@@ -75,9 +67,6 @@ CREATE TYPE "subscription_status" AS ENUM('active', 'inactive', 'trial', 'cancel
 - `users_openId_unique`: `openId` é único
 - `users_email_unique`: `email` é único
 - `users_googleId_unique`: `googleId` é único
-- `users_abacatepayCustomerId_unique`: `abacatepayCustomerId` é único
-- `users_abacatepaySubscriptionId_unique`: `abacatepaySubscriptionId` é único
-- `users_planGrantedBy_users_id_fk`: FK para `users.id` (ON DELETE SET NULL)
 
 ---
 
@@ -276,6 +265,6 @@ ORDER BY a.date, a.startTime;
 
 | Data | Mudança |
 |------|---------|
-| 2026-03-01 | Adicionados campos AbacatePay (abacatepayCustomerId, abacatepaySubscriptionId, planStartAt, planExpiresAt, planGrantedBy, lastPaymentId, lastPaymentDate, lastPaymentAmount) |
+| 2026-03-01 | Remoção de integrações de pagamento (Abacash/AbacatePay) e campos relacionados |
 | 2026-02-28 | Schema inicial criado |
 

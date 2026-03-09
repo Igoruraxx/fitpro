@@ -36,7 +36,7 @@ export default function Admin() {
   const [, setLocation] = useLocation();
   const [search, setSearch] = useState("");
   const [planFilter, setPlanFilter] = useState<"all" | "free" | "pro">("all");
-  const [originFilter, setOriginFilter] = useState<"all" | "payment" | "courtesy" | "trial">("all");
+  const [originFilter, setOriginFilter] = useState<"all" | "courtesy" | "trial">("all");
   const [selectedPersonal, setSelectedPersonal] = useState<any>(null);
   const [showActionDialog, setShowActionDialog] = useState<"convert" | "cancel" | null>(null);
   const [courtesyDays, setCourtesyDays] = useState("365");
@@ -97,7 +97,6 @@ export default function Admin() {
   };
 
   const originLabels = {
-    payment: "Pagamento",
     courtesy: "Cortesia",
     trial: "Trial 7 dias",
   };
@@ -143,7 +142,6 @@ export default function Admin() {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Todas as origens</SelectItem>
-              <SelectItem value="payment">Pagamento</SelectItem>
               <SelectItem value="courtesy">Cortesia</SelectItem>
               <SelectItem value="trial">Trial</SelectItem>
             </SelectContent>

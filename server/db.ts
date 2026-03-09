@@ -17,40 +17,216 @@ import { nanoid } from "nanoid";
 let _db: ReturnType<typeof drizzle> | null = null;
 
 async function runMigrations(db: ReturnType<typeof drizzle>) {
+  console.log("[Database] Running autonomous initialization...");
   try {
+    // 1. Create Enums if they don't exist
+    const enums = [
+      { name: 'role', values: ["user", "admin"] },
+      { name: 'subscription_plan', values: ["free", "basic", "pro", "premium"] },
+      { name: 'subscription_status', values: ["active", "inactive", "trial", "cancelled"] },
+      { name: 'gender', values: ["male", "female", "other"] },
+      { name: 'client_status', values: ["active", "inactive", "trial"] },
+      { name: 'plan_type', values: ["monthly", "package", "consulting"] },
+      { name: 'appointment_status', values: ["scheduled", "completed", "cancelled", "no_show"] },
+      { name: 'recurrence_type', values: ["none", "daily", "weekly", "biweekly", "monthly"] },
+      { name: 'photo_type', values: ["front", "back", "side_left", "side_right", "other"] },
+      { name: 'transaction_type', values: ["income", "expense"] },
+      { name: 'transaction_status', values: ["pending", "paid", "overdue", "cancelled"] }
+    ];
+
+    for (const e of enums) {
+      await db.execute(sql.raw(`
+        DO $$ BEGIN
+          IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = '${e.name}') THEN
+            CREATE TYPE "${e.name}" AS ENUM (${e.values.map(v => `'${v}'`).join(', ')});
+          END IF;
+        END $$;
+      `));
+    }
+
+    // 2. Create Tables
+    await db.execute(sql`
+      CREATE TABLE IF NOT EXISTS "users" (
+        "id" SERIAL PRIMARY KEY,
+        "openId" VARCHAR(64) UNIQUE,
+        "email" VARCHAR(320) UNIQUE,
+        "passwordHash" TEXT,
+        "emailVerified" BOOLEAN DEFAULT FALSE NOT NULL,
+        "googleId" VARCHAR(255) UNIQUE,
+        "name" TEXT,
+        "loginMethod" VARCHAR(64),
+        "role" "role" DEFAULT 'user' NOT NULL,
+        "phone" VARCHAR(20),
+        "photoUrl" TEXT,
+        "specialties" TEXT,
+        "bio" TEXT,
+        "cref" VARCHAR(20),
+        "subscriptionPlan" "subscription_plan" DEFAULT 'free' NOT NULL,
+        "subscriptionStatus" "subscription_status" DEFAULT 'trial' NOT NULL,
+        "proSource" VARCHAR(20),
+        "proExpiresAt" TIMESTAMP,
+        "trialRequestedAt" TIMESTAMP,
+        "planStartAt" TIMESTAMP,
+        "maxClients" INTEGER DEFAULT 5 NOT NULL,
+        "createdAt" TIMESTAMP DEFAULT NOW() NOT NULL,
+        "updatedAt" TIMESTAMP DEFAULT NOW() NOT NULL,
+        "lastSignedIn" TIMESTAMP DEFAULT NOW() NOT NULL
+      )
+    `);
+
+    await db.execute(sql`
+      CREATE TABLE IF NOT EXISTS "auth_tokens" (
+        "id" SERIAL PRIMARY KEY,
+        "userId" INTEGER NOT NULL REFERENCES "users"("id") ON DELETE CASCADE,
+        "token" VARCHAR(255) NOT NULL UNIQUE,
+        "type" VARCHAR(50) NOT NULL,
+        "expiresAt" TIMESTAMP NOT NULL,
+        "createdAt" TIMESTAMP DEFAULT NOW() NOT NULL
+      )
+    `);
+
+    await db.execute(sql`
+      CREATE TABLE IF NOT EXISTS "clients" (
+        "id" SERIAL PRIMARY KEY,
+        "trainerId" INTEGER NOT NULL REFERENCES "users"("id") ON DELETE CASCADE,
+        "name" VARCHAR(255) NOT NULL,
+        "phone" VARCHAR(20),
+        "birthDate" DATE,
+        "gender" "gender",
+        "photoUrl" TEXT,
+        "status" "client_status" DEFAULT 'active' NOT NULL,
+        "planType" "plan_type" DEFAULT 'monthly' NOT NULL,
+        "monthlyFee" NUMERIC(10, 2),
+        "paymentDay" INTEGER,
+        "packageSessions" INTEGER,
+        "sessionsRemaining" INTEGER,
+        "packageValue" NUMERIC(10, 2),
+        "sessionsPerWeek" INTEGER,
+        "sessionDays" VARCHAR(20),
+        "sessionTime" VARCHAR(5),
+        "sessionTimesPerDay" TEXT,
+        "sessionDuration" INTEGER DEFAULT 60,
+        "prepaidValue" NUMERIC(10, 2),
+        "prepaidDueDate" DATE,
+        "renovationHistory" TEXT,
+        "createdAt" TIMESTAMP DEFAULT NOW() NOT NULL,
+        "updatedAt" TIMESTAMP DEFAULT NOW() NOT NULL
+      )
+    `);
+
+    await db.execute(sql`
+      CREATE TABLE IF NOT EXISTS "appointments" (
+        "id" SERIAL PRIMARY KEY,
+        "trainerId" INTEGER NOT NULL REFERENCES "users"("id") ON DELETE CASCADE,
+        "clientId" INTEGER REFERENCES "clients"("id") ON DELETE CASCADE,
+        "guestName" VARCHAR(255),
+        "date" DATE NOT NULL,
+        "startTime" VARCHAR(5) NOT NULL,
+        "duration" INTEGER DEFAULT 60 NOT NULL,
+        "status" "appointment_status" DEFAULT 'scheduled' NOT NULL,
+        "notes" TEXT,
+        "muscleGroups" TEXT,
+        "recurrenceGroupId" VARCHAR(36),
+        "recurrenceType" "recurrence_type" DEFAULT 'none' NOT NULL,
+        "recurrenceDays" VARCHAR(20),
+        "createdAt" TIMESTAMP DEFAULT NOW() NOT NULL,
+        "updatedAt" TIMESTAMP DEFAULT NOW() NOT NULL
+      )
+    `);
+
+    await db.execute(sql`
+      CREATE TABLE IF NOT EXISTS "bodyMeasurements" (
+        "id" SERIAL PRIMARY KEY,
+        "trainerId" INTEGER NOT NULL REFERENCES "users"("id") ON DELETE CASCADE,
+        "clientId" INTEGER NOT NULL REFERENCES "clients"("id") ON DELETE CASCADE,
+        "date" DATE NOT NULL,
+        "weight" NUMERIC(5, 2),
+        "height" NUMERIC(5, 2),
+        "bodyFat" NUMERIC(5, 2),
+        "chest" NUMERIC(5, 2),
+        "waist" NUMERIC(5, 2),
+        "hips" NUMERIC(5, 2),
+        "leftArm" NUMERIC(5, 2),
+        "rightArm" NUMERIC(5, 2),
+        "leftThigh" NUMERIC(5, 2),
+        "rightThigh" NUMERIC(5, 2),
+        "leftCalf" NUMERIC(5, 2),
+        "rightCalf" NUMERIC(5, 2),
+        "notes" TEXT,
+        "createdAt" TIMESTAMP DEFAULT NOW() NOT NULL
+      )
+    `);
+
+    await db.execute(sql`
+      CREATE TABLE IF NOT EXISTS "progressPhotos" (
+        "id" SERIAL PRIMARY KEY,
+        "trainerId" INTEGER NOT NULL REFERENCES "users"("id") ON DELETE CASCADE,
+        "clientId" INTEGER NOT NULL REFERENCES "clients"("id") ON DELETE CASCADE,
+        "photoUrl" TEXT NOT NULL,
+        "photoType" "photo_type" DEFAULT 'front' NOT NULL,
+        "date" DATE NOT NULL,
+        "notes" TEXT,
+        "createdAt" TIMESTAMP DEFAULT NOW() NOT NULL
+      )
+    `);
+
+    await db.execute(sql`
+      CREATE TABLE IF NOT EXISTS "transactions" (
+        "id" SERIAL PRIMARY KEY,
+        "trainerId" INTEGER NOT NULL REFERENCES "users"("id") ON DELETE CASCADE,
+        "clientId" INTEGER REFERENCES "clients"("id") ON DELETE CASCADE,
+        "type" "transaction_type" NOT NULL,
+        "category" VARCHAR(100) NOT NULL,
+        "description" TEXT,
+        "amount" NUMERIC(10, 2) NOT NULL,
+        "date" DATE NOT NULL,
+        "dueDate" DATE,
+        "paidAt" DATE,
+        "status" "transaction_status" DEFAULT 'pending' NOT NULL,
+        "createdAt" TIMESTAMP DEFAULT NOW() NOT NULL,
+        "updatedAt" TIMESTAMP DEFAULT NOW() NOT NULL
+      )
+    `);
+
     await db.execute(sql`
       CREATE TABLE IF NOT EXISTS "bioimpedanceExams" (
         "id" SERIAL PRIMARY KEY,
-        "trainerId" INTEGER NOT NULL,
+        "trainerId" INTEGER NOT NULL REFERENCES "users"("id") ON DELETE CASCADE,
         "clientId" INTEGER NOT NULL REFERENCES "clients"("id") ON DELETE CASCADE,
         "date" DATE NOT NULL,
-        "weight" DECIMAL(6,2),
-        "muscleMass" DECIMAL(6,2),
-        "musclePct" DECIMAL(5,2),
-        "bodyFatPct" DECIMAL(5,2),
-        "visceralFat" DECIMAL(5,1),
+        "weight" NUMERIC(6, 2),
+        "muscleMass" NUMERIC(6, 2),
+        "musclePct" NUMERIC(5, 2),
+        "bodyFatPct" NUMERIC(5, 2),
+        "visceralFat" NUMERIC(5, 1),
+        "bmi" NUMERIC(5, 2),
+        "fatMass" NUMERIC(6, 2),
+        "leanMass" NUMERIC(6, 2),
+        "muscleRate" NUMERIC(5, 2),
+        "skeletalMuscleMass" NUMERIC(6, 2),
+        "boneMass" NUMERIC(6, 2),
+        "proteinMass" NUMERIC(6, 2),
+        "proteinPct" NUMERIC(5, 2),
+        "moistureContent" NUMERIC(6, 2),
+        "bodyWaterPct" NUMERIC(5, 2),
+        "subcutaneousFatPct" NUMERIC(5, 2),
+        "bmr" NUMERIC(7, 2),
+        "metabolicAge" INTEGER,
+        "whr" NUMERIC(5, 3),
+        "idealWeight" NUMERIC(6, 2),
+        "obesityLevel" VARCHAR(50),
+        "bodyType" VARCHAR(50),
         "perimetria" TEXT,
         "dobras" TEXT,
         "imageUrl" TEXT,
         "notes" TEXT,
-        "createdAt" TIMESTAMPTZ NOT NULL DEFAULT NOW()
+        "createdAt" TIMESTAMP DEFAULT NOW() NOT NULL
       )
     `);
-    // Ensure new columns exist (idempotent ALTER TABLE)
-    await db.execute(sql`
-      ALTER TABLE "bioimpedanceExams"
-        ADD COLUMN IF NOT EXISTS "musclePct" DECIMAL(5,2),
-        ADD COLUMN IF NOT EXISTS "perimetria" TEXT,
-        ADD COLUMN IF NOT EXISTS "dobras" TEXT
-    `);
-    // Ensure sessionTimesPerDay column exists in clients (added for per-day scheduling)
-    await db.execute(sql`
-      ALTER TABLE "clients"
-        ADD COLUMN IF NOT EXISTS "sessionTimesPerDay" TEXT
-    `);
-    console.log("[Database] Migrations applied");
+
+    console.log("[Database] All tables initialized");
   } catch (err) {
-    console.warn("[Database] Migration warning:", err);
+    console.warn("[Database] Autonomous initialization warning:", err);
   }
 }
 

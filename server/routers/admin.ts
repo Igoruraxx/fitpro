@@ -34,7 +34,7 @@ export const adminRouter = router({
       z.object({
         search: z.string().optional(),
         planFilter: z.enum(["all", "free", "pro"]).optional(),
-        originFilter: z.enum(["all", "payment", "courtesy", "trial"]).optional(),
+        originFilter: z.enum(["all", "courtesy", "trial"]).optional(),
       })
     )
     .query(async ({ input }) => {
@@ -191,7 +191,6 @@ export const adminRouter = router({
           proSource: null,
           proExpiresAt: null,
           planStartAt: null,
-          planGrantedBy: null,
           maxClients: 5,
           updatedAt: new Date(),
         })

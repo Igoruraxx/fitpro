@@ -876,27 +876,13 @@
 - [x] Testar em mobile e desktop
 - [x] Todos os 75 testes passando
 
-## Integração Abacash para Pagamentos (v69)
-- [ ] Configurar secret key Abacash
-- [ ] Criar helpers para API Abacash (criar subscription, webhook)
-- [ ] Definir preços dos planos: Mensal 24,90, Trimestral 69,72 (5%), Semestral 130,42 (10%), Anual 239,04 (20%)
-- [ ] Criar routers tRPC: createSubscription, cancelSubscription, getSubscriptionStatus
-- [ ] Implementar UI de seleção de planos com preços e descontos
-- [ ] Integrar fluxo de checkout (redirect para Abacash)
-- [ ] Implementar webhook para confirmar pagamento e ativar Pro
-- [ ] Testar fluxo completo de pagamento
-
-
-## Integração Abacash para Pagamentos (v69)
-- [x] Configurar secret ABACASH_SK_LIVE
-- [x] Criar helpers Abacash com planos (mensal 24,90, trimestral 70,97 com 5%, semestral 134,46 com 10%, anual 239,04 com 20%)
-- [x] Criar 11 testes para validação de preços e descontos
-- [x] Criar routers tRPC para pagamentos (getPlans, createCheckout, confirmPayment, getSubscriptionStatus, cancelSubscription)
-- [x] Criar componente PlanSelector com UI de seleção de planos
-- [x] Integrar modal de pagamento na página Upgrade
-- [x] Criar webhook handler para eventos Abacash (subscription.activated, subscription.cancelled, subscription.expired)
-- [x] Registrar rota POST /api/webhooks/abacash
-- [x] Todos os 86 testes passando
+## Autonomia e Banco de Dados Independente
+- [x] Desacoplamento de Storage (AWS S3)
+- [x] Independência de Notificações (Resend Fallback)
+- [x] Limpeza de infraestrutura Manus
+- [x] Banco de Dados Independente (PostgreSQL / PGlite)
+- [x] Remoção de integrações Abacash e AbacatePay
+- [x] Verificação de integridade com 104 testes passando
 
 
 ## Bug: Erro ao Criar Agendamentos para Pacotes (v70)
@@ -909,48 +895,13 @@
 ## Painel Admin de Personals (v71)
 - [x] Criar routers tRPC admin: listPersonals, convertToProCourtesy, cancelProSubscription, impersonatePersonal
 - [x] Criar componente AdminPersonalsTable com colunas: nome, clientes, plano, origem, expiração, status
-- [x] Implementar filtros: por plano (free/pro), por origem (pagamento/cortesia/trial)
+- [x] Implementar filtros: por plano (free/pro), por origem (cortesia/trial)
 - [x] Implementar busca por nome de personal
 - [x] Ação: converter free→pro (cortesia)
 - [x] Ação: cancelar assinatura pro
 - [x] Ação: impersonar personal (admin vira personal temporariamente)
 - [x] Integrar ao painel admin existente (/admin)
 - [x] Refatorar Admin.tsx com novo painel completo
-- [x] Todos os 86 testes passando
-
-
-## Bug: Erro ao Criar Checkout (v72)
-- [x] Investigar erro ao clicar em "Assinar Agora" na página /upgrade
-- [x] Verificar router createCheckout
-- [x] Adicionar modo mock para testes (development mode)
-- [x] Todos os 86 testes passando
-
-
-## Refatoração Painel Admin com AbacatePay (v73)
-- [ ] Atualizar schema: plan_type, plan_origin, abacatepay_customer_id, plan_expires_at, plan_granted_by
-- [ ] Criar helpers AbacatePay (checkout, status, webhook verification)
-- [ ] Criar routers tRPC: listPersonals avançado, updatePlanManual, getPaymentHistory
-- [ ] Implementar webhook handler /api/webhooks/abacatepay
-- [ ] Criar tabela com colunas: nome, email, clientes, plano, origem, expiração, ações
-- [ ] Implementar filtros: plano, origem, busca, ordenação
-- [ ] Badges com cores: verde (FREE), azul (PRO-Pagamento), roxo (PRO-Cortesia), laranja (PRO-Trial)
-- [ ] Ações: ver detalhes, editar plano, cancelar trial, histórico de pagamentos
-- [ ] Cron job para expiração automática de trials
-- [ ] Logging de mudanças de plano
-- [ ] Testes e validação
-
-
-## Refatoração Painel Admin com AbacatePay (v73)
-- [x] Atualizar schema com campos abacatepay_customer_id, abacatepay_subscription_id, plan_start_at, plan_expires_at
-- [x] Criar skill reutilizável abacatepay-saas-integration com documentação completa
-- [x] Implementar helper AbacatePay (checkout, webhook verification, status queries)
-- [x] Integrar webhook handler AbacatePay no servidor (/api/webhooks/abacatepay)
-- [x] Criar componente PersonalsTable com filtros, busca, badges coloridas
-- [x] Criar página AdminAbacatepay com ações (cortesia, cancelar, trial)
-- [ ] Criar routers tRPC admin avançados (listPersonals, convertToProCourtesy, etc)
-- [ ] Implementar cron job para expiração automática de trials
-- [ ] Criar testes para webhooks e routers admin
-- [ ] Integrar logging de mudanças de plano
 
 
 ## Cron Job: Downgrade de Trials Expirados (v74)

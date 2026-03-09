@@ -30,9 +30,6 @@ interface Personal {
   subscriptionPlan: 'free' | 'pro';
   proSource?: 'payment' | 'courtesy' | 'trial' | null;
   proExpiresAt?: Date | null;
-  lastPaymentDate?: Date | null;
-  lastPaymentAmount?: string | null;
-  lastPaymentId?: string | null;
   clientCount: number;
 }
 
@@ -58,8 +55,6 @@ const getPlanBadgeColor = (plan: 'free' | 'pro', origin?: string | null) => {
   }
 
   switch (origin) {
-    case 'payment':
-      return 'bg-blue-100 text-blue-800';
     case 'courtesy':
       return 'bg-purple-100 text-purple-800';
     case 'trial':
@@ -71,8 +66,6 @@ const getPlanBadgeColor = (plan: 'free' | 'pro', origin?: string | null) => {
 
 const getOriginLabel = (origin?: string | null) => {
   switch (origin) {
-    case 'payment':
-      return 'Pagamento';
     case 'courtesy':
       return 'Cortesia';
     case 'trial':
@@ -147,7 +140,6 @@ export const PersonalsTable: React.FC<PersonalsTableProps> = ({
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Todos</SelectItem>
-                <SelectItem value="payment">Pagamento</SelectItem>
                 <SelectItem value="courtesy">Cortesia</SelectItem>
                 <SelectItem value="trial">Trial</SelectItem>
               </SelectContent>
@@ -271,18 +263,6 @@ export const PersonalsTable: React.FC<PersonalsTableProps> = ({
                       <TableRow className="bg-gray-50">
                         <TableCell colSpan={7}>
                           <div className="space-y-4 py-4">
-                            {/* Payment Info */}
-                            {personal.proSource === 'payment' && personal.lastPaymentDate && (
-                              <div className="text-sm">
-                                <p className="font-semibold mb-2">Último Pagamento</p>
-                                <p>Data: {format(new Date(personal.lastPaymentDate), 'dd/MM/yyyy HH:mm', { locale: ptBR })}</p>
-                                <p>Valor: R$ {personal.lastPaymentAmount}</p>
-                                {personal.lastPaymentId && (
-                                  <p className="text-gray-600">ID: {personal.lastPaymentId}</p>
-                                )}
-                              </div>
-                            )}
-
                             {/* Actions */}
                             <div className="flex gap-2 flex-wrap">
                               {personal.subscriptionPlan === 'free' && (
@@ -314,32 +294,14 @@ export const PersonalsTable: React.FC<PersonalsTableProps> = ({
                                   >
                                     Cancelar Assinatura
                                   </Button>
-                                  {personal.proSource !== 'payment' && (
-                                    <Button
-                                      size="sm"
-                                      variant="outline"
-                                      onClick={() => onConvertToCourtesy(personal.id)}
-                                    >
-                                      Converter para Cortesia
-                                    </Button>
-                                  )}
-                                </>
-                              )}
-
-                              {personal.lastPaymentId && (
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  asChild
-                                >
-                                  <a
-                                    href={`https://dashboard.abacatepay.com/charges/${personal.lastPaymentId}`}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => onConvertToCourtesy(personal.id)}
                                   >
-                                    Ver na AbacatePay
-                                  </a>
-                                </Button>
+                                    Converter para Cortesia
+                                  </Button>
+                                </>
                               )}
                             </div>
                           </div>
