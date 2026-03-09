@@ -1,13 +1,11 @@
-import "dotenv/config";
 import express from "express";
-import { createExpressMiddleware } from "@trpc/server/adapters/express";
-import { registerOAuthRoutes } from "../server/_core/oauth";
-import { appRouter } from "../server/routers";
-import { createContext } from "../server/_core/context";
-import { handleAbacashWebhook } from "../server/webhooks/abacash";
-import { abacatepayWebhookRouter } from "../server/webhooks/abacatepay";
 
 const app = express();
+
+// Health check before loading heavy dependencies
+app.get("/api/ping", (_req, res) => {
+  res.json({ ok: true, ts: Date.now() });
+});
 
 app.use(
   express.json({
@@ -21,17 +19,37 @@ app.use(
 );
 app.use(express.urlencoded({ limit: "50mb", extended: true }));
 
-registerOAuthRoutes(app);
+let initialized = false;
+let initError: string | null = null;
 
-app.post("/api/webhooks/abacash", handleAbacashWebhook);
-app.use("/api/webhooks", abacatepayWebhookRouter);
+async function initApp() {
+  if (initialized) return;
+  try {
+    const { registerOAuthRoutes } = await import("../server/_core/oauth");
+    const { appRouter } = await import("../server/routers");
+    const { createContext } = await import("../server/_core/context");
+    const { handleAbacashWebhook } = await import("../server/webhooks/abacash");
+    const { abacatepayWebhookRouter } = await import("../server/webhooks/abacatepay");
+    const { createExpressMiddleware } = await import("@trpc/server/adapters/express");
 
-app.use(
-  "/api/trpc",
-  createExpressMiddleware({
-    router: appRouter,
-    createContext,
-  })
-);
+    registerOAuthRoutes(app);
+    app.post("/api/webhooks/abacash", handleAbacashWebhook);
+    app.use("/api/webhooks", abacatepayWebhookRouter);
+    app.use("/api/trpc", createExpressMiddleware({ router: appRouter, createContext }));
+    initialized = true;
+  } catch (err: any) {
+    initError = String(err?.stack || err);
+    console.error("[API] Init error:", initError);
+  }
+}
+
+app.use(async (req, res, next) => {
+  if (req.path === "/api/ping") return next();
+  await initApp();
+  if (initError) {
+    return res.status(500).json({ error: "Server initialization failed", detail: initError });
+  }
+  next();
+});
 
 export default app;
