@@ -553,21 +553,44 @@ export async function generateMonthlyCharges(trainerId: number, month: number, y
     return Math.min(day, lastDay);
   };
 
+  // Prefetch existing transactions for this month to avoid N+1 query
+  const startDate = `${year}-${String(month).padStart(2, '0')}-01`;
+  const lastDay = new Date(year, month, 0).getDate();
+  const endDate = `${year}-${String(month).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
+
+  const existingTransactions = await db.select({
+    clientId: transactions.clientId,
+    dueDate: transactions.dueDate
+  })
+    .from(transactions)
+    .where(and(
+      eq(transactions.trainerId, trainerId),
+      eq(transactions.type, 'income'),
+      sql`${transactions.dueDate} >= ${startDate}::date`,
+      sql`${transactions.dueDate} <= ${endDate}::date`
+    ));
+
+  // Map clientId -> Set of dueDates already charged
+  const existingMap = new Map<number, Set<string>>();
+  for (const tx of existingTransactions) {
+    if (tx.clientId && tx.dueDate) {
+      if (!existingMap.has(tx.clientId)) {
+        existingMap.set(tx.clientId, new Set());
+      }
+      // Drizzle might return Date object or string depending on driver; normalize to string
+      const dateStr = typeof tx.dueDate === 'string' ? tx.dueDate : (tx.dueDate as Date).toISOString().split('T')[0];
+      existingMap.get(tx.clientId)!.add(dateStr);
+    }
+  }
+
   let created = 0;
   for (const client of monthlyClients) {
     if (!client.monthlyFee || !client.paymentDay) continue;
     const validDay = clampDay(client.paymentDay, month, year);
     const dueDate = `${year}-${String(month).padStart(2, '0')}-${String(validDay).padStart(2, '0')}`;
 
-    // Check if charge already exists for this client/month
-    const existing = await db.select({ id: transactions.id }).from(transactions)
-      .where(and(
-        eq(transactions.trainerId, trainerId),
-        eq(transactions.clientId, client.id),
-        eq(transactions.type, 'income'),
-        sql`${transactions.dueDate} = ${dueDate}::date`
-      ));
-    if (existing.length > 0) continue;
+    // Check if charge already exists for this client/month using pre-fetched data
+    if (existingMap.get(client.id)?.has(dueDate)) continue;
 
     await db.insert(transactions).values({
       trainerId,
