@@ -1,20 +1,37 @@
-# FITPRO - Schema de Banco de Dados Real
+# FITPRO - Schema de Banco de Dados (v2.0)
 
 **Banco de Dados**: Supabase (PostgreSQL)  
-**Última Atualização**: 2026-03-01  
-**Status**: ✅ Sincronizado com migrations aplicadas
+**Última Atualização**: 2026-03-10  
+**Status**: ✅ Reconstruído do zero com RLS policies
 
 ---
 
 ## ⚠️ IMPORTANTE
 
-Este documento descreve o schema **REAL** do banco de dados Supabase. Use este arquivo como referência ao:
+Este documento descreve o schema **REAL** do banco de dados Supabase após a reconstrução completa. Use este arquivo como referência ao:
 - Escrever queries SQL
 - Criar procedures tRPC
 - Validar tipos TypeScript
 - Debugar erros de schema
 
-**NÃO use o arquivo `drizzle/schema.ts` como fonte de verdade** - ele pode estar desatualizado. Use este documento.
+**O arquivo `drizzle/schema.ts` está sincronizado com este documento.**
+
+---
+
+## 🔒 SEGURANÇA: ROW LEVEL SECURITY (RLS)
+
+Todas as tabelas agora possuem políticas RLS ativadas para garantir isolamento de dados:
+
+- **Multi-tenancy**: Cada personal só pode acessar seus próprios dados
+- **Admin Access**: Admins têm acesso completo para gerenciar usuários
+- **Auth Tokens**: Usuários só acessam seus próprios tokens
+- **Client Data**: Trainers só acessam clientes que pertencem a eles
+
+**Políticas implementadas:**
+- `SELECT`: Acesso somente aos próprios registros (ou todos para admins)
+- `INSERT`: Criação somente com o próprio `trainerId`
+- `UPDATE`: Modificação somente dos próprios registros
+- `DELETE`: Remoção somente dos próprios registros
 
 ---
 
@@ -261,6 +278,102 @@ ORDER BY a.date, a.startTime;
 
 ---
 
+## 🔒 Row Level Security (RLS) Policies
+
+Todas as tabelas estão protegidas por políticas RLS:
+
+### Tabela: `users`
+- **SELECT**: Usuários podem ver seu próprio perfil; admins veem todos
+- **UPDATE**: Usuários podem atualizar seu próprio perfil; admins podem atualizar todos
+- **INSERT**: Qualquer pessoa pode se registrar (necessário para signup)
+
+### Tabelas de dados multi-tenant
+Para `clients`, `appointments`, `bodyMeasurements`, `progressPhotos`, `transactions`, `bioimpedanceExams`:
+- **SELECT/INSERT/UPDATE/DELETE**: Apenas registros onde `trainerId = auth.uid()`
+
+### Tabela: `authTokens`
+- **SELECT/INSERT/DELETE**: Apenas tokens onde `userId = auth.uid()`
+
+**Importante**: As políticas RLS garantem que mesmo queries SQL diretas respeitam o isolamento de dados. Não é possível acessar dados de outros trainers, mesmo com acesso direto ao banco.
+
+---
+
+## 📊 Índices de Performance
+
+Os seguintes índices foram criados para otimizar queries comuns:
+
+### Índices em `users`:
+- `idx_users_email`, `idx_users_openId`, `idx_users_googleId` (login)
+- `idx_users_role`, `idx_users_subscriptionPlan` (filtros)
+
+### Índices em `clients`:
+- `idx_clients_trainerId`, `idx_clients_status`
+- `idx_clients_trainerId_status` (composto)
+
+### Índices em `appointments`:
+- `idx_appointments_trainerId`, `idx_appointments_clientId`
+- `idx_appointments_date`, `idx_appointments_status`
+- `idx_appointments_trainerId_date` (composto - agenda por dia)
+- `idx_appointments_recurrenceGroupId` (recorrências)
+
+### Índices em `bodyMeasurements`:
+- `idx_bodyMeasurements_clientId_date` (histórico de evolução)
+
+### Índices em `progressPhotos`:
+- `idx_progressPhotos_clientId_date` (galeria de fotos)
+
+### Índices em `transactions`:
+- `idx_transactions_trainerId_date` (relatórios financeiros)
+
+### Índices em `bioimpedanceExams`:
+- `idx_bioimpedanceExams_clientId_date` (evolução corporal)
+
+---
+
+## ✅ CHECK Constraints
+
+Validações de negócio implementadas no banco:
+
+### Tabela `users`:
+- Pelo menos um método de autenticação (`email`, `openId` ou `googleId`)
+- `maxClients` deve ser positivo
+- `proSource` deve ser 'trial', 'payment' ou 'courtesy'
+
+### Tabela `clients`:
+- `paymentDay` entre 1 e 31 (dia do mês)
+- `sessionsRemaining` não pode ser negativo
+- `sessionDuration` deve ser positivo
+
+### Tabela `appointments`:
+- Deve ter `clientId` OU `guestName` (não ambos vazios)
+- `duration` deve ser positivo
+
+### Tabela `bodyMeasurements`:
+- `weight` e `height` devem ser positivos quando preenchidos
+- `bodyFat` deve estar entre 0 e 100%
+
+### Tabela `transactions`:
+- `amount` deve ser positivo
+
+### Tabela `bioimpedanceExams`:
+- `weight` deve ser positivo
+- `bodyFatPct` e `musclePct` devem estar entre 0 e 100%
+
+---
+
+## 🔄 Triggers Automáticos
+
+### Atualização de `updatedAt`
+Trigger `update_updated_at_column()` aplicado às tabelas:
+- `users`
+- `clients`
+- `appointments`
+- `transactions`
+
+Atualiza automaticamente o campo `updatedAt` sempre que o registro é modificado.
+
+---
+
 ## Notas Importantes
 
 1. **Timestamps**: Todos os timestamps são em UTC (timezone-aware)
@@ -276,6 +389,32 @@ ORDER BY a.date, a.startTime;
 
 | Data | Mudança |
 |------|---------|
+| 2026-03-10 | **REBUILD COMPLETO**: Schema reconstruído do zero com RLS policies, índices otimizados, CHECK constraints, triggers automáticos |
 | 2026-03-01 | Adicionados campos AbacatePay (abacatepayCustomerId, abacatepaySubscriptionId, planStartAt, planExpiresAt, planGrantedBy, lastPaymentId, lastPaymentDate, lastPaymentAmount) |
 | 2026-02-28 | Schema inicial criado |
 
+---
+
+## 🚀 Como Aplicar o Schema
+
+Para aplicar este schema em um banco de dados novo ou reconstruir completamente:
+
+```bash
+# Certifique-se de ter o DATABASE_URL configurado no .env
+npm run db:rebuild
+```
+
+**⚠️ AVISO**: Este comando irá DELETAR TODOS OS DADOS existentes e reconstruir o schema do zero!
+
+---
+
+## 📝 Melhorias Implementadas na v2.0
+
+1. ✅ **Row Level Security (RLS)** - Proteção nativa do banco para multi-tenancy
+2. ✅ **Índices Otimizados** - Performance melhorada em queries comuns
+3. ✅ **CHECK Constraints** - Validação de dados no nível do banco
+4. ✅ **Triggers Automáticos** - `updatedAt` atualizado automaticamente
+5. ✅ **Foreign Keys Consistentes** - Todas as relações definidas corretamente
+6. ✅ **Documentação Completa** - Todas as tabelas, políticas e índices documentados
+7. ✅ **Migration Limpa** - Um único arquivo de migration que reconstrói tudo
+8. ✅ **Sem Artefatos** - Código de migration automática removido de `db.ts`
