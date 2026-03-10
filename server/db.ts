@@ -16,44 +16,6 @@ import { nanoid } from "nanoid";
 
 let _db: ReturnType<typeof drizzle> | null = null;
 
-async function runMigrations(db: ReturnType<typeof drizzle>) {
-  try {
-    await db.execute(sql`
-      CREATE TABLE IF NOT EXISTS "bioimpedanceExams" (
-        "id" SERIAL PRIMARY KEY,
-        "trainerId" INTEGER NOT NULL,
-        "clientId" INTEGER NOT NULL REFERENCES "clients"("id") ON DELETE CASCADE,
-        "date" DATE NOT NULL,
-        "weight" DECIMAL(6,2),
-        "muscleMass" DECIMAL(6,2),
-        "musclePct" DECIMAL(5,2),
-        "bodyFatPct" DECIMAL(5,2),
-        "visceralFat" DECIMAL(5,1),
-        "perimetria" TEXT,
-        "dobras" TEXT,
-        "imageUrl" TEXT,
-        "notes" TEXT,
-        "createdAt" TIMESTAMPTZ NOT NULL DEFAULT NOW()
-      )
-    `);
-    // Ensure new columns exist (idempotent ALTER TABLE)
-    await db.execute(sql`
-      ALTER TABLE "bioimpedanceExams"
-        ADD COLUMN IF NOT EXISTS "musclePct" DECIMAL(5,2),
-        ADD COLUMN IF NOT EXISTS "perimetria" TEXT,
-        ADD COLUMN IF NOT EXISTS "dobras" TEXT
-    `);
-    // Ensure sessionTimesPerDay column exists in clients (added for per-day scheduling)
-    await db.execute(sql`
-      ALTER TABLE "clients"
-        ADD COLUMN IF NOT EXISTS "sessionTimesPerDay" TEXT
-    `);
-    console.log("[Database] Migrations applied");
-  } catch (err) {
-    console.warn("[Database] Migration warning:", err);
-  }
-}
-
 export async function getDb() {
   if (!_db) {
     // Prefer DATABASE_URL for standard PostgreSQL connection
@@ -83,8 +45,7 @@ export async function getDb() {
 
       // Basic connectivity check
       await _db.execute(sql`SELECT 1`);
-
-      await runMigrations(_db);
+      console.log("[Database] Connection verified");
     } catch (error) {
       console.error("[Database] Critical connection failure:", error);
       if (error && error.message && error.message.includes("timeout") && connStr.includes("supabase.com") && !connStr.includes("6543")) {
