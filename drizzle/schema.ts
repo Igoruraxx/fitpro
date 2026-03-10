@@ -22,7 +22,6 @@ export const users: any = pgTable("users", {
   email: varchar("email", { length: 320 }).unique(),
   passwordHash: text("passwordHash"),
   emailVerified: boolean("emailVerified").default(false).notNull(),
-  googleId: varchar("googleId", { length: 255 }).unique(),
   name: text("name"),
   loginMethod: varchar("loginMethod", { length: 64 }),
   role: roleEnum("role").default("user").notNull(),
@@ -37,8 +36,6 @@ export const users: any = pgTable("users", {
   proSource: varchar("proSource", { length: 20 }), // 'trial' | 'paid' | 'courtesy'
   proExpiresAt: timestamp("proExpiresAt"),
   trialRequestedAt: timestamp("trialRequestedAt"),
-  abacatepayCustomerId: varchar("abacatepayCustomerId", { length: 255 }).unique(),
-  abacatepaySubscriptionId: varchar("abacatepaySubscriptionId", { length: 255 }).unique(),
   planStartAt: timestamp("planStartAt"),
   planExpiresAt: timestamp("planExpiresAt"),
   planGrantedBy: integer("planGrantedBy").references(() => users.id, { onDelete: "set null" }),

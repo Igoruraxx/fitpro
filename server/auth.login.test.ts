@@ -19,8 +19,6 @@ vi.mock("./_core/env", () => ({
     supabaseServiceKey: "",
     supabaseAnonKey: "",
     supabaseDbUrl: "",
-    abacashSkLive: "",
-    abacatepaySkLive: "",
     s3AccessKeyId: "",
     s3SecretAccessKey: "",
     s3Region: "us-east-1",

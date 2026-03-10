@@ -10,7 +10,7 @@ function createUserContext(overrides?: Partial<AuthenticatedUser>): TrpcContext 
     openId: "test-trainer-001",
     email: "trainer@fitpro.com",
     name: "Test Trainer",
-    loginMethod: "manus",
+    loginMethod: "email",
     role: "user",
     phone: null,
     photoUrl: null,

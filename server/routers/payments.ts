@@ -3,8 +3,43 @@ import { z } from "zod";
 import { getDb } from "../db";
 import { users } from "../../drizzle/schema";
 import { eq } from "drizzle-orm";
-import { createAbacashSubscription, SUBSCRIPTION_PLANS } from "../abacash";
 import { TRPCError } from "@trpc/server";
+
+// Subscription plans available
+const SUBSCRIPTION_PLANS = {
+  monthly: {
+    id: 'plan_monthly',
+    name: 'Plano Mensal',
+    priceCents: 2490, // R$ 24,90
+    price: 24.90,
+    cycle: 'monthly' as const,
+    discount: 0,
+  },
+  quarterly: {
+    id: 'plan_quarterly',
+    name: 'Plano Trimestral',
+    priceCents: 7097, // R$ 70,97 (5% desconto)
+    price: 70.97,
+    cycle: 'quarterly' as const,
+    discount: 5,
+  },
+  semiannual: {
+    id: 'plan_semiannual',
+    name: 'Plano Semestral',
+    priceCents: 13446, // R$ 134,46 (10% desconto)
+    price: 134.46,
+    cycle: 'semiannual' as const,
+    discount: 10,
+  },
+  annual: {
+    id: 'plan_annual',
+    name: 'Plano Anual',
+    priceCents: 23904, // R$ 239,04 (20% desconto)
+    price: 239.04,
+    cycle: 'annual' as const,
+    discount: 20,
+  },
+} as const;
 
 export const paymentsRouter = router({
   /**
@@ -48,28 +83,15 @@ export const paymentsRouter = router({
         throw new TRPCError({ code: "BAD_REQUEST", message: "Invalid plan" });
       }
 
-      try {
-        const result = await createAbacashSubscription({
-          customerId: `user_${ctx.user.id}`,
-          planId: plan.id,
-          planName: plan.name,
-          amount: plan.priceCents,
-          billingCycle: plan.cycle,
-          returnUrl: input.returnUrl,
-          notificationUrl: `${process.env.VITE_FRONTEND_FORGE_API_URL || "http://localhost:3000"}/api/webhooks/abacash`,
-        });
+      // In a real system, this would create a payment link with a payment provider
+      // For now, return a mock checkout URL
+      const checkoutUrl = `${input.returnUrl}?plan=${input.planKey}&price=${plan.price}`;
+      const subscriptionId = `sub_mock_${Date.now()}`;
 
-        return {
-          checkoutUrl: result.checkoutUrl,
-          subscriptionId: result.subscriptionId,
-        };
-      } catch (error) {
-        console.error("[Payments] Error creating checkout:", error);
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: "Erro ao criar checkout",
-        });
-      }
+      return {
+        checkoutUrl,
+        subscriptionId,
+      };
     }),
 
   /**
