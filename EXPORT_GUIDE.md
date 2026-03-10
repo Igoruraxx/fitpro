@@ -154,7 +154,7 @@ Para dúvidas sobre o código, consulte:
 
 1. **Email:** Resend está configurado para enviar apenas para `igorunifran@gmail.com` (conta de teste). Para produção, verificar domínio no Resend.
 
-2. **Autenticação:** O sistema usa JWT próprio, não Manus OAuth. Todos os endpoints estão protegidos com `protectedProcedure`.
+2. **Autenticação:** O sistema usa JWT próprio com autenticação por email/senha. Todos os endpoints estão protegidos com `protectedProcedure`.
 
 3. **Multi-tenancy:** Dados são isolados por `trainerId` (user.id). Cada personal vê apenas seus dados.
 

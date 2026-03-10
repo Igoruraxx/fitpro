@@ -8,7 +8,7 @@
 - [x] DB helpers para queries
 
 ## Autenticação & Multi-tenancy
-- [x] Autenticação com Manus OAuth
+- [x] Autenticação customizada por email/senha
 - [x] Isolamento de dados por personal (multi-tenancy)
 - [x] Roles: user (personal) e admin (proprietário)
 
@@ -168,16 +168,16 @@
 - [x] Integração de rotas de autenticação no App.tsx
 - [x] Testes para páginas de autenticação (38 testes)
 - [ ] Configurar envio de e-mail (Nodemailer/Resend/SendGrid)
-- [x] Remover dependência do Manus OAuth das rotas protegidas
+- [x] Remover dependência de OAuth das rotas protegidas
 - [x] Atualizar AppLayout para usar novo sistema de auth
 
-## Remoção do Manus OAuth (v4)
+## Remoção de OAuth (v4)
 - [x] Remover botão "Entrar com Manus" da Home
 - [x] Substituir Home por redirect para /login
-- [x] Remover Manus OAuth do server/_core/oauth.ts (manter estrutura, desativar fluxo)
+- [x] Remover OAuth e payment providers
 - [x] Criar AuthContext próprio com login/logout/me via tRPC
 - [x] Atualizar AppLayout para usar AuthContext próprio
-- [x] Atualizar protectedProcedure para usar JWT próprio (não Manus session)
+- [x] Atualizar protectedProcedure para usar JWT próprio
 - [x] Redirecionar para /login se não autenticado
 - [x] Redirecionar para / após login bem-sucedido
 - [x] Logout limpa cookie JWT e redireciona para /login
@@ -586,7 +586,7 @@
 - [x] Implementar notificação quando pacote atingir 80% de conclusão
 - [x] Adicionar indicador visual em Últimas Sessões com fundo amarelo
 - [x] Exibir ícone de alerta mostrando quantas sessões faltam
-- [x] Integrar com sistema de notificações push do Manus
+- [x] Integrar com sistema de notificações
 
 ## Botão de Concluir Sessão no Perfil (v35)
 - [x] Adicionar botão de concluir sessão na aba Sessões do ClienteDetalhe

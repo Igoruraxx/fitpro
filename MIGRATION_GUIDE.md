@@ -39,9 +39,8 @@ Este documento descreve a reconstrução completa do schema do banco de dados Fi
 ### 8 Tabelas Principais
 
 1. **users** - Trainers e Administradores
-   - Suporta 3 métodos de autenticação: Email/Password, Manus OAuth, Google OAuth
+   - Autenticação por Email/Password
    - Gestão de assinaturas (Free/Pro)
-   - Integração com AbacatePay
    - 45 campos
 
 2. **authTokens** - Tokens de Autenticação
