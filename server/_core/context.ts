@@ -1,4 +1,5 @@
 import type { CreateExpressContextOptions } from "@trpc/server/adapters/express";
+import type { Request, Response } from "express";
 import type { User } from "../../drizzle/schema";
 import { parse as parseCookieHeader } from "cookie";
 import { jwtVerify } from "jose";
@@ -7,8 +8,8 @@ import { ENV } from "./env";
 import { COOKIE_NAME } from "@shared/const";
 
 export type TrpcContext = {
-  req: CreateExpressContextOptions["req"];
-  res: CreateExpressContextOptions["res"];
+  req: Request;
+  res: Response;
   user: User | null;
   adminUser: User | null; // set when admin is impersonating someone
 };

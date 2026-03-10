@@ -9,7 +9,7 @@ type StorageConfig = { baseUrl: string; apiKey: string };
 
 // Initialize S3 client only if credentials are provided
 let _s3Client: S3Client | null = null;
-function getS3Client() {
+function getS3Client(): S3Client | null {
   if (_s3Client) return _s3Client;
   if (!ENV.s3AccessKeyId || !ENV.s3SecretAccessKey || !ENV.s3Bucket) return null;
 
