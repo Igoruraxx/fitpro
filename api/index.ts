@@ -2,11 +2,8 @@ import "dotenv/config";
 import express from "express";
 import type { Request, Response, NextFunction } from "express";
 import { createExpressMiddleware } from "@trpc/server/adapters/express";
-import { registerOAuthRoutes } from "../server/_core/oauth";
 import { appRouter } from "../server/routers";
 import { createContext } from "../server/_core/context";
-import { handleAbacashWebhook } from "../server/webhooks/abacash";
-import { abacatepayWebhookRouter } from "../server/webhooks/abacatepay";
 
 const app = express();
 
@@ -21,11 +18,6 @@ app.use(
   })
 );
 app.use(express.urlencoded({ limit: "50mb", extended: true }));
-
-registerOAuthRoutes(app);
-
-app.post("/api/webhooks/abacash", handleAbacashWebhook);
-app.use("/api/webhooks", abacatepayWebhookRouter);
 
 app.use(
   "/api/trpc",

@@ -325,22 +325,6 @@ export const PersonalsTable: React.FC<PersonalsTableProps> = ({
                                   )}
                                 </>
                               )}
-
-                              {personal.lastPaymentId && (
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  asChild
-                                >
-                                  <a
-                                    href={`https://dashboard.abacatepay.com/charges/${personal.lastPaymentId}`}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                  >
-                                    Ver na AbacatePay
-                                  </a>
-                                </Button>
-                              )}
                             </div>
                           </div>
                         </TableCell>

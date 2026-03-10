@@ -12,13 +12,10 @@ try {
 import { createServer } from "http";
 import net from "net";
 import { createExpressMiddleware } from "@trpc/server/adapters/express";
-import { registerOAuthRoutes } from "./oauth";
 import { appRouter } from "../routers";
 import { createContext } from "./context";
 import { serveStatic, setupVite } from "./vite";
 import { startJobs } from "../jobs";
-import { handleAbacashWebhook } from "../webhooks/abacash";
-import { abacatepayWebhookRouter } from "../webhooks/abacatepay";
 
 function isPortAvailable(port: number): Promise<boolean> {
   return new Promise(resolve => {
@@ -54,12 +51,6 @@ async function startServer() {
     })
   );
   app.use(express.urlencoded({ limit: "50mb", extended: true }));
-  // OAuth callback under /api/oauth/callback
-  registerOAuthRoutes(app);
-  // Abacash webhook
-  app.post("/api/webhooks/abacash", handleAbacashWebhook);
-  // AbacatePay webhook
-  app.use("/api/webhooks", abacatepayWebhookRouter);
   // tRPC API
   app.use(
     "/api/trpc",

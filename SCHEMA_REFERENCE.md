@@ -42,13 +42,12 @@ Armazena dados dos personals (treinadores) e administradores.
 | Campo | Tipo | Nullable | Default | Descrição |
 |-------|------|----------|---------|-----------|
 | `id` | serial | ❌ | - | ID único (PK) |
-| `openId` | varchar(64) | ✅ | - | ID do Manus OAuth (único) |
+| `openId` | varchar(64) | ✅ | - | ID único para compatibilidade (único) |
 | `email` | varchar(320) | ✅ | - | E-mail (único) |
 | `passwordHash` | text | ✅ | - | Hash da senha (para auth por e-mail) |
 | `emailVerified` | boolean | ❌ | false | Se e-mail foi verificado |
-| `googleId` | varchar(255) | ✅ | - | ID do Google OAuth (único) |
 | `name` | text | ✅ | - | Nome completo |
-| `loginMethod` | varchar(64) | ✅ | - | Método de login: 'manus' \| 'email' \| 'google' |
+| `loginMethod` | varchar(64) | ✅ | - | Método de login: 'email' |
 | `role` | role enum | ❌ | 'user' | Papel: 'user' (personal) \| 'admin' (proprietário) |
 | `phone` | varchar(20) | ✅ | - | Telefone |
 | `photoUrl` | text | ✅ | - | URL da foto de perfil (S3) |
@@ -59,10 +58,8 @@ Armazena dados dos personals (treinadores) e administradores.
 | `subscriptionStatus` | subscription_status enum | ❌ | 'trial' | Status: 'active' \| 'inactive' \| 'trial' \| 'cancelled' |
 | `subscriptionExpiresAt` | timestamp | ✅ | - | Data de expiração da assinatura |
 | `proSource` | varchar(20) | ✅ | - | Origem do PRO: 'payment' \| 'courtesy' \| 'trial' |
-| `proExpiresAt` | timestamp | ✅ | - | Data de expiração do PRO (AbacatePay) |
+| `proExpiresAt` | timestamp | ✅ | - | Data de expiração do PRO |
 | `trialRequestedAt` | timestamp | ✅ | - | Data quando trial foi solicitado |
-| `abacatepayCustomerId` | varchar(255) | ✅ | - | ID do cliente no AbacatePay (único) |
-| `abacatepaySubscriptionId` | varchar(255) | ✅ | - | ID da assinatura no AbacatePay (único) |
 | `planStartAt` | timestamp | ✅ | - | Data de início do plano PRO |
 | `planExpiresAt` | timestamp | ✅ | - | Data de expiração do plano PRO |
 | `planGrantedBy` | integer | ✅ | - | ID do admin que concedeu o plano (FK → users.id) |
@@ -91,9 +88,6 @@ CREATE TYPE "subscription_status" AS ENUM('active', 'inactive', 'trial', 'cancel
 
 - `users_openId_unique`: `openId` é único
 - `users_email_unique`: `email` é único
-- `users_googleId_unique`: `googleId` é único
-- `users_abacatepayCustomerId_unique`: `abacatepayCustomerId` é único
-- `users_abacatepaySubscriptionId_unique`: `abacatepaySubscriptionId` é único
 - `users_planGrantedBy_users_id_fk`: FK para `users.id` (ON DELETE SET NULL)
 
 ---
@@ -389,8 +383,7 @@ Atualiza automaticamente o campo `updatedAt` sempre que o registro é modificado
 
 | Data | Mudança |
 |------|---------|
-| 2026-03-10 | **REBUILD COMPLETO**: Schema reconstruído do zero com RLS policies, índices otimizados, CHECK constraints, triggers automáticos |
-| 2026-03-01 | Adicionados campos AbacatePay (abacatepayCustomerId, abacatepaySubscriptionId, planStartAt, planExpiresAt, planGrantedBy, lastPaymentId, lastPaymentDate, lastPaymentAmount) |
+| 2026-03-10 | **REBUILD COMPLETO**: Schema reconstruído do zero com RLS policies, índices otimizados, CHECK constraints, triggers automáticos. Removidos Google OAuth, Manus OAuth, e integrações com payment providers (AbacatePay, Abacash) |
 | 2026-02-28 | Schema inicial criado |
 
 ---

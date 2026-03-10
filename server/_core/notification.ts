@@ -60,18 +60,18 @@ const validatePayload = (input: NotificationPayload): NotificationPayload => {
 };
 
 /**
- * Dispatches a project-owner notification through the Manus Notification Service.
- * If Manus service is unavailable, it falls back to sending an email via Resend
+ * Dispatches a project-owner notification through the configured notification service.
+ * If the service is unavailable, it falls back to sending an email via Resend
  * to the owner defined in ENV.ownerOpenId (if it's a numeric ID).
  *
- * Returns `true` if the notification was delivered (Manus or Email), `false` otherwise.
+ * Returns `true` if the notification was delivered (via service or email), `false` otherwise.
  */
 export async function notifyOwner(
   payload: NotificationPayload
 ): Promise<boolean> {
   const { title, content } = validatePayload(payload);
 
-  // 1. Try Manus Notification Service first
+  // 1. Try notification service first
   if (ENV.forgeApiUrl && ENV.forgeApiKey) {
     const endpoint = buildEndpointUrl(ENV.forgeApiUrl);
     try {
@@ -92,14 +92,14 @@ export async function notifyOwner(
 
       const detail = await response.text().catch(() => "");
       console.warn(
-        `[Notification] Manus service failed (${response.status})${detail ? `: ${detail}` : ""}`
+        `[Notification] Service failed (${response.status})${detail ? `: ${detail}` : ""}`
       );
     } catch (error) {
-      console.warn("[Notification] Error calling Manus service:", error);
+      console.warn("[Notification] Error calling notification service:", error);
     }
   }
 
-  // 2. Fallback to Email if Manus fails or is not configured
+  // 2. Fallback to Email if service fails or is not configured
   // We need the owner's email. We'll try to get it from the database using ownerOpenId.
   try {
     let owner = null;

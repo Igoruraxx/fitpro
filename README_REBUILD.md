@@ -13,7 +13,7 @@ Conforme solicitado, o schema de banco de dados foi completamente reconstruído 
 
 ### 1. Análise Completa do Código
 - Mapeamento de todas as features (Dashboard, Agenda, Clientes, Evolução, Fotos, Finanças, Admin)
-- Identificação de 3 métodos de autenticação (Email/Password, Manus OAuth, Google OAuth)
+- Identificação de método de autenticação por Email/Password
 - Análise de 8 tabelas e 11 enums
 - Identificação de problemas (sem RLS, código inline, artefatos desnecessários)
 
@@ -141,7 +141,7 @@ Todos os enums foram recriados corretamente:
 - Confirmação de email (token)
 - Login com JWT
 - Reset de senha
-- OAuth pronto (Manus/Google)
+- Autenticação por email/senha
 
 #### 2. Perfil ✅
 - Dados pessoais
