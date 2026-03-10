@@ -66,7 +66,8 @@ export async function getDb() {
           const parsed = new URL(url.startsWith('postgresql://') ? url : `postgresql://${url}`);
           return parsed.hostname.endsWith('.supabase.com') || parsed.hostname === 'supabase.com';
         } catch {
-          return url.includes('supabase.com');
+          // If URL parsing fails, we can't reliably determine if it's Supabase
+          return false;
         }
       };
       
