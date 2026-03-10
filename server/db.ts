@@ -48,7 +48,7 @@ export async function getDb() {
       console.log("[Database] Connection verified");
     } catch (error) {
       console.error("[Database] Critical connection failure:", error);
-      if (error && error.message && error.message.includes("timeout") && connStr.includes("supabase.com") && !connStr.includes("6543")) {
+      if (error && typeof error === "object" && "message" in error && typeof error.message === "string" && error.message.includes("timeout") && connStr.includes("supabase.com") && !connStr.includes("6543")) {
         console.error("HINT: Supabase removed IPv4 support for direct connections (port 5432). Please use the Transaction Pooler URL (port 6543) in your DATABASE_URL for Vercel deployments.");
       }
       _db = null;
