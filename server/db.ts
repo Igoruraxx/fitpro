@@ -60,7 +60,17 @@ export async function getDb() {
         );
       };
       
-      if (isTimeoutError(error) && connStr.includes("supabase.com") && !connStr.includes("6543")) {
+      // Helper to check if connection string is for Supabase
+      const isSupabaseConnection = (url: string): boolean => {
+        try {
+          const parsed = new URL(url.startsWith('postgresql://') ? url : `postgresql://${url}`);
+          return parsed.hostname.endsWith('.supabase.com') || parsed.hostname === 'supabase.com';
+        } catch {
+          return url.includes('supabase.com');
+        }
+      };
+      
+      if (isTimeoutError(error) && isSupabaseConnection(connStr) && !connStr.includes("6543")) {
         console.error("HINT: Supabase removed IPv4 support for direct connections (port 5432). Please use the Transaction Pooler URL (port 6543) in your DATABASE_URL for Vercel deployments.");
       }
       _db = null;
