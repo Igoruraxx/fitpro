@@ -175,7 +175,7 @@ describe("auth.login", () => {
     ).rejects.toMatchObject({ code: "UNAUTHORIZED" });
   });
 
-  it("should reject login if email is not verified", async () => {
+  it("should allow login if email is not verified", async () => {
     const unverifiedUser = { ...mockUser, emailVerified: false };
     (getUserByEmail as ReturnType<typeof vi.fn>).mockResolvedValue(unverifiedUser);
     (verifyPassword as ReturnType<typeof vi.fn>).mockResolvedValue(true);
@@ -183,9 +183,8 @@ describe("auth.login", () => {
     const { ctx } = createAnonContext();
     const caller = appRouter.createCaller(ctx);
 
-    await expect(
-      caller.auth.login({ email: "trainer@fitpro.com", password: "ValidPassword1" })
-    ).rejects.toMatchObject({ code: "FORBIDDEN" });
+    const result = await caller.auth.login({ email: "trainer@fitpro.com", password: "ValidPassword1" });
+    expect(result.success).toBe(true);
   });
 
   it("should reject login with invalid email format", async () => {

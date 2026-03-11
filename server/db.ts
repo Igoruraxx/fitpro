@@ -845,7 +845,7 @@ export async function createUser(email: string, passwordHash: string, name?: str
     email,
     passwordHash,
     name,
-    emailVerified: false,
+    emailVerified: true,
     loginMethod: "email",
     role: "user",
     subscriptionPlan: "free",

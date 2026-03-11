@@ -15,14 +15,13 @@ import {
   createAuthToken,
   getAuthToken,
   deleteAuthToken,
-  updateUserEmailVerified,
   updateUserPassword,
   getUserById,
 } from "../db";
 import { getSessionCookieOptions } from "../_core/cookies";
 import { COOKIE_NAME, ONE_YEAR_MS } from "@shared/const";
 import { ENV } from "../_core/env";
-import { sendWelcomeEmail, sendPasswordResetEmail, sendEmailConfirmationEmail } from "../email";
+import { sendWelcomeEmail, sendPasswordResetEmail } from "../email";
 
 function getSessionSecret() {
   return new TextEncoder().encode(ENV.cookieSecret);
@@ -49,10 +48,6 @@ const registerSchema = z.object({
 const loginSchema = z.object({
   email: z.string().email("E-mail inválido"),
   password: z.string(),
-});
-
-const confirmEmailSchema = z.object({
-  token: z.string(),
 });
 
 const forgotPasswordSchema = z.object({
@@ -98,21 +93,12 @@ export const authRouter = router({
       const passwordHash = await hashPassword(input.password);
       const user = await createUser(input.email, passwordHash, input.name);
 
-      // Create email confirmation token
-      const confirmToken = await createAuthToken(
-        user.id,
-        "email_confirmation",
-        getTokenExpiration("email_confirmation")
-      );
-
-      // Send confirmation email via Resend
-      const baseUrl = ENV.appUrl.replace(/\/+$/, "");
-      const confirmUrl = `${baseUrl}/confirm-email?token=${confirmToken}`;
-      sendEmailConfirmationEmail(input.email, input.name, confirmUrl).catch(() => {});
+      // Send welcome email
+      sendWelcomeEmail(input.email, input.name).catch(() => {});
 
       return {
         success: true,
-        message: "Cadastro realizado! Verifique seu e-mail para confirmar a conta e fazer login.",
+        message: "Cadastro realizado com sucesso! Você já pode fazer login.",
         userId: user.id,
       };
     }),
@@ -135,14 +121,6 @@ export const authRouter = router({
         throw new TRPCError({
           code: "UNAUTHORIZED",
           message: "E-mail ou senha inválidos",
-        });
-      }
-
-      // Check if email is verified
-      if (!user.emailVerified) {
-        throw new TRPCError({
-          code: "FORBIDDEN",
-          message: "Por favor, confirme seu e-mail antes de fazer login",
         });
       }
 
@@ -176,54 +154,6 @@ export const authRouter = router({
       };
     }),
 
-  confirmEmail: publicProcedure
-    .input(confirmEmailSchema)
-    .mutation(async ({ input }) => {
-      // Get auth token
-      const authToken = await getAuthToken(input.token);
-      if (!authToken) {
-        throw new TRPCError({
-          code: "BAD_REQUEST",
-          message: "Token inválido ou expirado",
-        });
-      }
-
-      // Check if token is expired
-      if (new Date() > authToken.expiresAt) {
-        throw new TRPCError({
-          code: "BAD_REQUEST",
-          message: "Token expirado",
-        });
-      }
-
-      // Check if token is for email confirmation
-      if (authToken.type !== "email_confirmation") {
-        throw new TRPCError({
-          code: "BAD_REQUEST",
-          message: "Token inválido",
-        });
-      }
-
-      // Mark email as verified
-      await updateUserEmailVerified(authToken.userId);
-
-      // Get user info for welcome email
-      const confirmedUser = await getUserById(authToken.userId);
-
-      // Delete token
-      await deleteAuthToken(input.token);
-
-      // Send welcome email after successful confirmation (fire-and-forget)
-      if (confirmedUser) {
-        sendWelcomeEmail(confirmedUser.email!, confirmedUser.name ?? "Personal Trainer").catch(() => {});
-      }
-
-      return {
-        success: true,
-        message: "E-mail confirmado com sucesso! Você já pode fazer login.",
-      };
-    }),
-
   forgotPassword: publicProcedure
     .input(forgotPasswordSchema)
     .mutation(async ({ input }) => {
@@ -248,7 +178,7 @@ export const authRouter = router({
       // Use ENV.appUrl for reset link
       const baseUrl = ENV.appUrl.replace(/\/+$/, "");
       const resetUrl = `${baseUrl}/reset-password?token=${resetToken}`;
-      sendPasswordResetEmail(user.email!, user.name ?? "Personal Trainer", resetUrl).catch(() => {});
+      sendPasswordResetEmail(user.email, user.name ?? "Personal Trainer", resetUrl).catch(() => {});
 
       return {
         success: true,

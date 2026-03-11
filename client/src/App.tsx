@@ -22,8 +22,6 @@ import Login from "./pages/Login";
 import Register from "./pages/Register";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
-import ConfirmEmail from "./pages/ConfirmEmail";
-
 function Router() {
   return (
     <Switch>
@@ -32,7 +30,6 @@ function Router() {
       <Route path="/login" component={Login} />
       <Route path="/forgot-password" component={ForgotPassword} />
       <Route path="/reset-password" component={ResetPassword} />
-      <Route path="/confirm-email" component={ConfirmEmail} />
 
       {/* App Routes - With AppLayout */}
       <Route>
