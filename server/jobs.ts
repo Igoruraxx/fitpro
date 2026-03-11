@@ -107,9 +107,11 @@ async function runDueDateReminderJob() {
         txDescription: transactions.description,
         txCategory: transactions.category,
         clientId: transactions.clientId,
+        clientName: clients.name,
         trainerId: transactions.trainerId,
       })
       .from(transactions)
+      .leftJoin(clients, eq(transactions.clientId, clients.id))
       .where(
         and(
           eq(transactions.type, "income"),
@@ -140,15 +142,7 @@ async function runDueDateReminderJob() {
       if (!tx.trainerId) continue;
 
       // Get client name
-      let clientName = "Aluno";
-      if (tx.clientId) {
-        const [cl] = await db
-          .select({ name: clients.name })
-          .from(clients)
-          .where(eq(clients.id, tx.clientId))
-          .limit(1);
-        if (cl) clientName = cl.name;
-      }
+      const clientName = tx.clientName || "Aluno";
 
       const dueDate = typeof tx.txDueDate === "string" ? tx.txDueDate : tx.txDueDate ? (tx.txDueDate as unknown as Date).toISOString().split("T")[0] : todayStr;
       const dueDateObj = new Date(dueDate + "T12:00:00");
