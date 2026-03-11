@@ -384,6 +384,39 @@ export async function deleteAppointmentsByGroup(groupId: string, trainerId: numb
   );
 }
 
+/**
+ * Bulk delete appointments for a specific client with optional filters.
+ * Replaces N+1 query pattern.
+ */
+export async function deleteAppointmentsByClient(params: {
+  trainerId: number;
+  clientId: number;
+  startDate?: string;
+  status?: "scheduled" | "completed" | "cancelled" | "no_show";
+}) {
+  const db = await getDb();
+  if (!db) return 0;
+
+  const conditions = [
+    eq(appointments.trainerId, params.trainerId),
+    eq(appointments.clientId, params.clientId)
+  ];
+
+  if (params.startDate) {
+    conditions.push(sql`${appointments.date} >= ${params.startDate}::date` as any);
+  }
+
+  if (params.status) {
+    conditions.push(eq(appointments.status, params.status));
+  }
+
+  const result = await db.delete(appointments)
+    .where(and(...conditions))
+    .returning({ id: appointments.id });
+
+  return result.length;
+}
+
 // ==================== BODY MEASUREMENTS ====================
 
 export async function getMeasurementsByClient(trainerId: number, clientId: number) {
