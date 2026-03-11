@@ -5,7 +5,6 @@ import { Card } from "@/components/ui/card";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
 import { useState } from "react";
-import { PlanSelector, Plan } from "@/components/PlanSelector";
 import {
   Check, X, Crown, Zap, BarChart3, TrendingUp, FileText,
   Users, Calendar, DollarSign, Loader2, ArrowRight, X as XIcon,
@@ -23,16 +22,7 @@ const FEATURES = [
 export default function Upgrade() {
   const { user } = useAuth();
   const [, setLocation] = useLocation();
-  const [showPaymentPlans, setShowPaymentPlans] = useState(false);
-  const [selectedPlan, setSelectedPlan] = useState<Plan | null>(null);
 
-  const plansQuery = trpc.payments.getPlans.useQuery();
-  const createCheckoutMutation = trpc.payments.createCheckout.useMutation({
-    onSuccess: (data) => {
-      window.location.href = data.checkoutUrl;
-    },
-    onError: (e) => toast.error(e.message),
-  });
 
   const requestTrialMutation = trpc.users.requestTrial.useMutation({
     onSuccess: () => {
@@ -47,13 +37,7 @@ export default function Upgrade() {
   const isPro = user?.subscriptionPlan === "pro";
   const hasTrialRequested = (user as any)?.trialRequestedAt;
 
-  const handleSelectPlan = (plan: Plan) => {
-    setSelectedPlan(plan);
-    createCheckoutMutation.mutate({
-      planKey: plan.key,
-      returnUrl: window.location.origin + "/dashboard",
-    });
-  };
+
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-orange-500/5">
@@ -184,11 +168,11 @@ export default function Upgrade() {
                   </Button>
 
                   <Button
-                    onClick={() => setShowPaymentPlans(true)}
+                    disabled
                     variant="outline"
-                    className="w-full mb-8 border-orange-500/30 text-orange-400 hover:bg-orange-500/10"
+                    className="w-full mb-8 border-orange-500/30 text-orange-400 cursor-not-allowed"
                   >
-                    Assinar Agora
+                    Assinaturas Temporariamente Indisponíveis
                   </Button>
                 </>
               )}
@@ -211,38 +195,6 @@ export default function Upgrade() {
             </div>
           </Card>
         </div>
-
-        {/* Payment Plans Modal */}
-        {showPaymentPlans && (
-          <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-            <Card className="w-full max-w-4xl max-h-[90vh] overflow-y-auto">
-              <div className="p-6 border-b border-border flex items-center justify-between sticky top-0 bg-background">
-                <h2 className="text-2xl font-bold">Escolha seu Plano de Assinatura</h2>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setShowPaymentPlans(false)}
-                >
-                  <XIcon className="h-4 w-4" />
-                </Button>
-              </div>
-              <div className="p-6">
-                {plansQuery.isLoading ? (
-                  <div className="flex items-center justify-center py-12">
-                    <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-                  </div>
-                ) : plansQuery.data ? (
-                  <PlanSelector
-                    plans={plansQuery.data}
-                    onSelectPlan={handleSelectPlan}
-                    loading={createCheckoutMutation.isPending}
-                    selectedPlan={selectedPlan || undefined}
-                  />
-                ) : null}
-              </div>
-            </Card>
-          </div>
-        )}
 
         {/* FAQ Section */}
         <div className="max-w-2xl mx-auto">

@@ -84,9 +84,6 @@ CREATE TABLE "users" (
   "proExpiresAt" TIMESTAMP,
   "trialRequestedAt" TIMESTAMP,
   
-  -- AbacatePay integration
-  "abacatepayCustomerId" VARCHAR(255) UNIQUE,
-  "abacatepaySubscriptionId" VARCHAR(255) UNIQUE,
   "planStartAt" TIMESTAMP,
   "planExpiresAt" TIMESTAMP,
   "planGrantedBy" INTEGER,
