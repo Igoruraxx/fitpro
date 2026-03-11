@@ -9,7 +9,7 @@ import { z } from "zod";
 import {
   getClientsByTrainer, getClientById, createClient, updateClient, deleteClient, countClientsByTrainer,
   getAppointmentsByTrainer, getAppointmentById, createAppointment, updateAppointment, deleteAppointment,
-  deleteAppointmentsByGroup, decrementClientSessions,
+  deleteAppointmentsByGroup, deleteAppointmentsByClient, decrementClientSessions,
   getMeasurementsByClient, createMeasurement, deleteMeasurement,
   getPhotosByClient, createProgressPhoto, deleteProgressPhoto,
   getTransactionsByTrainer, getTransactionsByClient, createTransaction, updateTransaction, deleteTransaction, getFinancialSummary, getFinancialDashboard,
@@ -446,43 +446,26 @@ export const appRouter = router({
     deleteFutureByClient: protectedProcedure.input(z.object({
       clientId: z.number(),
     })).mutation(async ({ ctx, input }) => {
-      // Get all future appointments for this client
       const today = new Date().toISOString().split('T')[0];
-      const future = new Date(); future.setDate(future.getDate() + 365);
-      const endDate = future.toISOString().split('T')[0];
       
-      const allAppts = await getAppointmentsByTrainer(ctx.user.id, today, endDate);
-      const futureAppts = allAppts.filter((a: any) => 
-        a.clientId === input.clientId && 
-        a.status === 'scheduled' && 
-        a.date >= today
-      );
+      const deletedCount = await deleteAppointmentsByClient({
+        trainerId: ctx.user.id,
+        clientId: input.clientId,
+        startDate: today,
+        status: 'scheduled'
+      });
       
-      // Delete each appointment
-      for (const appt of futureAppts) {
-        await deleteAppointment(appt.id, ctx.user.id);
-      }
-      
-      return { success: true, deleted: futureAppts.length };
+      return { success: true, deleted: deletedCount };
     }),
     deleteAllByClient: protectedProcedure.input(z.object({
       clientId: z.number(),
     })).mutation(async ({ ctx, input }) => {
-      // Get all appointments for this client (past and future)
-      const past = new Date(); past.setDate(past.getDate() - 365);
-      const future = new Date(); future.setDate(future.getDate() + 365);
-      const startDate = past.toISOString().split('T')[0];
-      const endDate = future.toISOString().split('T')[0];
+      const deletedCount = await deleteAppointmentsByClient({
+        trainerId: ctx.user.id,
+        clientId: input.clientId
+      });
       
-      const allAppts = await getAppointmentsByTrainer(ctx.user.id, startDate, endDate);
-      const clientAppts = allAppts.filter((a: any) => a.clientId === input.clientId);
-      
-      // Delete each appointment
-      for (const appt of clientAppts) {
-        await deleteAppointment(appt.id, ctx.user.id);
-      }
-      
-      return { success: true, deleted: clientAppts.length };
+      return { success: true, deleted: deletedCount };
     }),
     // Get pending (scheduled) sessions for a specific client
     pendingByClient: protectedProcedure.input(z.object({ clientId: z.number() })).query(async ({ ctx, input }) => {
