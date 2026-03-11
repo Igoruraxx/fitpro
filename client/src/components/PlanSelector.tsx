@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -31,13 +31,30 @@ export function PlanSelector({
 }: PlanSelectorProps) {
   const [hoveredPlan, setHoveredPlan] = useState<string | null>(null);
 
-  // Sort plans by price
-  const sortedPlans = [...plans].sort((a, b) => a.price - b.price);
+  // Sort plans by price and pre-calculate values
+  const sortedPlans = useMemo(() => {
+    return [...plans]
+      .sort((a, b) => a.price - b.price)
+      .map((plan) => ({
+        ...plan,
+        monthlyEquivalent:
+          plan.price /
+          (plan.cycle === "monthly"
+            ? 1
+            : plan.cycle === "quarterly"
+              ? 3
+              : plan.cycle === "semiannual"
+                ? 6
+                : 12),
+      }));
+  }, [plans]);
 
   // Find the best value (highest discount)
-  const bestValue = sortedPlans.reduce((best, current) =>
-    current.discount > best.discount ? current : best
-  );
+  const bestValue = useMemo(() => {
+    return sortedPlans.reduce((best, current) =>
+      current.discount > best.discount ? current : best,
+    );
+  }, [sortedPlans]);
 
   return (
     <div className="w-full space-y-6">
@@ -52,7 +69,6 @@ export function PlanSelector({
         {sortedPlans.map((plan) => {
           const isSelected = selectedPlan?.key === plan.key;
           const isBestValue = plan.key === bestValue.key;
-          const monthlyEquivalent = plan.price / (plan.cycle === "monthly" ? 1 : plan.cycle === "quarterly" ? 3 : plan.cycle === "semiannual" ? 6 : 12);
 
           return (
             <Card
@@ -91,7 +107,7 @@ export function PlanSelector({
                     </span>
                   </div>
                   <p className="text-xs text-muted-foreground">
-                    R$ {monthlyEquivalent.toFixed(2)}/mês
+                    R$ {plan.monthlyEquivalent.toFixed(2)}/mês
                   </p>
                 </div>
 
