@@ -20,6 +20,7 @@ import {
 import { nanoid } from "nanoid";
 import { storagePut } from "./storage";
 import { notifyOwner } from "./_core/notification";
+import { validateImageBuffer, validateFileName, validateMimeType } from "./_core/validation";
 
 // ==================== RECURRENCE HELPER ====================
 /**
@@ -102,6 +103,7 @@ export const appRouter = router({
       if (input.imageBase64) {
         const base64Data = input.imageBase64.replace(/^data:image\/\w+;base64,/, '');
         const buffer = Buffer.from(base64Data, 'base64');
+        validateImageBuffer(buffer);
         const ext = input.imageBase64.startsWith('data:image/png') ? 'png' : 'jpg';
         const key = `bio/${ctx.user.id}/${input.clientId}/${Date.now()}.${ext}`;
         const { url } = await storagePut(key, buffer, `image/${ext}`);
@@ -738,7 +740,13 @@ export const appRouter = router({
       mimeType: z.string().default("image/jpeg"),
     })).mutation(async ({ ctx, input }) => {
       const { fileBase64, fileName, mimeType, clientId, photoType, date, notes } = input;
+
+      validateFileName(fileName);
+      validateMimeType(mimeType);
+
       const buffer = Buffer.from(fileBase64, "base64");
+      validateImageBuffer(buffer);
+
       const key = `photos/${ctx.user.id}/${clientId}/${Date.now()}-${fileName}`;
       const { url } = await storagePut(key, buffer, mimeType);
       const id = await createProgressPhoto({
