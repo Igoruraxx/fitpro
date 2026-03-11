@@ -749,22 +749,24 @@ export async function getTodaySessions(trainerId: number) {
 
   const todayStr = new Date().toISOString().split('T')[0];
 
-  const appts = await db.select().from(appointments)
+  const appts = await db.select({
+      appointment: appointments,
+      clientName: clients.name,
+    })
+    .from(appointments)
+    .leftJoin(clients, eq(appointments.clientId, clients.id))
     .where(and(
       eq(appointments.trainerId, trainerId),
       sql`${appointments.date} = ${todayStr}::date`
     ))
     .orderBy(asc(appointments.startTime));
 
-  const result = [];
-  for (const appt of appts) {
-    let clientName = appt.guestName || 'Convidado';
-    if (appt.clientId) {
-      const cl = await db.select({ name: clients.name }).from(clients).where(eq(clients.id, appt.clientId)).limit(1);
-      if (cl.length > 0) clientName = cl[0].name;
-    }
-    result.push({ ...appt, clientName });
-  }
+  const result = appts.map(row => {
+    return {
+      ...row.appointment,
+      clientName: row.clientName || row.appointment.guestName || 'Convidado',
+    };
+  });
 
   return result;
 }
