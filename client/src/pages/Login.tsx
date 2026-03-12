@@ -44,9 +44,6 @@ export default function Login() {
     } catch (error: any) {
       if (error.data?.code === "UNAUTHORIZED") {
         form.setError("password", { message: "E-mail ou senha inválidos" });
-      } else if (error.data?.code === "FORBIDDEN") {
-        toast.error("Por favor, confirme seu e-mail antes de fazer login");
-        setLocation("/confirm-email");
       } else {
         toast.error(error.message || "Erro ao fazer login");
       }

@@ -47,7 +47,7 @@ export default function Register() {
         password: values.password,
       });
 
-      toast.success("Cadastro realizado! Verifique seu e-mail para confirmar a conta.");
+      toast.success("Cadastro realizado com sucesso! Você já pode fazer login.");
       window.location.href = "/login";
     } catch (error: any) {
       if (error.data?.code === "CONFLICT") {
